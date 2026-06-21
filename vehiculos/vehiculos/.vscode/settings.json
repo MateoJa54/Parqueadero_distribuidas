@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^docker --version 2>/dev/null && docker compose version 2>/dev/null && echo \"---\" && docker compose config -q && echo \"compose OK\" \\|\\| echo \"Docker no disponible o compose inválido\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

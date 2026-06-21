@@ -1,0 +1,39 @@
+# ============================================================
+# Base de datos UNIFICADA para el sistema de parqueadero.
+#
+# Una sola instancia PostgreSQL (puerto 5432) que aloja las
+# tres bases de datos usadas por las APIs:
+#   - zonas         (Spring Boot)  usuario: zonas      / zonas123
+#   - usuarios      (Spring Boot)  usuario: usuarios   / usuarios123
+#   - vehiculos_db  (NestJS)       usuario: postgres   / postgres
+#
+# Las bases y usuarios se crean automáticamente con los scripts
+# de ./init-db la primera vez que se levanta el volumen.
+#
+# Uso:
+#   docker compose up -d        # levantar
+#   docker compose down         # detener (conserva datos)
+#   docker compose down -v      # detener y BORRAR datos
+# ============================================================
+services:
+  postgres:
+    image: postgres:16
+    container_name: parqueadero-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - parqueadero_pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  parqueadero_pgdata:

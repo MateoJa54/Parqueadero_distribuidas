@@ -1,0 +1,45 @@
+# ============================================================
+#  .gitignore raiz - Sistema de Parqueadero (microservicios)
+# ============================================================
+
+# ---------- Java / Maven (usuarios, zonas) ----------
+target/
+*.class
+*.jar
+*.war
+*.ear
+!**/.mvn/wrapper/maven-wrapper.jar
+.mvn/.develocity/
+*.log
+
+# ---------- Node / NestJS (vehiculos) ----------
+node_modules/
+dist/
+build/
+coverage/
+.npm/
+*.tsbuildinfo
+.eslintcache
+
+# ---------- Variables de entorno / secretos ----------
+.env
+.env.*
+!.env.example
+
+# ---------- IDE / Editor ----------
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.classpath
+.project
+.settings/
+*.swp
+
+# ---------- Sistema operativo ----------
+.DS_Store
+Thumbs.db
+
+# ---------- Docker ----------
+*.pid

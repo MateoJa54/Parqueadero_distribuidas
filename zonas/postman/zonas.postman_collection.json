@@ -1,0 +1,382 @@
+{
+  "info": {
+    "name": "Zonas API - Parqueadero",
+    "description": "Coleccion para probar la API de zonas y espacios (Spring Boot, puerto 8080). Cubre el CRUD completo de zonas y espacios, el ciclo de estados (DISPONIBLE/OCUPADO/RESERVADO/MANTENIMIENTO), activar/desactivar con cascada y las reglas de negocio (capacidad, no desactivar zona con espacios OCUPADOS). Los IDs se guardan automaticamente en variables de coleccion. Ejecutable de corrido con 'Run collection'.\n\nEnums:\n- TipoZona: VIP, REGULAR, INTERNA, EXTERNA, PREFERENCIAL\n- TipoEspacio: MOTO, AUTO, BUSETA\n- EstadoEspacio: DISPONIBLE, OCUPADO, RESERVADO, MANTENIMIENTO",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "idZona", "value": "", "type": "string" },
+    { "key": "idEspacio", "value": "", "type": "string" },
+    { "key": "idEspacio2", "value": "", "type": "string" },
+    { "key": "nombreZona", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "00 - Health (debug si se cuelga)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas"] },
+        "description": "Si no responde, la app NO esta levantada o el puerto es incorrecto. Debe devolver 200 y una lista (vacia [] al inicio)."
+      },
+      "response": []
+    },
+    {
+      "name": "01 - Crear Zona (OK 201)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Nombre unico y repetible para no chocar al re-ejecutar la coleccion",
+              "pm.collectionVariables.set('nombreZona', 'Zona QA ' + Date.now());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 201', () => pm.response.code === 201);",
+              "const body = pm.response.json();",
+              "pm.collectionVariables.set('idZona', body.idZona);",
+              "pm.test('activo true por defecto', () => body.activo === true);",
+              "pm.test('codigo generado ZONA-', () => body.codigo.startsWith('ZONA-'));",
+              "console.log('idZona guardado:', body.idZona);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"{{nombreZona}}\",\n  \"descripcion\": \"Zona regular planta baja\",\n  \"tipo\": \"REGULAR\",\n  \"capacidad\": 3\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas"] },
+        "description": "Crea una zona REGULAR con capacidad 3. Guarda idZona en variable de coleccion."
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Crear Zona nombre duplicado (ERROR 409)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 409', () => pm.response.code === 409);" ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"{{nombreZona}}\",\n  \"descripcion\": \"Repetida\",\n  \"tipo\": \"VIP\",\n  \"capacidad\": 5\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas"] },
+        "description": "Reutiliza el nombre de la zona 01 -> 409 'Ya existe una zona con el nombre: ...'."
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Crear Zona invalida (ERROR 400)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 400', () => pm.response.code === 400);" ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"\",\n  \"descripcion\": \"Sin nombre y capacidad invalida\",\n  \"tipo\": \"REGULAR\",\n  \"capacidad\": 0\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas"] },
+        "description": "nombre vacio (@NotBlank) y capacidad 0 (@Min 1) -> 400 con mapa de errores."
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Listar Zonas (OK 200)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 200', () => pm.response.code === 200);", "pm.test('es lista', () => Array.isArray(pm.response.json()));" ] } }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas"] }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Obtener Zona por ID (OK 200)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 200', () => pm.response.code === 200);" ] } }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas/{{idZona}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas", "{{idZona}}"] }
+      },
+      "response": []
+    },
+    {
+      "name": "06 - Actualizar Zona (PUT OK 200)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 200', () => pm.response.code === 200);", "const b = pm.response.json();", "pm.test('capacidad actualizada a 5', () => b.capacidad === 5);" ] } }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"{{nombreZona}}\",\n  \"descripcion\": \"Descripcion actualizada\",\n  \"tipo\": \"PREFERENCIAL\",\n  \"capacidad\": 5\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas/{{idZona}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas", "{{idZona}}"] },
+        "description": "Actualiza descripcion, tipo y capacidad. El codigo y el estado no cambian por aqui."
+      },
+      "response": []
+    },
+    {
+      "name": "07 - Crear Espacio 1 (OK 201)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 201', () => pm.response.code === 201);", "const b = pm.response.json();", "pm.collectionVariables.set('idEspacio', b.id);", "pm.test('estado inicial DISPONIBLE', () => b.estado === 'DISPONIBLE');", "console.log('idEspacio guardado:', b.id);" ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"idZona\": \"{{idZona}}\",\n  \"descripcion\": \"Espacio para auto\",\n  \"tipo\": \"AUTO\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios"] },
+        "description": "Crea un espacio AUTO en la zona. El codigo se genera (ESP-...) y el estado arranca en DISPONIBLE."
+      },
+      "response": []
+    },
+    {
+      "name": "08 - Crear Espacio 2 (OK 201)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 201', () => pm.response.code === 201);", "const b = pm.response.json();", "pm.collectionVariables.set('idEspacio2', b.id);", "console.log('idEspacio2 guardado:', b.id);" ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"idZona\": \"{{idZona}}\",\n  \"descripcion\": \"Espacio para moto\",\n  \"tipo\": \"MOTO\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios"] }
+      },
+      "response": []
+    },
+    {
+      "name": "09 - Crear Espacio invalido (ERROR 400)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 400', () => pm.response.code === 400);" ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"idZona\": \"{{idZona}}\",\n  \"descripcion\": \"Sin tipo\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios"] },
+        "description": "Falta 'tipo' (@NotNull) -> 400 con mapa de errores."
+      },
+      "response": []
+    },
+    {
+      "name": "10 - Listar Espacios (OK 200)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 200', () => pm.response.code === 200);" ] } }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios"] }
+      },
+      "response": []
+    },
+    {
+      "name": "11 - Obtener Espacio por ID (OK 200)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 200', () => pm.response.code === 200);" ] } }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios/{{idEspacio}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios", "{{idEspacio}}"] }
+      },
+      "response": []
+    },
+    {
+      "name": "12 - Actualizar Espacio (PUT OK 200)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 200', () => pm.response.code === 200);", "const b = pm.response.json();", "pm.test('tipo actualizado a BUSETA', () => b.tipo === 'BUSETA');" ] } }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"idZona\": \"{{idZona}}\",\n  \"descripcion\": \"Reasignado a buseta\",\n  \"tipo\": \"BUSETA\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios/{{idEspacio}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios", "{{idEspacio}}"] },
+        "description": "Actualiza descripcion y tipo. El codigo, la zona y el estado/activo no se modifican por aqui."
+      },
+      "response": []
+    },
+    {
+      "name": "13 - Cambiar Estado a OCUPADO (PATCH OK 200)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 200', () => pm.response.code === 200);", "const b = pm.response.json();", "pm.test('estado OCUPADO', () => b.estado === 'OCUPADO');" ] } }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios/{{idEspacio}}/estado?estado=OCUPADO", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios", "{{idEspacio}}", "estado"], "query": [{ "key": "estado", "value": "OCUPADO" }] }
+      },
+      "response": []
+    },
+    {
+      "name": "14 - Listar Espacios por estado OCUPADO (OK 200)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 200', () => pm.response.code === 200);" ] } }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios/estado/OCUPADO", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios", "estado", "OCUPADO"] }
+      },
+      "response": []
+    },
+    {
+      "name": "15 - Buscar por Zona y Estado (OK 200)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 200', () => pm.response.code === 200);" ] } }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios/zona/{{idZona}}/estado/OCUPADO", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios", "zona", "{{idZona}}", "estado", "OCUPADO"] },
+        "description": "Devuelve el primer espacio de la zona en estado OCUPADO."
+      },
+      "response": []
+    },
+    {
+      "name": "16 - Desactivar Zona con espacio OCUPADO (ERROR 409)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 409', () => pm.response.code === 409);" ] } }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas/{{idZona}}/desactivar", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas", "{{idZona}}", "desactivar"] },
+        "description": "Regla de negocio: no se puede desactivar una zona si tiene espacios OCUPADOS -> 409."
+      },
+      "response": []
+    },
+    {
+      "name": "17 - Liberar Espacio (Estado DISPONIBLE 200)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 200', () => pm.response.code === 200);" ] } }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios/{{idEspacio}}/estado?estado=DISPONIBLE", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios", "{{idEspacio}}", "estado"], "query": [{ "key": "estado", "value": "DISPONIBLE" }] }
+      },
+      "response": []
+    },
+    {
+      "name": "18 - Desactivar Zona (PATCH 204)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 204', () => pm.response.code === 204);" ] } }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas/{{idZona}}/desactivar", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas", "{{idZona}}", "desactivar"] },
+        "description": "Ahora si: sin espacios OCUPADOS. Cascada: los espacios pasan a MANTENIMIENTO e inactivo."
+      },
+      "response": []
+    },
+    {
+      "name": "19 - Activar Zona (PATCH 204)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 204', () => pm.response.code === 204);" ] } }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas/{{idZona}}/activar", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas", "{{idZona}}", "activar"] },
+        "description": "Cascada: los espacios vuelven a DISPONIBLE y activo."
+      },
+      "response": []
+    },
+    {
+      "name": "20 - Desactivar Espacio (PATCH 204)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 204', () => pm.response.code === 204);" ] } }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios/{{idEspacio2}}/desactivar", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios", "{{idEspacio2}}", "desactivar"] }
+      },
+      "response": []
+    },
+    {
+      "name": "21 - Activar Espacio (PATCH 204)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 204', () => pm.response.code === 204);" ] } }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios/{{idEspacio2}}/activar", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios", "{{idEspacio2}}", "activar"] }
+      },
+      "response": []
+    },
+    {
+      "name": "22 - Estado enum invalido (ERROR 400)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 400', () => pm.response.code === 400);" ] } }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios/{{idEspacio}}/estado?estado=VOLANDO", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios", "{{idEspacio}}", "estado"], "query": [{ "key": "estado", "value": "VOLANDO" }] },
+        "description": "Enum invalido en la URL -> 400 (manejado por GlobalExceptionHandler / TypeMismatch)."
+      },
+      "response": []
+    },
+    {
+      "name": "23 - Eliminar Espacio (DELETE 204)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 204', () => pm.response.code === 204);" ] } }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/espacios/{{idEspacio2}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "espacios", "{{idEspacio2}}"] }
+      },
+      "response": []
+    },
+    {
+      "name": "24 - Obtener Zona inexistente (ERROR 404)",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('status 404', () => pm.response.code === 404);" ] } }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/zonas/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas", "00000000-0000-0000-0000-000000000000"] },
+        "description": "UUID inexistente -> 404 'Zona no encontrada con ID: ...'."
+      },
+      "response": []
+    }
+  ]
+}
