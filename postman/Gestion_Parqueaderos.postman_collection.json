@@ -1069,7 +1069,7 @@
               }
             ],
             "url": {
-              "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}/estado",
+              "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}/estado?estado=OCUPADO",
               "host": [
                 "{{urlZonas}}"
               ],
@@ -1079,17 +1079,16 @@
                 "espacios",
                 "{{idEspacio}}",
                 "estado"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "OCUPADO",
+                  "description": "Uno de: DISPONIBLE, OCUPADO, RESERVADO, MANTENIMIENTO"
+                }
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"estado\": \"OCUPADO\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "El estado viaja como query param (?estado=...), NO en el body. El controlador usa @RequestParam EstadoEspacio estado."
           },
           "response": []
         },
@@ -1429,9 +1428,10 @@
                 "{{idVehiculo}}"
               ]
             },
+            "description": "PATCH parcial. Los campos a cambiar van DENTRO de 'datos' (misma forma que al crear). Enviar 'color' suelto NO surte efecto porque el servicio lee updateVehiculoDto.datos.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"color\": \"Azul\"\n}",
+              "raw": "{\n  \"datos\": {\n    \"color\": \"Azul\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"

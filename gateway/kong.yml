@@ -1,17 +1,4 @@
-# =====================================================================
-# Kong API Gateway - Configuracion declarativa (modo DB-less)
-# ---------------------------------------------------------------------
-# "Sin codificar": todo el ruteo y las reglas viven en este archivo.
-# Kong NO usa base de datos; lee este YAML al arrancar.
-#
-# Las APIs corren en el HOST (no en Docker), por eso se usa
-# host.docker.internal (resuelto via extra_hosts en docker-compose).
-#
-# Ruteo por recurso, preservando el path original (strip_path: false):
-#   /api/v1/personas|usuarios|roles|asignaciones  -> usuarios  :8081
-#   /api/v1/zonas|espacios                         -> zonas     :8080
-#   /api/vehiculos                                 -> vehiculos :3000
-# =====================================================================
+
 _format_version: "3.0"
 _transform: true
 
@@ -83,8 +70,7 @@ plugins:
       credentials: false
       max_age: 3600
 
-  # Correlation-ID: marca cada peticion con un id unico para trazarla
-  # entre servicios. Se devuelve al cliente en la cabecera X-Correlation-ID.
+
   - name: correlation-id
     config:
       header_name: X-Correlation-ID
