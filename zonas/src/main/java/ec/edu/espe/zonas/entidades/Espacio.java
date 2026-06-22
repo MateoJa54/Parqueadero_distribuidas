@@ -50,8 +50,8 @@ public class Espacio {
     @Column(nullable = false)
     private EstadoEspacio estado;
 
-    @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name="id_zona")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_zona", nullable = false)
     private Zona zona;
 
     @Column(nullable = false, updatable = false)

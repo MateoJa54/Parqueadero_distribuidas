@@ -81,4 +81,34 @@ public class AsignacionServicioImpl implements AsignacionServicio {
                 .map(mapper::toAsignacionResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    @Transactional
+    public AsignacionResponseDto desactivarAsignacion(UUID idUsuario, UUID idRol) {
+        UsuarioRol asignacion = usuarioRolRepositorio.findById(new UsuarioRolId(idUsuario, idRol))
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe asignacion para el usuario " + idUsuario + " y el rol " + idRol));
+
+        asignacion.setActive(false);
+        return mapper.toAsignacionResponse(usuarioRolRepositorio.save(asignacion));
+    }
+
+    @Override
+    @Transactional
+    public AsignacionResponseDto activarAsignacion(UUID idUsuario, UUID idRol) {
+        UsuarioRol asignacion = usuarioRolRepositorio.findById(new UsuarioRolId(idUsuario, idRol))
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe asignacion para el usuario " + idUsuario + " y el rol " + idRol));
+
+        // No tiene sentido reactivar una relacion si el rol o el usuario estan inactivos.
+        if (!asignacion.getRol().isActive()) {
+            throw new ReglaNegocioException("No se puede reactivar la asignacion: el rol esta inactivo");
+        }
+        if (!asignacion.getUsuario().isActive()) {
+            throw new ReglaNegocioException("No se puede reactivar la asignacion: el usuario esta inactivo");
+        }
+
+        asignacion.setActive(true);
+        return mapper.toAsignacionResponse(usuarioRolRepositorio.save(asignacion));
+    }
 }

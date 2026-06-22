@@ -6,13 +6,12 @@ import java.util.UUID;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,13 +33,15 @@ import lombok.ToString;
 @Builder
 public class Usuario {
 
+    // PK compartida con Persona (relacion 1 a 1). El id NO se autogenera:
+    // @MapsId copia el id de la persona asociada como clave primaria de users.
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id_person")
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @PrimaryKeyJoinColumn
+    @MapsId
+    @JoinColumn(name = "id_person")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Persona persona;

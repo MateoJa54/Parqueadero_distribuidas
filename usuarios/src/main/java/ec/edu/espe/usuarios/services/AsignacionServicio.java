@@ -13,4 +13,8 @@ public interface AsignacionServicio {
     List<AsignacionResponseDto> listarAsignaciones();
 
     List<AsignacionResponseDto> listarRolesDeUsuario(UUID idUsuario);
+
+    AsignacionResponseDto desactivarAsignacion(UUID idUsuario, UUID idRol);
+
+    AsignacionResponseDto activarAsignacion(UUID idUsuario, UUID idRol);
 }

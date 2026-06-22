@@ -11,7 +11,9 @@ import ec.edu.espe.usuarios.dtos.PersonaRequestDto;
 import ec.edu.espe.usuarios.dtos.PersonaResponseDto;
 import ec.edu.espe.usuarios.entidades.Persona;
 import ec.edu.espe.usuarios.repositorios.PersonaRepositorio;
+import ec.edu.espe.usuarios.repositorios.UsuarioRepositorio;
 import ec.edu.espe.usuarios.services.PersonaServicio;
+import ec.edu.espe.usuarios.services.UsuarioServicio;
 import ec.edu.espe.usuarios.utils.RecursoNoEncontradoException;
 import ec.edu.espe.usuarios.utils.ReglaNegocioException;
 import ec.edu.espe.usuarios.utils.UtilMappers;
@@ -22,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 public class PersonaServicioImpl implements PersonaServicio {
 
     private final PersonaRepositorio personaRepositorio;
+    private final UsuarioRepositorio usuarioRepositorio;
+    private final UsuarioServicio usuarioServicio;
     private final UtilMappers mapper;
 
     @Override
@@ -107,9 +111,28 @@ public class PersonaServicioImpl implements PersonaServicio {
 
     @Override
     @Transactional
-    public PersonaResponseDto eliminarPersona(UUID idPersona) {
+    public PersonaResponseDto activarPersona(UUID idPersona) {
         Persona persona = personaRepositorio.findById(idPersona)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Persona no encontrada con ID: " + idPersona));
+
+        persona.setActive(true);
+        // No se reactiva el usuario en cascada: reactivar la identidad no implica
+        // devolver el acceso. El usuario se reactiva de forma explicita (minimo privilegio).
+        return mapper.toPersonaResponse(personaRepositorio.save(persona));
+    }
+
+    @Override
+    @Transactional
+    public PersonaResponseDto desactivarPersona(UUID idPersona) {
+        Persona persona = personaRepositorio.findById(idPersona)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Persona no encontrada con ID: " + idPersona));
+
+        // Cascada logica: revocar la identidad (persona) revoca el acceso del usuario,
+        // y este, a su vez, retira sus roles. Se reutiliza la logica de UsuarioServicio
+        // para no duplicar la cascada hacia las asignaciones.
+        if (usuarioRepositorio.existsById(idPersona)) {
+            usuarioServicio.desactivarUsuario(idPersona);
+        }
 
         persona.setActive(false);
         return mapper.toPersonaResponse(personaRepositorio.save(persona));

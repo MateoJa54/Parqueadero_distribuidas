@@ -16,7 +16,9 @@ public interface PersonaServicio {
 
     PersonaResponseDto actualizarPersona(UUID idPersona, PersonaRequestDto request);
 
-    PersonaResponseDto eliminarPersona(UUID idPersona);
+    PersonaResponseDto activarPersona(UUID idPersona);
+
+    PersonaResponseDto desactivarPersona(UUID idPersona);
 
     // Busqueda flexible por cedula (exacta), nombre o apellido (parcial).
     // Al menos un criterio debe venir informado.

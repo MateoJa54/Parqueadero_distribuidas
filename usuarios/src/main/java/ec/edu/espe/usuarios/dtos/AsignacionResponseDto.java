@@ -3,7 +3,6 @@ package ec.edu.espe.usuarios.dtos;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import ec.edu.espe.usuarios.entidades.NombreRol;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +17,7 @@ public class AsignacionResponseDto {
     private UUID idUser;
     private String username;
     private UUID idRole;
-    private NombreRol rol;
+    private String rol;
     private boolean active;
     private LocalDateTime assignedAt;
     private LocalDateTime updatedAt;

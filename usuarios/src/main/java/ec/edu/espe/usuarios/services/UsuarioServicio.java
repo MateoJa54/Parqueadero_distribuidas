@@ -17,7 +17,9 @@ public interface UsuarioServicio {
 
     UsuarioResponseDto actualizarUsuario(UUID idUsuario, UsuarioUpdateDto request);
 
-    UsuarioResponseDto eliminarUsuario(UUID idUsuario);
+    UsuarioResponseDto activarUsuario(UUID idUsuario);
+
+    UsuarioResponseDto desactivarUsuario(UUID idUsuario);
 
     // Busqueda parcial por username (case-insensitive).
     List<UsuarioResponseDto> buscarUsuarios(String username);
