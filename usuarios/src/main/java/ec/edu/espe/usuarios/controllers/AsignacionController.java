@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,5 +42,17 @@ public class AsignacionController {
     @GetMapping("/usuario/{idUsuario}")
     public ResponseEntity<List<AsignacionResponseDto>> listarRolesDeUsuario(@PathVariable UUID idUsuario) {
         return ResponseEntity.ok(asignacionServicio.listarRolesDeUsuario(idUsuario));
+    }
+
+    @PatchMapping("/usuario/{idUsuario}/rol/{idRol}/desactivar")
+    public ResponseEntity<AsignacionResponseDto> desactivarAsignacion(@PathVariable UUID idUsuario,
+            @PathVariable UUID idRol) {
+        return ResponseEntity.ok(asignacionServicio.desactivarAsignacion(idUsuario, idRol));
+    }
+
+    @PatchMapping("/usuario/{idUsuario}/rol/{idRol}/activar")
+    public ResponseEntity<AsignacionResponseDto> activarAsignacion(@PathVariable UUID idUsuario,
+            @PathVariable UUID idRol) {
+        return ResponseEntity.ok(asignacionServicio.activarAsignacion(idUsuario, idRol));
     }
 }

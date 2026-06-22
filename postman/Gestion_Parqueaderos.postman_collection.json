@@ -1,0 +1,1648 @@
+{
+  "info": {
+    "name": "Gestion_Parqueaderos",
+    "description": "Coleccion unica del sistema distribuido de parqueaderos (ESPE). Carpetas por entidad. Usar el environment Parqueadero-Local o Parqueadero-Kong. Los 'Crear' guardan los IDs para encadenar el flujo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Persona",
+      "item": [
+        {
+          "name": "Crear persona",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/personas",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "personas"
+              ]
+            },
+            "description": "Crea una persona. Guarda el id en {{idPersona}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Mateo\",\n  \"middleName\": \"Andres\",\n  \"lastName\": \"Jacome\",\n  \"dni\": \"1750123456\",\n  \"email\": \"mateo.jacome@espe.edu.ec\",\n  \"phone\": \"0991234567\",\n  \"address\": \"Sangolqui\",\n  \"nationality\": \"Ecuatoriana\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idPersona', json.id);",
+                  "  console.log('idPersona =', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar personas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/personas",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "personas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener persona por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/personas/{{idPersona}}",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "personas",
+                "{{idPersona}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar por DNI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/personas/buscar?dni=1750123456",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "personas",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "dni",
+                  "value": "1750123456"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar por apellido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/personas/buscar?apellido=Jacome",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "personas",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "apellido",
+                  "value": "Jacome"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar persona",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/personas/{{idPersona}}",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "personas",
+                "{{idPersona}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Mateo\",\n  \"middleName\": \"Andres\",\n  \"lastName\": \"Jacome\",\n  \"dni\": \"1750123456\",\n  \"email\": \"mateo.jacome@espe.edu.ec\",\n  \"phone\": \"0991234567\",\n  \"address\": \"Quito\",\n  \"nationality\": \"Ecuatoriana\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Desactivar persona (cascada a usuario)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/personas/{{idPersona}}/desactivar",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "personas",
+                "{{idPersona}}",
+                "desactivar"
+              ]
+            },
+            "description": "Soft-delete. Si la persona tiene usuario, tambien se desactiva (cascada)."
+          },
+          "response": []
+        },
+        {
+          "name": "Activar persona",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/personas/{{idPersona}}/activar",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "personas",
+                "{{idPersona}}",
+                "activar"
+              ]
+            },
+            "description": "Reactiva la persona. NO reactiva el usuario (minimo privilegio)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Crear rol",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/roles",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles"
+              ]
+            },
+            "description": "Nombre de texto libre (3-50, letras/numeros/espacios/_). Se normaliza a MAYUSCULAS. Guarda {{idRol}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"SUPERVISOR\",\n  \"description\": \"Supervisa la operacion del parqueadero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idRol', json.id);",
+                  "  console.log('idRol =', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/roles",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener rol por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/roles/{{idRol}}",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                "{{idRol}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar rol",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/roles/{{idRol}}",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                "{{idRol}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"SUPERVISOR GENERAL\",\n  \"description\": \"Rol actualizado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear rol (nombre invalido -> 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/roles",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles"
+              ]
+            },
+            "description": "Demuestra la validacion: name < 3 caracteres -> 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ab\",\n  \"description\": \"muy corto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Desactivar rol (guarda asignaciones activas)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/roles/{{idRol}}/desactivar",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                "{{idRol}}",
+                "desactivar"
+              ]
+            },
+            "description": "No deja desactivar si hay usuarios activos con ese rol -> 409 (igual que zona con espacio OCUPADO)."
+          },
+          "response": []
+        },
+        {
+          "name": "Activar rol",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/roles/{{idRol}}/activar",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                "{{idRol}}",
+                "activar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Crear usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/usuarios",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios"
+              ]
+            },
+            "description": "PK compartida con persona (1 a 1). Guarda {{idUsuario}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPersona\": \"{{idPersona}}\",\n  \"username\": \"mjacome\",\n  \"password\": \"Espe2025\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idUsuario', json.id);",
+                  "  console.log('idUsuario =', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/usuarios",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener usuario por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/usuarios/{{idUsuario}}",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios",
+                "{{idUsuario}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar usuario por username",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/usuarios/buscar?username=mjacome",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "mjacome"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/usuarios/{{idUsuario}}",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios",
+                "{{idUsuario}}"
+              ]
+            },
+            "description": "password vacio = se conserva la actual.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPersona\": \"{{idPersona}}\",\n  \"username\": \"mjacome\",\n  \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Desactivar usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/usuarios/{{idUsuario}}/desactivar",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios",
+                "{{idUsuario}}",
+                "desactivar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Activar usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/usuarios/{{idUsuario}}/activar",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios",
+                "{{idUsuario}}",
+                "activar"
+              ]
+            },
+            "description": "Falla si la persona esta inactiva."
+          },
+          "response": []
+        },
+        {
+          "name": "Asignaciones",
+          "item": [
+            {
+              "name": "Asignar rol a usuario",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{urlUsuarios}}/api/v1/asignaciones",
+                  "host": [
+                    "{{urlUsuarios}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "asignaciones"
+                  ]
+                },
+                "description": "Crea la relacion user_role (active=true).",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idUser\": \"{{idUsuario}}\",\n  \"idRole\": \"{{idRol}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Listar asignaciones",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{urlUsuarios}}/api/v1/asignaciones",
+                  "host": [
+                    "{{urlUsuarios}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "asignaciones"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Roles de un usuario",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{urlUsuarios}}/api/v1/asignaciones/usuario/{{idUsuario}}",
+                  "host": [
+                    "{{urlUsuarios}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "asignaciones",
+                    "usuario",
+                    "{{idUsuario}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Desactivar asignacion (quitar rol)",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{urlUsuarios}}/api/v1/asignaciones/usuario/{{idUsuario}}/rol/{{idRol}}/desactivar",
+                  "host": [
+                    "{{urlUsuarios}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "asignaciones",
+                    "usuario",
+                    "{{idUsuario}}",
+                    "rol",
+                    "{{idRol}}",
+                    "desactivar"
+                  ]
+                },
+                "description": "Quita el rol sin perder historial (active=false). Permite luego desactivar el rol."
+              },
+              "response": []
+            },
+            {
+              "name": "Activar asignacion (devolver rol)",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{urlUsuarios}}/api/v1/asignaciones/usuario/{{idUsuario}}/rol/{{idRol}}/activar",
+                  "host": [
+                    "{{urlUsuarios}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "asignaciones",
+                    "usuario",
+                    "{{idUsuario}}",
+                    "rol",
+                    "{{idRol}}",
+                    "activar"
+                  ]
+                },
+                "description": "Reactiva la relacion. Falla si el rol o el usuario estan inactivos."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Zonas",
+      "item": [
+        {
+          "name": "Crear zona",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/zonas",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "zonas"
+              ]
+            },
+            "description": "El codigo se autogenera. Guarda {{idZona}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Zona Norte\",\n  \"descripcion\": \"Zona principal norte\",\n  \"tipo\": \"REGULAR\",\n  \"capacidad\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idZona', json.id);",
+                  "  console.log('idZona =', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar zonas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/zonas",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "zonas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener zona por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/zonas/{{idZona}}",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "zonas",
+                "{{idZona}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar zona",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/zonas/{{idZona}}",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "zonas",
+                "{{idZona}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Zona Norte A\",\n  \"descripcion\": \"Actualizada\",\n  \"tipo\": \"VIP\",\n  \"capacidad\": 25\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Desactivar zona (cascada + guarda)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/zonas/{{idZona}}/desactivar",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "zonas",
+                "{{idZona}}",
+                "desactivar"
+              ]
+            },
+            "description": "Desactiva los espacios en cascada. Falla si algun espacio esta OCUPADO."
+          },
+          "response": []
+        },
+        {
+          "name": "Activar zona (cascada)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/zonas/{{idZona}}/activar",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "zonas",
+                "{{idZona}}",
+                "activar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Espacios",
+      "item": [
+        {
+          "name": "Crear espacio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios"
+              ]
+            },
+            "description": "El codigo se autogenera. Guarda {{idEspacio}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idZona\": \"{{idZona}}\",\n  \"descripcion\": \"Espacio A1\",\n  \"tipo\": \"AUTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idEspacio', json.id);",
+                  "  console.log('idEspacio =', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar espacios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener espacio por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "{{idEspacio}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar espacio",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "{{idEspacio}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idZona\": \"{{idZona}}\",\n  \"descripcion\": \"Espacio A1 mod\",\n  \"tipo\": \"AUTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar estado",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}/estado",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "{{idEspacio}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"OCUPADO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Espacios disponibles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/disponibles",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "disponibles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Espacios por estado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/estado/DISPONIBLE",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "estado",
+                "DISPONIBLE"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Espacios por zona y estado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/zona/{{idZona}}/estado/DISPONIBLE",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "zona",
+                "{{idZona}}",
+                "estado",
+                "DISPONIBLE"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disponibilidad de un espacio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}/disponibilidad",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "{{idEspacio}}",
+                "disponibilidad"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Desactivar espacio",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}/desactivar",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "{{idEspacio}}",
+                "desactivar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Activar espacio",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}/activar",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "{{idEspacio}}",
+                "activar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar espacio",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "{{idEspacio}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vehiculos",
+      "item": [
+        {
+          "name": "Crear auto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlVehiculos}}/vehiculos",
+              "host": [
+                "{{urlVehiculos}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "description": "Guarda {{idVehiculo}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"Auto\",\n  \"datos\": {\n    \"placa\": \"PBX-1234\",\n    \"marca\": \"Toyota\",\n    \"modelo\": \"Corolla\",\n    \"color\": \"Rojo\",\n    \"anio\": 2022,\n    \"clasificacion\": \"Gasolina\",\n    \"numeroPuertas\": 4,\n    \"capacidadMaletero\": 470\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idVehiculo', json.id);",
+                  "  console.log('idVehiculo =', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear motocicleta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlVehiculos}}/vehiculos",
+              "host": [
+                "{{urlVehiculos}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"Motocicleta\",\n  \"datos\": {\n    \"placa\": \"AB-123A\",\n    \"marca\": \"Yamaha\",\n    \"modelo\": \"FZ\",\n    \"color\": \"Negro\",\n    \"anio\": 2021,\n    \"clasificacion\": \"Gasolina\",\n    \"cilindraje\": 150,\n    \"tipoMoto\": \"Deportiva\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear camioneta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlVehiculos}}/vehiculos",
+              "host": [
+                "{{urlVehiculos}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"Camioneta\",\n  \"datos\": {\n    \"placa\": \"PCX-5678\",\n    \"marca\": \"Chevrolet\",\n    \"modelo\": \"Dmax\",\n    \"color\": \"Blanco\",\n    \"anio\": 2020,\n    \"clasificacion\": \"Diesel\",\n    \"cabina\": 4,\n    \"capacidadCarga\": \"3.5t\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar vehiculos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlVehiculos}}/vehiculos",
+              "host": [
+                "{{urlVehiculos}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener por placa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlVehiculos}}/vehiculos/placa/PBX-1234",
+              "host": [
+                "{{urlVehiculos}}"
+              ],
+              "path": [
+                "vehiculos",
+                "placa",
+                "PBX-1234"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlVehiculos}}/vehiculos/{{idVehiculo}}",
+              "host": [
+                "{{urlVehiculos}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar vehiculo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlVehiculos}}/vehiculos/{{idVehiculo}}",
+              "host": [
+                "{{urlVehiculos}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"color\": \"Azul\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar vehiculo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{urlVehiculos}}/vehiculos/{{idVehiculo}}",
+              "host": [
+                "{{urlVehiculos}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Kong",
+      "item": [
+        {
+          "name": "Usuarios via gateway",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlGateway}}/api/v1/usuarios",
+              "host": [
+                "{{urlGateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios"
+              ]
+            },
+            "description": "Mismo endpoint pero atravesando Kong (puerto 8000)."
+          },
+          "response": []
+        },
+        {
+          "name": "Zonas via gateway",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlGateway}}/api/v1/zonas",
+              "host": [
+                "{{urlGateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "zonas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Vehiculos via gateway",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlGateway}}/api/vehiculos",
+              "host": [
+                "{{urlGateway}}"
+              ],
+              "path": [
+                "api",
+                "vehiculos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Probar rate-limiting",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlGateway}}/api/v1/roles",
+              "host": [
+                "{{urlGateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles"
+              ]
+            },
+            "description": "Enviar varias veces seguidas para ver el header RateLimit-Remaining y eventual 429."
+          },
+          "response": []
+        }
+      ],
+      "description": "Pruebas atravesando el API Gateway Kong (proxy en :8000)."
+    },
+    {
+      "name": "Kong Configurado",
+      "item": [
+        {
+          "name": "Listar services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlKongAdmin}}/services",
+              "host": [
+                "{{urlKongAdmin}}"
+              ],
+              "path": [
+                "services"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar routes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlKongAdmin}}/routes",
+              "host": [
+                "{{urlKongAdmin}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar plugins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlKongAdmin}}/plugins",
+              "host": [
+                "{{urlKongAdmin}}"
+              ],
+              "path": [
+                "plugins"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Estado del nodo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlKongAdmin}}/status",
+              "host": [
+                "{{urlKongAdmin}}"
+              ],
+              "path": [
+                "status"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Inspeccion de la configuracion declarativa de Kong (Admin API en :8001)."
+    }
+  ],
+  "variable": [
+    {
+      "key": "idPersona",
+      "value": ""
+    },
+    {
+      "key": "idRol",
+      "value": ""
+    },
+    {
+      "key": "idUsuario",
+      "value": ""
+    },
+    {
+      "key": "idZona",
+      "value": ""
+    },
+    {
+      "key": "idEspacio",
+      "value": ""
+    },
+    {
+      "key": "idVehiculo",
+      "value": ""
+    }
+  ]
+}

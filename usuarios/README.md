@@ -159,7 +159,7 @@ GET /api/v1/asignaciones/usuario/{idUsuario}
 - `password`: 6-30 caracteres, obligatorio
 
 ### RolRequestDto
-- `name`: Valor del enum NombreRol, único, obligatorio
+- `name`: texto libre 3-50 caracteres (letras, números, espacios y `_`), único, obligatorio (se normaliza a MAYÚSCULAS)
 - `description`: Máximo 255 caracteres, opcional
 
 ## Estructura del Proyecto
@@ -175,10 +175,9 @@ src/main/java/ec/edu/espe/usuarios/
 ├── entidades/
 │   ├── Persona.java                  # Raíz de identidad
 │   ├── Usuario.java                  # Cuenta de sistema (1:1 con Persona)
-│   ├── Rol.java                      # Rol disponible
+│   ├── Rol.java                      # Rol disponible (name de texto libre)
 │   ├── UsuarioRol.java               # Asignación N:N
-│   ├── UsuarioRolId.java             # Clave compuesta
-│   └── NombreRol.java                # Enum de roles
+│   └── UsuarioRolId.java             # Clave compuesta
 ├── dtos/
 │   ├── PersonaRequestDto.java
 │   ├── PersonaResponseDto.java

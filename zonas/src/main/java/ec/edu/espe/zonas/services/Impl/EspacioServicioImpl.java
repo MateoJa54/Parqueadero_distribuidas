@@ -94,14 +94,6 @@ public class EspacioServicioImpl implements EspacioServicio {
 
     @Override
     @Transactional
-    public void eliminarEspacio(UUID idEspacio) {
-        Espacio espacio = espacioRepositorio.findById(idEspacio)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con ID: " + idEspacio));
-        espacioRepositorio.delete(espacio);
-    }
-
-    @Override
-    @Transactional
     public EspacioRespondeDto cambiarEstado(UUID idEspacio, EstadoEspacio estado) {
 
         if (idEspacio == null) {
@@ -201,6 +193,10 @@ public class EspacioServicioImpl implements EspacioServicio {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con ID: " + idEspacio));
         if (espacio.isActivo()) {
             throw new ReglaNegocioException("El espacio ya está activo");
+        }
+        // Invariante: un espacio no puede estar activo si su zona está inactiva.
+        if (!espacio.getZona().isActivo()) {
+            throw new ReglaNegocioException("No se puede activar el espacio: su zona está inactiva");
         }
         espacio.setActivo(true);
         espacio.setEstado(EstadoEspacio.DISPONIBLE);

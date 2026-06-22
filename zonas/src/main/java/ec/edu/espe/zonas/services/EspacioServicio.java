@@ -18,8 +18,6 @@ public interface EspacioServicio {
 
     EspacioRespondeDto actualizarEspacio(UUID idEspacio, EspacioRequestDto dto);
 
-    void eliminarEspacio(UUID idEspacio);
-
     EspacioRespondeDto cambiarEstado(UUID idEspacio, EstadoEspacio estado);
 
     void activarEspacio(UUID idEspacio);

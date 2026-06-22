@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 
 import ec.edu.espe.usuarios.dtos.UsuarioRequestDto;
 import ec.edu.espe.usuarios.dtos.UsuarioResponseDto;
@@ -56,8 +56,13 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioServicio.actualizarUsuario(idUsuario, request));
     }
 
-    @DeleteMapping("/{idUsuario}")
-    public ResponseEntity<UsuarioResponseDto> eliminarUsuario(@PathVariable UUID idUsuario) {
-        return ResponseEntity.ok(usuarioServicio.eliminarUsuario(idUsuario));
+    @PatchMapping("/{idUsuario}/activar")
+    public ResponseEntity<UsuarioResponseDto> activarUsuario(@PathVariable UUID idUsuario) {
+        return ResponseEntity.ok(usuarioServicio.activarUsuario(idUsuario));
+    }
+
+    @PatchMapping("/{idUsuario}/desactivar")
+    public ResponseEntity<UsuarioResponseDto> desactivarUsuario(@PathVariable UUID idUsuario) {
+        return ResponseEntity.ok(usuarioServicio.desactivarUsuario(idUsuario));
     }
 }

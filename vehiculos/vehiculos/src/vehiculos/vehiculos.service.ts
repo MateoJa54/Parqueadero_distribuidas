@@ -31,7 +31,7 @@ export class VehiculosService {
       where: { placa },
     });
     if (existe) {
-      throw new ConflictException('Vehiculo already exists');
+      throw new ConflictException('Ya existe un vehículo con la placa: ' + placa);
     }
 
     const vehiculo = FactoryVehiculos.crear(createVehiculoDto);
@@ -49,7 +49,7 @@ export class VehiculosService {
       },
     });
     if (!existe) {
-      throw new NotFoundException('Vehiculo not found');
+      throw new NotFoundException('Vehículo no encontrado con ID: ' + id);
     }
     return existe;
   }
@@ -65,7 +65,7 @@ export class VehiculosService {
       where: { placa: placaNormalizada },
     });
     if (!existe) {
-      throw new NotFoundException('Vehiculo not found');
+      throw new NotFoundException('Vehículo no encontrado con placa: ' + placaNormalizada);
     }
     return existe;
   }
@@ -73,13 +73,17 @@ export class VehiculosService {
   async update(id: string, updateVehiculoDto: UpdateVehiculoDto): Promise<Vehiculo> {
     const existe = await this.repositoryVehiculo.findOne({ where: { id } });
     if (!existe) {
-      throw new NotFoundException('Vehiculo not found');
+      throw new NotFoundException('Vehículo no encontrado con ID: ' + id);
     }
 
     const partialDatos =
       ((updateVehiculoDto as { datos?: DeepPartial<Vehiculo> }).datos as
         | DeepPartial<Vehiculo>
         | undefined) ?? {};
+
+    // 'activo' se gestiona SOLO con los endpoints activar/desactivar,
+    // nunca por una edición de atributos.
+    delete (partialDatos as { activo?: boolean }).activo;
 
     // Si se actualiza la placa, se normaliza (trim + mayusculas) y se valida
     // que no exista en OTRO vehiculo (excluyendo el actual por su id).
@@ -102,11 +106,27 @@ export class VehiculosService {
     return this.repositoryVehiculo.save(updated);
   }
 
-  async remove(id: string): Promise<void> {
+  async desactivar(id: string): Promise<Vehiculo> {
     const existe = await this.repositoryVehiculo.findOne({ where: { id } });
     if (!existe) {
-      throw new NotFoundException('Vehiculo not found');
+      throw new NotFoundException('Vehículo no encontrado con ID: ' + id);
     }
-    await this.repositoryVehiculo.remove(existe);
+    if (!existe.activo) {
+      throw new ConflictException('El vehículo ya está inactivo');
+    }
+    existe.activo = false;
+    return this.repositoryVehiculo.save(existe);
+  }
+
+  async activar(id: string): Promise<Vehiculo> {
+    const existe = await this.repositoryVehiculo.findOne({ where: { id } });
+    if (!existe) {
+      throw new NotFoundException('Vehículo no encontrado con ID: ' + id);
+    }
+    if (existe.activo) {
+      throw new ConflictException('El vehículo ya está activo');
+    }
+    existe.activo = true;
+    return this.repositoryVehiculo.save(existe);
   }
 }

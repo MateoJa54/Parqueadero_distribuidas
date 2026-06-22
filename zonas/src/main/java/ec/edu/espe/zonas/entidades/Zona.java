@@ -46,7 +46,9 @@ public class Zona {
     @Column
     private int capacidad;
 
-    @OneToMany(mappedBy = "zona", cascade = CascadeType.ALL, orphanRemoval = true)
+    // Soft-delete: los espacios nunca se borran fisicamente con la zona.
+    // Por eso solo se cascadea persist/merge y NO se usa orphanRemoval.
+    @OneToMany(mappedBy = "zona", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @Builder.Default
     private List<Espacio> espacios = new ArrayList<>();
 

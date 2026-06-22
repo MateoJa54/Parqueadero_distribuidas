@@ -16,5 +16,7 @@ public interface RolServicio {
 
     RolResponseDto actualizarRol(UUID idRol, RolRequestDto request);
 
-    RolResponseDto eliminarRol(UUID idRol);
+    RolResponseDto activarRol(UUID idRol);
+
+    RolResponseDto desactivarRol(UUID idRol);
 }

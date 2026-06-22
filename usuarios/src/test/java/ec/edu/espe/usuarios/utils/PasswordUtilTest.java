@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PasswordUtilTest {
 
     @Test
-    @DisplayName("Debería generar un hash SHA-256 Base64 válido")
+    @DisplayName("Deberia generar un hash BCrypt valido")
     void testHashGeneratesValidBase64() {
         String password = "MiContraseña123";
         String hash = PasswordUtil.hash(password);
@@ -20,13 +20,17 @@ class PasswordUtilTest {
     }
 
     @Test
-    @DisplayName("Debería generar el mismo hash para la misma contraseña")
-    void testHashIsDeterministic() {
+    @DisplayName("Deberia generar hashes distintos para la misma contrasena (salt aleatorio de BCrypt)")
+    void testHashIsSalted() {
         String password = "MiContraseña123";
         String hash1 = PasswordUtil.hash(password);
         String hash2 = PasswordUtil.hash(password);
-        
-        assertEquals(hash1, hash2);
+
+        // BCrypt usa un salt aleatorio: el mismo texto produce hashes distintos,
+        // pero ambos validan correctamente contra la contrasena original.
+        assertNotEquals(hash1, hash2);
+        assertTrue(PasswordUtil.matches(password, hash1));
+        assertTrue(PasswordUtil.matches(password, hash2));
     }
 
     @Test

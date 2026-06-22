@@ -14,6 +14,7 @@ import ec.edu.espe.usuarios.entidades.Persona;
 import ec.edu.espe.usuarios.entidades.Usuario;
 import ec.edu.espe.usuarios.repositorios.PersonaRepositorio;
 import ec.edu.espe.usuarios.repositorios.UsuarioRepositorio;
+import ec.edu.espe.usuarios.repositorios.UsuarioRolRepositorio;
 import ec.edu.espe.usuarios.services.UsuarioServicio;
 import ec.edu.espe.usuarios.utils.PasswordUtil;
 import ec.edu.espe.usuarios.utils.RecursoNoEncontradoException;
@@ -27,6 +28,7 @@ public class UsuarioServicioImpl implements UsuarioServicio {
 
     private final UsuarioRepositorio usuarioRepositorio;
     private final PersonaRepositorio personaRepositorio;
+    private final UsuarioRolRepositorio usuarioRolRepositorio;
     private final UtilMappers mapper;
 
     @Override
@@ -52,6 +54,12 @@ public class UsuarioServicioImpl implements UsuarioServicio {
         Persona persona = personaRepositorio.findById(request.getIdPersona())
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Persona no encontrada con ID: " + request.getIdPersona()));
+
+        // No se puede crear un usuario (acceso) sobre una persona (identidad) inactiva.
+        if (!persona.isActive()) {
+            throw new ReglaNegocioException(
+                    "No se puede crear un usuario: la persona esta inactiva");
+        }
 
         // La PK de users es compartida con persons (relacion 1 a 1),
         // por lo que una persona solo puede tener un usuario.
@@ -102,9 +110,33 @@ public class UsuarioServicioImpl implements UsuarioServicio {
 
     @Override
     @Transactional
-    public UsuarioResponseDto eliminarUsuario(UUID idUsuario) {
+    public UsuarioResponseDto activarUsuario(UUID idUsuario) {
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
+
+        // No se puede dar acceso a un usuario cuya persona (identidad) esta inactiva.
+        if (usuario.getPersona() != null && !usuario.getPersona().isActive()) {
+            throw new ReglaNegocioException("No se puede activar el usuario: su persona esta inactiva");
+        }
+
+        usuario.setActive(true);
+        return mapper.toUsuarioResponse(usuarioRepositorio.save(usuario));
+    }
+
+    @Override
+    @Transactional
+    public UsuarioResponseDto desactivarUsuario(UUID idUsuario) {
+        Usuario usuario = usuarioRepositorio.findById(idUsuario)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
+
+        // Cascada logica: revocar el acceso del usuario tambien retira sus roles activos.
+        // (Composicion: el usuario "posee" sus asignaciones de rol.)
+        usuarioRolRepositorio.findByUsuario(usuario).forEach(asignacion -> {
+            if (asignacion.isActive()) {
+                asignacion.setActive(false);
+                usuarioRolRepositorio.save(asignacion);
+            }
+        });
 
         usuario.setActive(false);
         return mapper.toUsuarioResponse(usuarioRepositorio.save(usuario));
