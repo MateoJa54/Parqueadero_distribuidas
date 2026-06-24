@@ -1,7 +1,7 @@
 # 🅿️ Sistema de Parqueadero — Microservicios Distribuidos
 
 Proyecto de **Sistemas Distribuidos** (Parcial 2 · backend). El sistema está compuesto por
-**3 microservicios independientes**, una **base de datos PostgreSQL unificada** y un
+**4 microservicios independientes**, una **base de datos PostgreSQL unificada** y un
 **API Gateway Kong** que expone todo desde un único punto de entrada.
 
 | Microservicio | Tecnología | Puerto | Base de datos |
@@ -9,13 +9,15 @@ Proyecto de **Sistemas Distribuidos** (Parcial 2 · backend). El sistema está c
 | **usuarios** | Spring Boot 3.5 (Java 25) | `8081` | `usuarios` |
 | **zonas** | Spring Boot 3.5 (Java 25) | `8080` | `zonas` |
 | **vehiculos** | NestJS 11 + TypeORM | `3000` (prefijo `/api`) | `vehiculos_db` |
-| **PostgreSQL** | Docker (postgres:16) | `5432` | las 3 anteriores |
+| **asignaciones** | Spring Boot 3.5 (Java 25) | `8082` | `asignaciones` |
+| **PostgreSQL** | Docker (postgres:16) | `5433` | las 4 anteriores |
 | **Kong Gateway** | Docker (kong:3.7, DB-less) | `8000` proxy / `8001` admin | — |
 
 ```
 Cliente ──► Kong (:8000) ──► usuarios (:8081)
                           ├─► zonas    (:8080)
-                          └─► vehiculos(:3000)
+                          ├─► vehiculos(:3000)
+                          └─► asignaciones(:8082)
 ```
 
 ---
@@ -26,7 +28,7 @@ Instala esto en tu equipo (sirve igual para **Windows**, Linux y macOS):
 
 | Herramienta | Versión | Para qué |
 |---|---|---|
-| **JDK 25** | 25 | compilar/ejecutar usuarios y zonas |
+| **JDK 25** | 25 | compilar/ejecutar usuarios, zonas y asignaciones |
 | **Node.js** | 20 o superior | ejecutar vehiculos |
 | **Docker Desktop** | reciente | PostgreSQL y Kong |
 | **Git** | reciente | clonar el repositorio |
@@ -53,14 +55,14 @@ cd Parqueadero_distribuidas
 ```
 
 ### 2) Levantar la base de datos (Docker)
-Una sola instancia de PostgreSQL crea **automáticamente** las 3 bases la primera vez
+Una sola instancia de PostgreSQL crea **automáticamente** las 4 bases la primera vez
 (gracias a `init-db/01-init.sql`):
 ```bash
 docker compose up -d
 ```
 Verifica que esté arriba:
 ```bash
-docker compose ps          # parqueadero-postgres debe verse "healthy"
+docker compose ps          # parqueadero-postgres debe verse "healthy" y publica localhost:5433
 ```
 > Detener sin borrar datos: `docker compose down` · Borrar TODO (resetear): `docker compose down -v`
 
@@ -103,8 +105,24 @@ npm install
 npm run start:dev
 ```
 
-En este punto las 3 APIs corren en el host y la base en Docker. Ya puedes probar directo
-(`http://localhost:8081`, `:8080`, `:3000/api`) o levantar el gateway (siguiente sección).
+En este punto las APIs core corren en el host y la base en Docker. Ya puedes probar directo
+(`http://localhost:8081`, `:8080`, `:3000/api`, `:8082`) o levantar el gateway (siguiente sección).
+
+### 6) Levantar el microservicio **asignaciones** (puerto 8082)
+En **otra terminal**:
+
+**Windows:**
+```powershell
+cd asignaciones
+.\mvnw.cmd spring-boot:run
+```
+
+**Linux / macOS:**
+```bash
+cd asignaciones
+export JAVA_HOME=/ruta/al/jdk-25
+./mvnw spring-boot:run
+```
 
 ---
 
@@ -129,6 +147,8 @@ A partir de aquí, **todas** las peticiones entran por el puerto **8000** (los p
 | zonas | `http://localhost:8080/api/v1/zonas` | `http://localhost:8000/api/v1/zonas` |
 | espacios | `http://localhost:8080/api/v1/espacios` | `http://localhost:8000/api/v1/espacios` |
 | vehiculos | `http://localhost:3000/api/vehiculos` | `http://localhost:8000/api/vehiculos` |
+| asignaciones | `http://localhost:8082/api/v1/asignaciones-vehiculos` | `http://localhost:8000/api/v1/asignaciones-vehiculos` |
+| flota propietario | `http://localhost:8082/api/v1/propietarios/{id}/vehiculos` | `http://localhost:8000/api/v1/propietarios/{id}/vehiculos` |
 
 ### Reglas (plugins) activas en Kong
 - **rate-limiting** — máx. 100 peticiones/minuto por servicio (devuelve `429` si se supera).
@@ -166,6 +186,7 @@ El environment trae estas variables:
 urlUsuarios  = http://localhost:8081
 urlZonas     = http://localhost:8080
 urlVehiculos = http://localhost:3000/api
+urlAsignaciones = http://localhost:8082
 urlGateway   = http://localhost:8000
 ```
 
@@ -175,6 +196,7 @@ Solo cambia 3 valores del environment y vuelve a correr las colecciones (no hay 
 urlUsuarios  = http://localhost:8000
 urlZonas     = http://localhost:8000
 urlVehiculos = http://localhost:8000/api
+urlAsignaciones = http://localhost:8000
 ```
 
 ### Endpoints de búsqueda y disponibilidad (nuevos)
@@ -198,13 +220,14 @@ GET /api/v1/espacios/{id}/disponibilidad             # ¿este espacio está libr
 ## 🗂️ Estructura del repositorio
 ```
 .
-├── docker-compose.yml        # PostgreSQL unificado (3 bases)
+├── docker-compose.yml        # PostgreSQL unificado (4 bases, host 5433)
 ├── init-db/                  # script que crea las bases la 1ª vez
 ├── gateway/                  # Kong (kong.yml + docker-compose.yml)
 ├── postman/                  # environment compartido
 ├── usuarios/                 # microservicio Spring Boot (8081)
 ├── zonas/                    # microservicio Spring Boot (8080)
-└── vehiculos/vehiculos/      # microservicio NestJS (3000)
+├── vehiculos/vehiculos/      # microservicio NestJS (3000)
+└── asignaciones/             # microservicio Spring Boot (8082)
 ```
 
 ---
@@ -214,7 +237,7 @@ GET /api/v1/espacios/{id}/disponibilidad             # ¿este espacio está libr
 | Problema | Causa / Solución |
 |---|---|
 | `JAVA_HOME` no encontrado / compila con otra versión | Define `JAVA_HOME` apuntando al **JDK 25**. Windows: variable de entorno; Linux/mac: `export JAVA_HOME=...`. |
-| Puerto en uso (8080/8081/3000/5432/8000) | Cierra el proceso que lo ocupa o cambia el puerto del servicio. |
+| Puerto en uso (8080/8081/8082/3000/5433/8000) | Cierra el proceso que lo ocupa o cambia el puerto del servicio. El repo usa `5433` para no chocar con PostgreSQL local en `5432`. |
 | Las bases no se crearon | Se crean solo con el **volumen vacío**. Resetea: `docker compose down -v && docker compose up -d`. |
 | Kong responde `502 Bad Gateway` | Las APIs deben estar **levantadas en el host** antes de probar por Kong. |
 | `host.docker.internal` no resuelve (Linux) | Ya está resuelto con `extra_hosts: host-gateway` en `gateway/docker-compose.yml`. |

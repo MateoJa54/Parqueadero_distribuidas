@@ -2,7 +2,7 @@ spring:
   application:
     name: usuarios
   datasource:
-    url: jdbc:postgresql://localhost:5432/usuarios
+    url: jdbc:postgresql://localhost:${DB_PORT:5433}/usuarios
     username: usuarios
     password: usuarios123
     driver-class-name: org.postgresql.Driver

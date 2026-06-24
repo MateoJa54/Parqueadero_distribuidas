@@ -2,7 +2,7 @@ spring:
   application:
     name: zonas
   datasource:
-    url: jdbc:postgresql://localhost:5432/zonas
+    url: jdbc:postgresql://localhost:${DB_PORT:5433}/zonas
     username: zonas
     password: zonas123
     driver-class-name: org.postgresql.Driver
