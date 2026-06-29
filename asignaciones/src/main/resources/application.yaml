@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: asignaciones
+  datasource:
+    url: jdbc:postgresql://localhost:${DB_PORT:5433}/asignaciones
+    username: asignaciones
+    password: asignaciones123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+  sql:
+    init:
+      mode: always
+
+server:
+  port: 8082
+
+services:
+  usuarios-url: ${USUARIOS_URL:http://localhost:8081}
+  vehiculos-url: ${VEHICULOS_URL:http://localhost:3000}

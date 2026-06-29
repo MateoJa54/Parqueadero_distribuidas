@@ -256,7 +256,7 @@
             "description": "Nombre de texto libre (3-50, letras/numeros/espacios/_). Se normaliza a MAYUSCULAS. Guarda {{idRol}}.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"SUPERVISOR\",\n  \"description\": \"Supervisa la operacion del parqueadero\"\n}",
+              "raw": "{\n  \"name\": \"COMUNIDAD ESPE\",\n  \"description\": \"Rol habilitado para asociar vehiculos a usuarios\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -276,6 +276,56 @@
                   "if (json && json.id) {",
                   "  pm.collectionVariables.set('idRol', json.id);",
                   "  console.log('idRol =', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear rol alterno no asignado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/roles",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles"
+              ]
+            },
+            "description": "Guarda {{idRolNoAsignado}} para validar que no se puedan crear asignaciones con roles no asociados al usuario.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"VISITANTE EXTERNO\",\n  \"description\": \"Rol de prueba que no se asigna al usuario\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idRolNoAsignado', json.id);",
+                  "  console.log('idRolNoAsignado =', json.id);",
                   "}"
                 ]
               }
@@ -1062,12 +1112,7 @@
           "name": "Cambiar estado",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}/estado?estado=OCUPADO",
               "host": [
@@ -1083,12 +1128,11 @@
               "query": [
                 {
                   "key": "estado",
-                  "value": "OCUPADO",
-                  "description": "Uno de: DISPONIBLE, OCUPADO, RESERVADO, MANTENIMIENTO"
+                  "value": "OCUPADO"
                 }
               ]
             },
-            "description": "El estado viaja como query param (?estado=...), NO en el body. El controlador usa @RequestParam EstadoEspacio estado."
+            "description": "El estado viaja como query param (?estado=...), NO en el body."
           },
           "response": []
         },
@@ -1428,7 +1472,7 @@
                 "{{idVehiculo}}"
               ]
             },
-            "description": "PATCH parcial. Los campos a cambiar van DENTRO de 'datos' (misma forma que al crear). Enviar 'color' suelto NO surte efecto porque el servicio lee updateVehiculoDto.datos.",
+            "description": "PATCH parcial. Los campos a cambiar van dentro de 'datos'.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"datos\": {\n    \"color\": \"Azul\"\n  }\n}",
@@ -1460,6 +1504,319 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Asignaciones y Trazabilidad",
+      "item": [
+        {
+          "name": "RF1 - Asignar vehiculo a propietario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos"
+              ]
+            },
+            "description": "Crea la relacion propietario-vehiculo con clave compuesta userId + vehicleId. Exige que el usuario tenga activo el roleId enviado. Registra auditoria CREACION.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\",\n  \"roleId\": \"{{idRol}}\",\n  \"assignmentType\": \"PROPIETARIO\",\n  \"vehicleAlias\": \"Vehiculo principal ESPE\",\n  \"observation\": \"Asignacion regular para propietario registrado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "RF1 - Asignar sin roleId -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos"
+              ]
+            },
+            "description": "Debe responder 400 porque roleId es obligatorio.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "RF1 - Asignar con rol no asociado -> 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos"
+              ]
+            },
+            "description": "Debe responder 409 si el usuario no tiene asociado ese roleId activo. No importa el nombre del rol.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\",\n  \"roleId\": \"{{idRolNoAsignado}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "RF1 - Intentar asignacion duplicada -> 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos"
+              ]
+            },
+            "description": "Debe responder 409 porque el vehiculo ya tiene una asignacion activa.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\",\n  \"roleId\": \"{{idRol}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "RF2 - Modificar asignacion",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos/{{idUsuario}}/{{idVehiculo}}",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos",
+                "{{idUsuario}}",
+                "{{idVehiculo}}"
+              ]
+            },
+            "description": "Modifica campos propios de parqueadero y registra auditoria MODIFICACION.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SUSPENDIDA\",\n  \"assignmentType\": \"TEMPORAL\",\n  \"vehicleAlias\": \"Vehiculo temporal ESPE\",\n  \"entryAuthorized\": false,\n  \"observation\": \"Acceso suspendido temporalmente por revision administrativa\",\n  \"changeReason\": \"Control interno ESPE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "RF3 - Consultar flota por propietario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/propietarios/{{idUsuario}}/vehiculos",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "propietarios",
+                "{{idUsuario}}",
+                "vehiculos"
+              ]
+            },
+            "description": "Retorna los vehiculos asignados enriquecidos con tipo y clasificacion desde el microservicio vehiculos."
+          },
+          "response": []
+        },
+        {
+          "name": "RF2 - Consultar trazabilidad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos/{{idUsuario}}/{{idVehiculo}}/trazabilidad",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos",
+                "{{idUsuario}}",
+                "{{idVehiculo}}",
+                "trazabilidad"
+              ]
+            },
+            "description": "Debe mostrar al menos el evento CREACION, con payload del cambio."
+          },
+          "response": []
+        },
+        {
+          "name": "RF2 - Desactivar asignacion (borrado logico)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos/{{idUsuario}}/{{idVehiculo}}/desactivar",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos",
+                "{{idUsuario}}",
+                "{{idVehiculo}}",
+                "desactivar"
+              ]
+            },
+            "description": "Desactiva la asignacion sin borrar el historico. Registra auditoria ELIMINACION."
+          },
+          "response": []
+        },
+        {
+          "name": "RF2 - Trazabilidad despues de eliminar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos/{{idUsuario}}/{{idVehiculo}}/trazabilidad",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos",
+                "{{idUsuario}}",
+                "{{idVehiculo}}",
+                "trazabilidad"
+              ]
+            },
+            "description": "Debe mostrar eventos CREACION y ELIMINACION."
+          },
+          "response": []
+        },
+        {
+          "name": "RF2 - Reactivar asignacion",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos/{{idUsuario}}/{{idVehiculo}}/activar",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos",
+                "{{idUsuario}}",
+                "{{idVehiculo}}",
+                "activar"
+              ]
+            },
+            "description": "Reactiva una asignacion historica. Registra auditoria MODIFICACION."
+          },
+          "response": []
+        },
+        {
+          "name": "RF3 - Flota despues de reactivar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/propietarios/{{idUsuario}}/vehiculos",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "propietarios",
+                "{{idUsuario}}",
+                "vehiculos"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Pruebas directas del microservicio asignaciones (puerto 8082) segun el PDF."
     },
     {
       "name": "Kong",
@@ -1518,6 +1875,28 @@
                 "vehiculos"
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Asignaciones via gateway",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlGateway}}/api/v1/propietarios/{{idUsuario}}/vehiculos",
+              "host": [
+                "{{urlGateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "propietarios",
+                "{{idUsuario}}",
+                "vehiculos"
+              ]
+            },
+            "description": "Consulta la flota atravesando Kong."
           },
           "response": []
         },
@@ -1626,6 +2005,10 @@
     },
     {
       "key": "idRol",
+      "value": ""
+    },
+    {
+      "key": "idRolNoAsignado",
       "value": ""
     },
     {

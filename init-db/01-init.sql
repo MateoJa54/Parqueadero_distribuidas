@@ -14,6 +14,10 @@ CREATE DATABASE zonas OWNER zonas;
 CREATE USER usuarios WITH PASSWORD 'usuarios123';
 CREATE DATABASE usuarios OWNER usuarios;
 
+-- ---------- API asignaciones (Spring Boot) ----------
+CREATE USER asignaciones WITH PASSWORD 'asignaciones123';
+CREATE DATABASE asignaciones OWNER asignaciones;
+
 -- ---------- API vehiculos (NestJS / TypeORM) ----------
 -- Usa el superusuario 'postgres' (definido en docker-compose).
 CREATE DATABASE vehiculos_db OWNER postgres;

@@ -3,7 +3,7 @@
 y agrega la variable urlKongAdmin a los environments.
 
 Estructura de carpetas: Persona, Roles, Usuarios (con subcarpeta Asignaciones),
-Zonas, Espacios, Vehiculos, Kong, Kong Configurado.
+Zonas, Espacios, Vehiculos, Asignaciones y Trazabilidad, Kong, Kong Configurado.
 Los "Crear" guardan el id en variables de coleccion para encadenar el flujo.
 """
 import json
@@ -90,9 +90,13 @@ persona = folder("Persona", [
 # ---------------- ROLES ----------------
 roles = folder("Roles", [
     req("Crear rol", "POST", U, ["api", "v1", "roles"],
-        body={"name": "SUPERVISOR", "description": "Supervisa la operacion del parqueadero"},
+        body={"name": "COMUNIDAD ESPE", "description": "Rol habilitado para asociar vehiculos a usuarios"},
         desc="Nombre de texto libre (3-50, letras/numeros/espacios/_). Se normaliza a MAYUSCULAS. Guarda {{idRol}}.",
         save=("idRol", "id")),
+    req("Crear rol alterno no asignado", "POST", U, ["api", "v1", "roles"],
+        body={"name": "VISITANTE EXTERNO", "description": "Rol de prueba que no se asigna al usuario"},
+        desc="Guarda {{idRolNoAsignado}} para validar que no se puedan crear asignaciones con roles no asociados al usuario.",
+        save=("idRolNoAsignado", "id")),
     req("Listar roles", "GET", U, ["api", "v1", "roles"]),
     req("Obtener rol por ID", "GET", U, ["api", "v1", "roles", "{{idRol}}"]),
     req("Actualizar rol", "PUT", U, ["api", "v1", "roles", "{{idRol}}"],
@@ -164,7 +168,8 @@ espacios = folder("Espacios", [
     req("Actualizar espacio", "PUT", Z, ["api", "v1", "espacios", "{{idEspacio}}"],
         body={"idZona": "{{idZona}}", "descripcion": "Espacio A1 mod", "tipo": "AUTO"}),
     req("Cambiar estado", "PATCH", Z, ["api", "v1", "espacios", "{{idEspacio}}", "estado"],
-        body={"estado": "OCUPADO"}),
+        query=[("estado", "OCUPADO")],
+        desc="El estado viaja como query param (?estado=...), NO en el body."),
     req("Espacios disponibles", "GET", Z, ["api", "v1", "espacios", "disponibles"]),
     req("Espacios por estado", "GET", Z, ["api", "v1", "espacios", "estado", "DISPONIBLE"]),
     req("Espacios por zona y estado", "GET", Z,
@@ -195,9 +200,66 @@ vehiculos = folder("Vehiculos", [
     req("Obtener por placa", "GET", V, ["vehiculos", "placa", "PBX-1234"]),
     req("Obtener por ID", "GET", V, ["vehiculos", "{{idVehiculo}}"]),
     req("Actualizar vehiculo", "PATCH", V, ["vehiculos", "{{idVehiculo}}"],
-        body={"color": "Azul"}),
+        body={"datos": {"color": "Azul"}},
+        desc="PATCH parcial. Los campos a cambiar van dentro de 'datos'."),
     req("Eliminar vehiculo", "DELETE", V, ["vehiculos", "{{idVehiculo}}"]),
 ])
+
+# ---------------- ASIGNACIONES VEHICULOS ----------------
+A = "urlAsignaciones"
+asignaciones_vehiculos = folder("Asignaciones y Trazabilidad", [
+    req("RF1 - Asignar vehiculo a propietario", "POST", A,
+        ["api", "v1", "asignaciones-vehiculos"],
+        body={
+            "userId": "{{idUsuario}}",
+            "vehicleId": "{{idVehiculo}}",
+            "roleId": "{{idRol}}",
+            "assignmentType": "PROPIETARIO",
+            "vehicleAlias": "Vehiculo principal ESPE",
+            "observation": "Asignacion regular para propietario registrado"
+        },
+        desc="Crea la relacion propietario-vehiculo con clave compuesta userId + vehicleId. Exige que el usuario tenga activo el roleId enviado. Registra auditoria CREACION."),
+    req("RF1 - Asignar sin roleId -> 400", "POST", A,
+        ["api", "v1", "asignaciones-vehiculos"],
+        body={"userId": "{{idUsuario}}", "vehicleId": "{{idVehiculo}}"},
+        desc="Debe responder 400 porque roleId es obligatorio."),
+    req("RF1 - Asignar con rol no asociado -> 409", "POST", A,
+        ["api", "v1", "asignaciones-vehiculos"],
+        body={"userId": "{{idUsuario}}", "vehicleId": "{{idVehiculo}}", "roleId": "{{idRolNoAsignado}}"},
+        desc="Debe responder 409 si el usuario no tiene asociado ese roleId activo. No importa el nombre del rol."),
+    req("RF1 - Intentar asignacion duplicada -> 409", "POST", A,
+        ["api", "v1", "asignaciones-vehiculos"],
+        body={"userId": "{{idUsuario}}", "vehicleId": "{{idVehiculo}}", "roleId": "{{idRol}}"},
+        desc="Debe responder 409 porque el vehiculo ya tiene una asignacion activa."),
+    req("RF2 - Modificar asignacion", "PATCH", A,
+        ["api", "v1", "asignaciones-vehiculos", "{{idUsuario}}", "{{idVehiculo}}"],
+        body={
+            "status": "SUSPENDIDA",
+            "assignmentType": "TEMPORAL",
+            "vehicleAlias": "Vehiculo temporal ESPE",
+            "entryAuthorized": False,
+            "observation": "Acceso suspendido temporalmente por revision administrativa",
+            "changeReason": "Control interno ESPE"
+        },
+        desc="Modifica campos propios de parqueadero y registra auditoria MODIFICACION."),
+    req("RF3 - Consultar flota por propietario", "GET", A,
+        ["api", "v1", "propietarios", "{{idUsuario}}", "vehiculos"],
+        desc="Retorna los vehiculos asignados enriquecidos con tipo y clasificacion desde el microservicio vehiculos."),
+    req("RF2 - Consultar trazabilidad", "GET", A,
+        ["api", "v1", "asignaciones-vehiculos", "{{idUsuario}}", "{{idVehiculo}}", "trazabilidad"],
+        desc="Debe mostrar al menos el evento CREACION, con payload del cambio."),
+    req("RF2 - Desactivar asignacion (borrado logico)", "PATCH", A,
+        ["api", "v1", "asignaciones-vehiculos", "{{idUsuario}}", "{{idVehiculo}}", "desactivar"],
+        desc="Desactiva la asignacion sin borrar el historico. Registra auditoria ELIMINACION."),
+    req("RF2 - Trazabilidad despues de eliminar", "GET", A,
+        ["api", "v1", "asignaciones-vehiculos", "{{idUsuario}}", "{{idVehiculo}}", "trazabilidad"],
+        desc="Debe mostrar eventos CREACION y ELIMINACION."),
+    req("RF2 - Reactivar asignacion", "PATCH", A,
+        ["api", "v1", "asignaciones-vehiculos", "{{idUsuario}}", "{{idVehiculo}}", "activar"],
+        desc="Reactiva una asignacion historica. Registra auditoria MODIFICACION."),
+    req("RF3 - Flota despues de reactivar", "GET", A,
+        ["api", "v1", "propietarios", "{{idUsuario}}", "vehiculos"]),
+], desc="Pruebas directas del microservicio asignaciones (puerto 8082) segun el PDF.")
 
 # ---------------- KONG (proxy 8000) ----------------
 G = "urlGateway"
@@ -206,6 +268,9 @@ kong = folder("Kong", [
         desc="Mismo endpoint pero atravesando Kong (puerto 8000)."),
     req("Zonas via gateway", "GET", G, ["api", "v1", "zonas"]),
     req("Vehiculos via gateway", "GET", G, ["api", "vehiculos"]),
+    req("Asignaciones via gateway", "GET", G,
+        ["api", "v1", "propietarios", "{{idUsuario}}", "vehiculos"],
+        desc="Consulta la flota atravesando Kong."),
     req("Probar rate-limiting", "GET", G, ["api", "v1", "roles"],
         desc="Enviar varias veces seguidas para ver el header RateLimit-Remaining y eventual 429."),
 ], desc="Pruebas atravesando el API Gateway Kong (proxy en :8000).")
@@ -227,10 +292,11 @@ collection = {
                        "Parqueadero-Kong. Los 'Crear' guardan los IDs para encadenar el flujo.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     },
-    "item": [persona, roles, usuarios, zonas, espacios, vehiculos, kong, kong_cfg],
+    "item": [persona, roles, usuarios, zonas, espacios, vehiculos, asignaciones_vehiculos, kong, kong_cfg],
     "variable": [
         {"key": "idPersona", "value": ""},
         {"key": "idRol", "value": ""},
+        {"key": "idRolNoAsignado", "value": ""},
         {"key": "idUsuario", "value": ""},
         {"key": "idZona", "value": ""},
         {"key": "idEspacio", "value": ""},
