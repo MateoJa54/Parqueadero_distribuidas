@@ -15,3 +15,8 @@ spring:
     show-sql: true
 server:
   port: 8081
+
+jwt:
+  secret: ${JWT_SECRET:parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026}
+  issuer: ${JWT_ISSUER:parqueadero}
+  expiration-minutes: ${JWT_EXP_MIN:120}

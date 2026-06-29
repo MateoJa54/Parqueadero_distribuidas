@@ -1,9 +1,11 @@
 package ec.edu.espe.usuarios.utils;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("PasswordUtil Tests")
 class PasswordUtilTest {
@@ -55,7 +57,9 @@ class PasswordUtilTest {
     @Test
     @DisplayName("Debería manejar contraseñas largas")
     void testHashWithLongPassword() {
-        String password = "A".repeat(100);
+        // BCrypt admite hasta 72 bytes; la app limita la contrasena a 30 caracteres,
+        // por lo que se prueba una contrasena larga pero dentro del limite del algoritmo.
+        String password = "A".repeat(72);
         String hash = PasswordUtil.hash(password);
         
         assertNotNull(hash);
