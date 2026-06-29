@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ec.edu.espe.asignaciones.dtos.AssignmentResponse;
 import ec.edu.espe.asignaciones.dtos.AuditEventResponse;
-import ec.edu.espe.asignaciones.dtos.FleetVehicleResponse;
 import ec.edu.espe.asignaciones.dtos.CreateAssignmentRequest;
+import ec.edu.espe.asignaciones.dtos.FleetVehicleResponse;
 import ec.edu.espe.asignaciones.dtos.UpdateAssignmentRequest;
 import ec.edu.espe.asignaciones.dtos.UserRoleAssignmentResponse;
 import ec.edu.espe.asignaciones.dtos.VehiculoClientResponse;
@@ -92,6 +92,13 @@ public class AssignmentService {
         String oldPayload = toJson(assignment);
 
         if (request.getStatus() != null) {
+            AssignmentStatus previousStatus = assignment.getStatus();
+            if (request.getStatus() == AssignmentStatus.ACTIVA && previousStatus != AssignmentStatus.ACTIVA) {
+                externalCatalogService.validarUsuarioActivo(userId);
+                UserRoleAssignmentResponse authorizationRole = externalCatalogService
+                        .validarRolAutorizadoParaAsignacion(userId, assignment.getAuthorizationRoleId());
+                assignment.setAuthorizationRoleName(authorizationRole.getRol());
+            }
             assignment.setStatus(request.getStatus());
             if (request.getStatus() == AssignmentStatus.FINALIZADA) {
                 assignment.setActive(false);
