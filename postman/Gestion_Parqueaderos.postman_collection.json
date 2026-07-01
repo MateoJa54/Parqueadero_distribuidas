@@ -2095,6 +2095,1161 @@
       "description": "Pruebas directas del microservicio asignaciones (puerto 8082) segun el PDF."
     },
     {
+      "name": "Tickets",
+      "description": "Microservicio tickets (puerto 8083, /api/v1/tickets). Cobra el parqueo. REQUISITOS previos (ejecutar en orden): 1) Auth > Login root. 2) Persona > Crear. 3) Auth > Registro cliente + Login cliente (guarda idUsuario). 4) Vehiculos > Crear (placa PBX-1234, tipo Auto, guarda idVehiculo). 5) Zonas > Crear + Espacios > Crear (tipo AUTO, guarda idEspacio). Luego correr esta carpeta de arriba a abajo. Toda la coleccion usa el token ROOT (Bearer). Roles que pueden operar tickets: ROOT, ADMIN, RECAUDADOR. CLIENTE => 403.",
+      "item": [
+        {
+          "name": "Prep 1 - Crear asignacion vehiculo (201 o 409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos"
+              ]
+            },
+            "description": "Garantiza que el vehiculo tenga una asignacion. 201 si es nueva, 409 si ya existia. El ingreso de tickets exige una asignacion ACTIVA con entryAuthorized=true.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\",\n  \"assignmentType\": \"PROPIETARIO\",\n  \"vehicleAlias\": \"Vehiculo prueba tickets\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Asignacion creada o ya existente (201/409)', function () {",
+                  "  pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Prep 2 - Forzar ACTIVA + entryAuthorized",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos/{{idUsuario}}/{{idVehiculo}}",
+              "host": [
+                "{{urlAsignaciones}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones-vehiculos",
+                "{{idUsuario}}",
+                "{{idVehiculo}}"
+              ]
+            },
+            "description": "Deja la asignacion en estado ACTIVA y con ingreso autorizado, por si un test previo la dejo SUSPENDIDA.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVA\",\n  \"entryAuthorized\": true,\n  \"changeReason\": \"Preparacion prueba de tickets\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Asignacion ACTIVA (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingreso por placa (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "description": "Registra el ingreso del vehiculo por placa en el espacio. Guarda {{idTicket}} y {{codigoTicket}}. El id del empleado se toma del JWT (sub).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placa}}\",\n  \"idEspacio\": \"{{idEspacio}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idTicket', json.id);",
+                  "  pm.collectionVariables.set('codigoTicket', json.codigo);",
+                  "  console.log('idTicket =', json.id, 'codigo =', json.codigo);",
+                  "}",
+                  "pm.test('Ingreso creado (201) y ticket ACTIVO', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(json.estadoTicket, 'estadoTicket').to.eql('ACTIVO');",
+                  "  pm.expect(json.valorRecaudado, 'valorRecaudado inicial 0').to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingreso duplicado mismo vehiculo (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "description": "Un vehiculo no puede tener dos tickets activos a la vez. Debe responder 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placa}}\",\n  \"idEspacio\": \"{{idEspacio}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Ingreso duplicado rechazado (409)', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar ticket por id (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets/{{idTicket}}",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{idTicket}}"
+              ]
+            },
+            "description": "Obtiene el ticket por su id."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Ticket encontrado (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar por codigo (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets/codigo/{{codigoTicket}}",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "codigo",
+                "{{codigoTicket}}"
+              ]
+            },
+            "description": "Obtiene el ticket por su codigo legible (TKT-000001)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Ticket por codigo (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ticket activo por espacio (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets/activo/espacio/{{idEspacio}}",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "activo",
+                "espacio",
+                "{{idEspacio}}"
+              ]
+            },
+            "description": "Devuelve el ticket ACTIVO que ocupa el espacio."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Ticket activo del espacio (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar todos (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "description": "Lista todos los tickets ordenados por fecha de ingreso descendente."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Listado (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar por estado ACTIVO (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets?estado=ACTIVO",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "ACTIVO"
+                }
+              ]
+            },
+            "description": "Filtra por estado. Valores validos: ACTIVO, PAGADO, ANULADO."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Listado filtrado (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagar ticket (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets/{{idTicket}}/pagar",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{idTicket}}",
+                "pagar"
+              ]
+            },
+            "description": "Cobra la estadia (tarifa por hora, minimo 1h) y libera el espacio. Debe quedar PAGADO con valorRecaudado > 0."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Pago exitoso (200) PAGADO con cobro', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(json.estadoTicket, 'estadoTicket').to.eql('PAGADO');",
+                  "  pm.expect(Number(json.valorRecaudado), 'valorRecaudado').to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagar de nuevo (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets/{{idTicket}}/pagar",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{idTicket}}",
+                "pagar"
+              ]
+            },
+            "description": "Un ticket ya PAGADO no se puede volver a pagar. Debe responder 409."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Doble pago rechazado (409)', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anular un ticket ya pagado (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets/{{idTicket}}/anular",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{idTicket}}",
+                "anular"
+              ]
+            },
+            "description": "La anulacion solo aplica a tickets ACTIVOS. Un PAGADO no se anula. Debe responder 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Intento invalido de anular un pago\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Anular pagado rechazado (409)', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingreso 2 para anular (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "description": "El espacio quedo DISPONIBLE tras el pago y el vehiculo ya no tiene ticket activo, asi que se puede reingresar. Guarda {{idTicket2}} para probar la anulacion.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placa}}\",\n  \"idEspacio\": \"{{idEspacio}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idTicket2', json.id);",
+                  "  console.log('idTicket2 =', json.id);",
+                  "}",
+                  "pm.test('Reingreso creado (201)', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anular ticket activo (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets/{{idTicket2}}/anular",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{idTicket2}}",
+                "anular"
+              ]
+            },
+            "description": "Anula por error humano (placa mal digitada). Requiere motivo. Deja ANULADO, valorRecaudado 0 y libera el espacio.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Placa mal digitada al ingresar - correccion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test('Anulacion exitosa (200) ANULADO sin cobro', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(json.estadoTicket, 'estadoTicket').to.eql('ANULADO');",
+                  "  pm.expect(Number(json.valorRecaudado), 'valorRecaudado').to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anular de nuevo (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets/{{idTicket2}}/anular",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{idTicket2}}",
+                "anular"
+              ]
+            },
+            "description": "Un ticket ANULADO no se vuelve a anular. Debe responder 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Reintento invalido\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Doble anulacion rechazada (409)', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validacion - ingreso sin body (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "description": "placa e idEspacio son obligatorios. Debe responder 400 con el detalle de campos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Validacion de campos (400)', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validacion - placa inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "description": "Si la placa no existe en el microservicio vehiculos, debe responder 404.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"ZZZ-0000\",\n  \"idEspacio\": \"{{idEspacio}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Placa inexistente (404)', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validacion - espacio inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "description": "Si el espacio no existe en el microservicio zonas, debe responder 404.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placa}}\",\n  \"idEspacio\": \"00000000-0000-0000-0000-000000000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Espacio inexistente (404)', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seguridad - sin token (401)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "description": "Sin JWT valido, todos los endpoints responden 401."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token (401)', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rol - Login CLIENTE (guardar tokenCliente)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/auth/login",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesion con el cliente y guarda su token en {{tokenCliente}} SIN pisar {{token}} (que sigue siendo ROOT).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"mjacome\",\n  \"password\": \"Espe2025\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.token) {",
+                  "  pm.collectionVariables.set('tokenCliente', json.token);",
+                  "  console.log('tokenCliente guardado. roles =', json.roles);",
+                  "}",
+                  "pm.test('Login cliente (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rol - Ingreso como CLIENTE (403)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "description": "Un CLIENTE no puede operar tickets. Debe responder 403 (autenticado pero sin permiso).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placa}}\",\n  \"idEspacio\": \"{{idEspacio}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CLIENTE sin permiso (403)', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rol - Obtener idRol RECAUDADOR",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/roles",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles"
+              ]
+            },
+            "description": "Lista los roles (token ROOT) y guarda el id del rol RECAUDADOR en {{idRolRecaudador}}."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var arr = [];",
+                  "try { arr = pm.response.json(); } catch (e) {}",
+                  "var rol = Array.isArray(arr) ? arr.find(function (r) { return (r.name || r.nombre) === 'RECAUDADOR'; }) : null;",
+                  "if (rol && rol.id) {",
+                  "  pm.collectionVariables.set('idRolRecaudador', rol.id);",
+                  "  console.log('idRolRecaudador =', rol.id);",
+                  "}",
+                  "pm.test('Rol RECAUDADOR encontrado', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(rol, 'rol RECAUDADOR').to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rol - Otorgar RECAUDADOR al cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/asignaciones",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asignaciones"
+              ]
+            },
+            "description": "Como ROOT, asigna el rol RECAUDADOR al usuario cliente ({{idUsuario}}). Asi ese usuario podra operar tickets. Acepta 200/201; 409 si ya lo tenia.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idUser\": \"{{idUsuario}}\",\n  \"idRole\": \"{{idRolRecaudador}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rol asignado (200/201/409)', function () {",
+                  "  pm.expect([200, 201, 409]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rol - Login cliente ahora RECAUDADOR (tokenRecaudador)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/auth/login",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Vuelve a iniciar sesion: el token ahora incluye el rol RECAUDADOR (roles frescos desde BD). Guarda {{tokenRecaudador}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"mjacome\",\n  \"password\": \"Espe2025\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.token) {",
+                  "  pm.collectionVariables.set('tokenRecaudador', json.token);",
+                  "  console.log('tokenRecaudador guardado. roles =', json.roles);",
+                  "}",
+                  "pm.test('Login con RECAUDADOR (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(JSON.stringify(json.roles || [])).to.include('RECAUDADOR');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rol - Ingreso como RECAUDADOR (201 o 409)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenRecaudador}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlTickets}}/api/v1/tickets",
+              "host": [
+                "{{urlTickets}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "description": "Ahora el mismo usuario, con rol RECAUDADOR, SI puede operar tickets. 201 si el espacio esta libre, 409 si el vehiculo/espacio ya tiene un ticket activo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placa}}\",\n  \"idEspacio\": \"{{idEspacio}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('RECAUDADOR autorizado (201 o 409, NO 403)', function () {",
+                  "  pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Kong",
       "item": [
         {
@@ -2313,6 +3468,34 @@
     },
     {
       "key": "idVehiculo",
+      "value": ""
+    },
+    {
+      "key": "placa",
+      "value": "PBX-1234"
+    },
+    {
+      "key": "idTicket",
+      "value": ""
+    },
+    {
+      "key": "idTicket2",
+      "value": ""
+    },
+    {
+      "key": "codigoTicket",
+      "value": ""
+    },
+    {
+      "key": "tokenCliente",
+      "value": ""
+    },
+    {
+      "key": "tokenRecaudador",
+      "value": ""
+    },
+    {
+      "key": "idRolRecaudador",
       "value": ""
     }
   ]

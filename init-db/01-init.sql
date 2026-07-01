@@ -18,6 +18,10 @@ CREATE DATABASE usuarios OWNER usuarios;
 CREATE USER asignaciones WITH PASSWORD 'asignaciones123';
 CREATE DATABASE asignaciones OWNER asignaciones;
 
+-- ---------- API tickets (Spring Boot) ----------
+CREATE USER tickets WITH PASSWORD 'tickets123';
+CREATE DATABASE tickets OWNER tickets;
+
 -- ---------- API vehiculos (NestJS / TypeORM) ----------
 -- Usa el superusuario 'postgres' (definido en docker-compose).
 CREATE DATABASE vehiculos_db OWNER postgres;

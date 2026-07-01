@@ -58,6 +58,12 @@ public class AssignmentController {
         return ResponseEntity.ok(assignmentService.reactivarAsignacion(userId, vehicleId));
     }
 
+    @GetMapping("/vehiculo/{vehicleId}")
+    public ResponseEntity<AssignmentResponse> consultarAsignacionActivaPorVehiculo(
+            @PathVariable UUID vehicleId) {
+        return ResponseEntity.ok(assignmentService.consultarAsignacionActivaPorVehiculo(vehicleId));
+    }
+
     @GetMapping("/{userId}/{vehicleId}/trazabilidad")
     public ResponseEntity<List<AuditEventResponse>> consultarTrazabilidad(
             @PathVariable UUID userId,

@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: tickets
+  datasource:
+    url: jdbc:postgresql://localhost:${DB_PORT:5433}/tickets
+    username: tickets
+    password: tickets123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+
+server:
+  port: 8083
+
+# URLs de los microservicios que consume tickets (orquestacion).
+services:
+  usuarios-url: ${USUARIOS_URL:http://localhost:8081}
+  vehiculos-url: ${VEHICULOS_URL:http://localhost:3000}
+  zonas-url: ${ZONAS_URL:http://localhost:8080}
+  asignaciones-url: ${ASIGNACIONES_URL:http://localhost:8082}
+
+# Mismo secreto/emisor que el microservicio usuarios: permite validar el JWT
+# de forma stateless sin llamar a usuarios en cada peticion.
+jwt:
+  secret: ${JWT_SECRET:parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026}
+  issuer: ${JWT_ISSUER:parqueadero}
+
+# Tarifas por hora segun (tipo de vehiculo _ tipo de espacio). Los valores se
+# leen del archivo .env (spring-dotenv); aqui van solo los valores por defecto.
+tarifas:
+  por-defecto: ${TARIFA_DEFAULT:1.00}
+  matriz:
+    AUTO_AUTO: ${TARIFA_AUTO_AUTO:1.50}
+    MOTOCICLETA_MOTO: ${TARIFA_MOTOCICLETA_MOTO:0.75}
+    CAMIONETA_BUSETA: ${TARIFA_CAMIONETA_BUSETA:2.00}

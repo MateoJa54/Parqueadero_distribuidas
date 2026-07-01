@@ -215,6 +215,14 @@ public class AssignmentService {
     }
 
     @Transactional(readOnly = true)
+    public AssignmentResponse consultarAsignacionActivaPorVehiculo(UUID vehicleId) {
+        VehicleAssignment assignment = assignmentRepository.findByIdVehicleIdAndActiveTrue(vehicleId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe una asignacion activa para el vehiculo: " + vehicleId));
+        return toResponse(assignment);
+    }
+
+    @Transactional(readOnly = true)
     public List<AuditEventResponse> consultarTrazabilidad(UUID userId, UUID vehicleId) {
         return auditRepository.findByUserIdAndVehicleIdOrderByTimestampDesc(userId, vehicleId).stream()
                 .map(event -> AuditEventResponse.builder()
