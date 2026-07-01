@@ -51,16 +51,14 @@ class AssignmentServiceTest {
     void crearAsignacionRechazaVehiculoConPropietarioActivo() {
         UUID userId = UUID.randomUUID();
         UUID vehicleId = UUID.randomUUID();
-        UUID roleId = UUID.randomUUID();
         UUID otherUserId = UUID.randomUUID();
         CreateAssignmentRequest request = new CreateAssignmentRequest();
         request.setUserId(userId);
         request.setVehicleId(vehicleId);
-        request.setRoleId(roleId);
 
         when(externalCatalogService.validarUsuarioActivo(userId)).thenReturn(new UsuarioClientResponse());
         when(externalCatalogService.validarVehiculoActivo(vehicleId)).thenReturn(new VehiculoClientResponse());
-        when(externalCatalogService.validarRolAutorizadoParaAsignacion(userId, roleId))
+        when(externalCatalogService.validarRolAutorizadoParaAsignacion(userId))
                 .thenReturn(new UserRoleAssignmentResponse());
         when(assignmentRepository.findByIdVehicleIdAndActiveTrue(vehicleId))
                 .thenReturn(Optional.of(VehicleAssignment.builder()
@@ -111,8 +109,8 @@ class AssignmentServiceTest {
         when(assignmentRepository.findById(new AssignmentId(userId, vehicleId)))
                 .thenReturn(Optional.of(suspendida));
         when(externalCatalogService.validarUsuarioActivo(userId)).thenReturn(new UsuarioClientResponse());
-        when(externalCatalogService.validarRolAutorizadoParaAsignacion(userId, roleId))
-                .thenThrow(new ReglaNegocioException("El usuario no tiene asociado el rol requerido"));
+        when(externalCatalogService.validarRolAutorizadoParaAsignacion(userId))
+                .thenThrow(new ReglaNegocioException("El usuario no tiene un rol activo"));
 
         UpdateAssignmentRequest request = new UpdateAssignmentRequest();
         request.setStatus(AssignmentStatus.ACTIVA);

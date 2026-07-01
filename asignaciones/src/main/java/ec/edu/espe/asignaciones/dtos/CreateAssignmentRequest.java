@@ -16,9 +16,6 @@ public class CreateAssignmentRequest {
     @NotNull(message = "El vehicleId es obligatorio")
     private UUID vehicleId;
 
-    @NotNull(message = "El roleId es obligatorio para autorizar la asignacion")
-    private UUID roleId;
-
     private AssignmentType assignmentType = AssignmentType.PROPIETARIO;
 
     @Size(max = 80, message = "El alias del vehiculo no puede superar 80 caracteres")

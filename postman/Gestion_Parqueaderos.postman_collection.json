@@ -1839,10 +1839,10 @@
                 "asignaciones-vehiculos"
               ]
             },
-            "description": "Crea la relacion propietario-vehiculo con clave compuesta userId + vehicleId. Exige que el usuario tenga activo el roleId enviado. Registra auditoria CREACION.",
+            "description": "Crea la relacion propietario-vehiculo con clave compuesta userId + vehicleId. El vehiculo se asigna al usuario; solo se valida que el usuario tenga al menos un rol activo. Registra auditoria CREACION.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\",\n  \"roleId\": \"{{idRol}}\",\n  \"assignmentType\": \"PROPIETARIO\",\n  \"vehicleAlias\": \"Vehiculo principal ESPE\",\n  \"observation\": \"Asignacion regular para propietario registrado\"\n}",
+              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\",\n  \"assignmentType\": \"PROPIETARIO\",\n  \"vehicleAlias\": \"Vehiculo principal ESPE\",\n  \"observation\": \"Asignacion regular para propietario registrado\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1853,7 +1853,7 @@
           "response": []
         },
         {
-          "name": "RF1 - Asignar sin roleId -> 400",
+          "name": "RF1 - Asignar a usuario sin rol activo -> 409",
           "request": {
             "method": "POST",
             "header": [
@@ -1873,44 +1873,10 @@
                 "asignaciones-vehiculos"
               ]
             },
-            "description": "Debe responder 400 porque roleId es obligatorio.",
+            "description": "Debe responder 409 si el usuario no tiene ningun rol activo. Usa en {{idUsuarioSinRol}} el id de un usuario sin roles (o con todos sus roles desactivados).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "RF1 - Asignar con rol no asociado -> 409",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos",
-              "host": [
-                "{{urlAsignaciones}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "asignaciones-vehiculos"
-              ]
-            },
-            "description": "Debe responder 409 si el usuario no tiene asociado ese roleId activo. No importa el nombre del rol.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\",\n  \"roleId\": \"{{idRolNoAsignado}}\"\n}",
+              "raw": "{\n  \"userId\": \"{{idUsuarioSinRol}}\",\n  \"vehicleId\": \"{{idVehiculo}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1944,7 +1910,7 @@
             "description": "Debe responder 409 porque el vehiculo ya tiene una asignacion activa.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\",\n  \"roleId\": \"{{idRol}}\"\n}",
+              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

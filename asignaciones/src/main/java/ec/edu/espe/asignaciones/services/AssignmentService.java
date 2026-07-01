@@ -45,7 +45,7 @@ public class AssignmentService {
         externalCatalogService.validarUsuarioActivo(userId);
         externalCatalogService.validarVehiculoActivo(vehicleId);
         UserRoleAssignmentResponse authorizationRole = externalCatalogService
-                .validarRolAutorizadoParaAsignacion(userId, request.getRoleId());
+                .validarRolAutorizadoParaAsignacion(userId);
 
         assignmentRepository.findByIdVehicleIdAndActiveTrue(vehicleId)
                 .ifPresent(existing -> {
@@ -60,7 +60,7 @@ public class AssignmentService {
                     }
                     existing.setActive(true);
                     existing.setStatus(AssignmentStatus.ACTIVA);
-                    existing.setAuthorizationRoleId(request.getRoleId());
+                    existing.setAuthorizationRoleId(authorizationRole.getIdRole());
                     existing.setAuthorizationRoleName(authorizationRole.getRol());
                     existing.setAssignmentType(request.getAssignmentType());
                     existing.setVehicleAlias(request.getVehicleAlias());
@@ -73,7 +73,7 @@ public class AssignmentService {
                         .active(true)
                         .status(AssignmentStatus.ACTIVA)
                         .assignmentType(request.getAssignmentType())
-                        .authorizationRoleId(request.getRoleId())
+                        .authorizationRoleId(authorizationRole.getIdRole())
                         .authorizationRoleName(authorizationRole.getRol())
                         .vehicleAlias(request.getVehicleAlias())
                         .entryAuthorized(true)
@@ -96,7 +96,8 @@ public class AssignmentService {
             if (request.getStatus() == AssignmentStatus.ACTIVA && previousStatus != AssignmentStatus.ACTIVA) {
                 externalCatalogService.validarUsuarioActivo(userId);
                 UserRoleAssignmentResponse authorizationRole = externalCatalogService
-                        .validarRolAutorizadoParaAsignacion(userId, assignment.getAuthorizationRoleId());
+                        .validarRolAutorizadoParaAsignacion(userId);
+                assignment.setAuthorizationRoleId(authorizationRole.getIdRole());
                 assignment.setAuthorizationRoleName(authorizationRole.getRol());
             }
             assignment.setStatus(request.getStatus());
@@ -170,12 +171,13 @@ public class AssignmentService {
             throw new ReglaNegocioException("La asignacion ya esta activa");
         }
         UserRoleAssignmentResponse authorizationRole = externalCatalogService
-                .validarRolAutorizadoParaAsignacion(userId, assignment.getAuthorizationRoleId());
+                .validarRolAutorizadoParaAsignacion(userId);
 
         String oldPayload = toJson(assignment);
         assignment.setActive(true);
         assignment.setStatus(AssignmentStatus.ACTIVA);
         assignment.setEntryAuthorized(true);
+        assignment.setAuthorizationRoleId(authorizationRole.getIdRole());
         assignment.setAuthorizationRoleName(authorizationRole.getRol());
         VehicleAssignment saved = assignmentRepository.save(assignment);
         eventPublisher.publishEvent(new AssignmentChangedEvent(id, AuditAction.MODIFICACION, oldPayload, toJson(saved)));

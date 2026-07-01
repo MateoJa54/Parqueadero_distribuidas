@@ -1,7 +1,6 @@
 package ec.edu.espe.asignaciones.services;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -9,8 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
-import ec.edu.espe.asignaciones.dtos.UsuarioClientResponse;
 import ec.edu.espe.asignaciones.dtos.UserRoleAssignmentResponse;
+import ec.edu.espe.asignaciones.dtos.UsuarioClientResponse;
 import ec.edu.espe.asignaciones.dtos.VehiculoClientResponse;
 import ec.edu.espe.asignaciones.utils.RecursoNoEncontradoException;
 import ec.edu.espe.asignaciones.utils.ReglaNegocioException;
@@ -71,7 +70,7 @@ public class ExternalCatalogService {
         return vehiculo;
     }
 
-    public UserRoleAssignmentResponse validarRolAutorizadoParaAsignacion(UUID userId, UUID roleId) {
+    public UserRoleAssignmentResponse validarRolAutorizadoParaAsignacion(UUID userId) {
         UserRoleAssignmentResponse[] roles;
         try {
             roles = restClient.get()
@@ -82,16 +81,10 @@ public class ExternalCatalogService {
             throw new RecursoNoEncontradoException("Usuario no encontrado: " + userId);
         }
 
-        UserRoleAssignmentResponse userRole = Arrays.stream(roles != null ? roles : new UserRoleAssignmentResponse[0])
-                .filter(role -> roleId.equals(role.getIdRole()))
+        return Arrays.stream(roles != null ? roles : new UserRoleAssignmentResponse[0])
+                .filter(UserRoleAssignmentResponse::isActive)
                 .findFirst()
                 .orElseThrow(() -> new ReglaNegocioException(
-                        "El usuario no tiene asociado el rol requerido para asignar vehiculos"));
-
-        if (!userRole.isActive()) {
-            throw new ReglaNegocioException("El rol del usuario no esta activo para autorizar la asignacion");
-        }
-
-        return userRole;
+                        "El usuario no tiene un rol activo para autorizar la asignacion"));
     }
 }
