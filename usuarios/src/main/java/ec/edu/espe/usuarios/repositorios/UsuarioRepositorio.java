@@ -16,6 +16,9 @@ public interface UsuarioRepositorio extends JpaRepository<Usuario, UUID> {
 
     Optional<Usuario> findByUsername(String username);
 
+    // Login: el username es unico sin distinguir mayusculas/minusculas.
+    Optional<Usuario> findByUsernameIgnoreCase(String username);
+
     // Busqueda parcial de usuarios por username (para localizar al operador del ticket).
     List<Usuario> findByUsernameContainingIgnoreCase(String username);
 }
