@@ -4,7 +4,317 @@
     "description": "Coleccion unica del sistema distribuido de parqueaderos (ESPE). Carpetas por entidad. Usar el environment Parqueadero-Local o Parqueadero-Kong. Los 'Crear' guardan los IDs para encadenar el flujo.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
   "item": [
+    {
+      "name": "Auth (JWT)",
+      "description": "Autenticacion del sistema. usuarios es el UNICO emisor de JWT. Ejecutar 'Login root' primero para obtener un token ADMIN/ROOT; el token se guarda en {{token}} y toda la coleccion lo envia como 'Authorization: Bearer'. Credenciales root por defecto: root / Root2025 (creadas por el BootstrapAdminSeeder).",
+      "item": [
+        {
+          "name": "Login root (admin)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/auth/login",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesion con el usuario root inicial. Guarda el token en {{token}} y el id en {{idAdmin}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"root\",\n  \"password\": \"Root2025\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.token) {",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "  pm.collectionVariables.set('idAdmin', json.idUsuario);",
+                  "  console.log('token ADMIN guardado. roles =', json.roles);",
+                  "}",
+                  "pm.test('Login exitoso (200) con token', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(json.token, 'token').to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.refreshToken, 'refreshToken').to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro cliente (persona existente)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/auth/register",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Registro publico: crea un usuario (rol CLIENTE) sobre una persona YA existente. Requiere {{idPersona}} (crear la persona antes con root). Guarda el token del cliente en {{token}} y su id en {{idUsuario}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPersona\": \"{{idPersona}}\",\n  \"username\": \"mjacome\",\n  \"password\": \"Espe2025\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.token) {",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "  pm.collectionVariables.set('idUsuario', json.idUsuario);",
+                  "  console.log('token CLIENTE guardado. roles =', json.roles);",
+                  "}",
+                  "pm.test('Registro exitoso (201) con token', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(json.token, 'token').to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login cliente",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/auth/login",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesion con el cliente registrado. Cambia {{token}} al del CLIENTE para probar restricciones por rol.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"mjacome\",\n  \"password\": \"Espe2025\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.token) {",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "  pm.collectionVariables.set('idUsuario', json.idUsuario);",
+                  "  console.log('token CLIENTE guardado. roles =', json.roles);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mis datos (/me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/auth/me",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Devuelve los datos del usuario autenticado (usa el {{token}} actual)."
+          },
+          "response": []
+        },
+        {
+          "name": "Acceso sin token (401)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/usuarios",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios"
+              ]
+            },
+            "description": "Sin cabecera Authorization: debe responder 401."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rechaza sin token (401)', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refrescar token",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/auth/refresh",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Renueva el access token usando el {{refreshToken}} vigente (endpoint publico). Rota ambos tokens: guarda el nuevo {{token}} y el nuevo {{refreshToken}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.token) {",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "  console.log('tokens rotados. roles =', json.roles);",
+                  "}",
+                  "pm.test('Refresh exitoso (200) con nuevo par de tokens', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(json.token, 'token').to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.refreshToken, 'refreshToken').to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "Persona",
       "item": [
@@ -1999,6 +2309,18 @@
     }
   ],
   "variable": [
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "idAdmin",
+      "value": ""
+    },
     {
       "key": "idPersona",
       "value": ""

@@ -49,7 +49,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             String token = header.substring(PREFIX.length()).trim();
             try {
-                Claims claims = jwtService.validar(token);
+                // Solo un ACCESS token autoriza peticiones; un refresh token aqui es invalido.
+                Claims claims = jwtService.validarTipo(token, JwtService.TYPE_ACCESS);
                 List<String> roles = claims.get("roles", List.class);
                 List<SimpleGrantedAuthority> authorities = (roles == null ? List.<String>of() : roles).stream()
                         .map(rol -> new SimpleGrantedAuthority("ROLE_" + rol))

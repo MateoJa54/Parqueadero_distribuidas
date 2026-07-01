@@ -13,6 +13,7 @@ import ec.edu.espe.usuarios.dtos.UsuarioResponseDto;
 import ec.edu.espe.usuarios.dtos.auth.AuthResponse;
 import ec.edu.espe.usuarios.dtos.auth.LoginRequest;
 import ec.edu.espe.usuarios.dtos.auth.PerfilResponse;
+import ec.edu.espe.usuarios.dtos.auth.RefreshRequest;
 import ec.edu.espe.usuarios.dtos.auth.RegisterRequest;
 import ec.edu.espe.usuarios.entidades.Persona;
 import ec.edu.espe.usuarios.entidades.Rol;
@@ -29,6 +30,8 @@ import ec.edu.espe.usuarios.utils.CredencialesInvalidasException;
 import ec.edu.espe.usuarios.utils.PasswordUtil;
 import ec.edu.espe.usuarios.utils.RecursoNoEncontradoException;
 import ec.edu.espe.usuarios.utils.ReglaNegocioException;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -98,6 +101,35 @@ public class AuthServicioImpl implements AuthServicio {
     }
 
     @Override
+    @Transactional
+    public AuthResponse refrescar(RefreshRequest request) {
+        // 1. Validar firma, expiracion y que el token sea realmente de tipo refresh.
+        Claims claims;
+        try {
+            claims = jwtService.validarTipo(request.getRefreshToken().trim(), JwtService.TYPE_REFRESH);
+        } catch (JwtException | IllegalArgumentException ex) {
+            throw new CredencialesInvalidasException("Refresh token invalido o expirado: inicie sesion de nuevo");
+        }
+
+        // 2. El usuario debe seguir existiendo y estar activo.
+        UUID idUsuario;
+        try {
+            idUsuario = UUID.fromString(claims.getSubject());
+        } catch (IllegalArgumentException ex) {
+            throw new CredencialesInvalidasException("Refresh token invalido o expirado: inicie sesion de nuevo");
+        }
+        Usuario usuario = usuarioRepositorio.findById(idUsuario)
+                .orElseThrow(() -> new CredencialesInvalidasException(
+                        "Refresh token invalido o expirado: inicie sesion de nuevo"));
+        if (!usuario.isActive()) {
+            throw new CredencialesInvalidasException("La cuenta esta inactiva");
+        }
+
+        // 3. Emitir un nuevo access y ROTAR el refresh (roles frescos desde la BD).
+        return construirRespuesta(usuario, rolesActivos(usuario));
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public PerfilResponse perfil(UUID idUsuario) {
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
@@ -122,10 +154,13 @@ public class AuthServicioImpl implements AuthServicio {
 
     private AuthResponse construirRespuesta(Usuario usuario, List<String> roles) {
         String token = jwtService.generarToken(usuario.getId(), usuario.getUsername(), roles);
+        String refreshToken = jwtService.generarRefreshToken(usuario.getId(), usuario.getUsername());
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken)
                 .tokenType("Bearer")
                 .expiresIn(jwtService.getExpirationSeconds())
+                .refreshExpiresIn(jwtService.getRefreshExpirationSeconds())
                 .idUsuario(usuario.getId())
                 .username(usuario.getUsername())
                 .roles(roles)

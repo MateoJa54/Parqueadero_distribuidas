@@ -1,5 +1,0 @@
-Base : 10 
-asiganar propietario vehiculo: 2
-trazabilidad: 2
-reasignación: 0
-datos prueba: 2

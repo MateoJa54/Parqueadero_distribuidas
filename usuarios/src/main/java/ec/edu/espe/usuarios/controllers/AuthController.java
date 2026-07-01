@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ec.edu.espe.usuarios.dtos.auth.AuthResponse;
 import ec.edu.espe.usuarios.dtos.auth.LoginRequest;
 import ec.edu.espe.usuarios.dtos.auth.PerfilResponse;
+import ec.edu.espe.usuarios.dtos.auth.RefreshRequest;
 import ec.edu.espe.usuarios.dtos.auth.RegisterRequest;
 import ec.edu.espe.usuarios.services.AuthServicio;
 import jakarta.validation.Valid;
@@ -34,6 +35,13 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return new ResponseEntity<>(authServicio.register(request), HttpStatus.CREATED);
+    }
+
+    // Renueva el access token usando un refresh token vigente (publico: el access
+    // ya pudo haber expirado, por eso no exige estar autenticado).
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authServicio.refrescar(request));
     }
 
     // "Ver mis datos": el id del usuario viaja en el token (principal = idUsuario).
