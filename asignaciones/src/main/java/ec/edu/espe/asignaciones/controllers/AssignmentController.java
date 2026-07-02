@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,9 +31,10 @@ public class AssignmentController {
 
     @PostMapping
     public ResponseEntity<AssignmentResponse> crearAsignacion(
-            @Valid @RequestBody CreateAssignmentRequest request) {
+            @Valid @RequestBody CreateAssignmentRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         return new ResponseEntity<>(
-                assignmentService.crearAsignacion(request),
+                assignmentService.crearAsignacion(request, authorization),
                 HttpStatus.CREATED);
     }
 
@@ -40,8 +42,9 @@ public class AssignmentController {
     public ResponseEntity<AssignmentResponse> modificarAsignacion(
             @PathVariable UUID userId,
             @PathVariable UUID vehicleId,
-            @Valid @RequestBody UpdateAssignmentRequest request) {
-        return ResponseEntity.ok(assignmentService.modificarAsignacion(userId, vehicleId, request));
+            @Valid @RequestBody UpdateAssignmentRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        return ResponseEntity.ok(assignmentService.modificarAsignacion(userId, vehicleId, request, authorization));
     }
 
     @PatchMapping("/{userId}/{vehicleId}/desactivar")
@@ -54,8 +57,9 @@ public class AssignmentController {
     @PatchMapping("/{userId}/{vehicleId}/activar")
     public ResponseEntity<AssignmentResponse> reactivarAsignacion(
             @PathVariable UUID userId,
-            @PathVariable UUID vehicleId) {
-        return ResponseEntity.ok(assignmentService.reactivarAsignacion(userId, vehicleId));
+            @PathVariable UUID vehicleId,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        return ResponseEntity.ok(assignmentService.reactivarAsignacion(userId, vehicleId, authorization));
     }
 
     @GetMapping("/vehiculo/{vehicleId}")

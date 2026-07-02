@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -30,11 +31,12 @@ public class ExternalCatalogService {
         this.vehiculosUrl = vehiculosUrl;
     }
 
-    public UsuarioClientResponse validarUsuarioActivo(UUID userId) {
+    public UsuarioClientResponse validarUsuarioActivo(UUID userId, String authorization) {
         UsuarioClientResponse usuario;
         try {
             usuario = restClient.get()
                     .uri(usuariosUrl + "/api/v1/usuarios/{idUsuario}", userId)
+                    .headers(headers -> agregarAuthorization(headers, authorization))
                     .retrieve()
                     .body(UsuarioClientResponse.class);
         } catch (HttpClientErrorException.NotFound ex) {
@@ -70,11 +72,12 @@ public class ExternalCatalogService {
         return vehiculo;
     }
 
-    public UserRoleAssignmentResponse validarRolAutorizadoParaAsignacion(UUID userId) {
+    public UserRoleAssignmentResponse validarRolAutorizadoParaAsignacion(UUID userId, String authorization) {
         UserRoleAssignmentResponse[] roles;
         try {
             roles = restClient.get()
                     .uri(usuariosUrl + "/api/v1/asignaciones/usuario/{idUsuario}", userId)
+                    .headers(headers -> agregarAuthorization(headers, authorization))
                     .retrieve()
                     .body(UserRoleAssignmentResponse[].class);
         } catch (HttpClientErrorException.NotFound ex) {
@@ -86,5 +89,12 @@ public class ExternalCatalogService {
                 .findFirst()
                 .orElseThrow(() -> new ReglaNegocioException(
                         "El usuario no tiene un rol activo para autorizar la asignacion"));
+    }
+
+    /** Reenvia el token del llamante original: usuarios exige ADMIN/ROOT en estos endpoints. */
+    private void agregarAuthorization(HttpHeaders headers, String authorization) {
+        if (authorization != null && !authorization.isBlank()) {
+            headers.set("Authorization", authorization);
+        }
     }
 }
