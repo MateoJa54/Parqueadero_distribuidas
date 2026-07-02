@@ -39,13 +39,13 @@ public class AssignmentService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public AssignmentResponse crearAsignacion(CreateAssignmentRequest request) {
+    public AssignmentResponse crearAsignacion(CreateAssignmentRequest request, String authorization) {
         UUID userId = request.getUserId();
         UUID vehicleId = request.getVehicleId();
-        externalCatalogService.validarUsuarioActivo(userId);
+        externalCatalogService.validarUsuarioActivo(userId, authorization);
         externalCatalogService.validarVehiculoActivo(vehicleId);
         UserRoleAssignmentResponse authorizationRole = externalCatalogService
-                .validarRolAutorizadoParaAsignacion(userId);
+                .validarRolAutorizadoParaAsignacion(userId, authorization);
 
         assignmentRepository.findByIdVehicleIdAndActiveTrue(vehicleId)
                 .ifPresent(existing -> {
@@ -86,7 +86,8 @@ public class AssignmentService {
     }
 
     @Transactional
-    public AssignmentResponse modificarAsignacion(UUID userId, UUID vehicleId, UpdateAssignmentRequest request) {
+    public AssignmentResponse modificarAsignacion(UUID userId, UUID vehicleId, UpdateAssignmentRequest request,
+            String authorization) {
         AssignmentId id = new AssignmentId(userId, vehicleId);
         VehicleAssignment assignment = obtenerAsignacionActiva(id);
         String oldPayload = toJson(assignment);
@@ -94,9 +95,9 @@ public class AssignmentService {
         if (request.getStatus() != null) {
             AssignmentStatus previousStatus = assignment.getStatus();
             if (request.getStatus() == AssignmentStatus.ACTIVA && previousStatus != AssignmentStatus.ACTIVA) {
-                externalCatalogService.validarUsuarioActivo(userId);
+                externalCatalogService.validarUsuarioActivo(userId, authorization);
                 UserRoleAssignmentResponse authorizationRole = externalCatalogService
-                        .validarRolAutorizadoParaAsignacion(userId);
+                        .validarRolAutorizadoParaAsignacion(userId, authorization);
                 assignment.setAuthorizationRoleId(authorizationRole.getIdRole());
                 assignment.setAuthorizationRoleName(authorizationRole.getRol());
             }
@@ -155,8 +156,8 @@ public class AssignmentService {
     }
 
     @Transactional
-    public AssignmentResponse reactivarAsignacion(UUID userId, UUID vehicleId) {
-        externalCatalogService.validarUsuarioActivo(userId);
+    public AssignmentResponse reactivarAsignacion(UUID userId, UUID vehicleId, String authorization) {
+        externalCatalogService.validarUsuarioActivo(userId, authorization);
         externalCatalogService.validarVehiculoActivo(vehicleId);
 
         assignmentRepository.findByIdVehicleIdAndActiveTrue(vehicleId)
@@ -171,7 +172,7 @@ public class AssignmentService {
             throw new ReglaNegocioException("La asignacion ya esta activa");
         }
         UserRoleAssignmentResponse authorizationRole = externalCatalogService
-                .validarRolAutorizadoParaAsignacion(userId);
+                .validarRolAutorizadoParaAsignacion(userId, authorization);
 
         String oldPayload = toJson(assignment);
         assignment.setActive(true);
@@ -185,8 +186,8 @@ public class AssignmentService {
     }
 
     @Transactional(readOnly = true)
-    public List<FleetVehicleResponse> consultarFlota(UUID userId) {
-        externalCatalogService.validarUsuarioActivo(userId);
+    public List<FleetVehicleResponse> consultarFlota(UUID userId, String authorization) {
+        externalCatalogService.validarUsuarioActivo(userId, authorization);
         return assignmentRepository.findByIdUserIdAndActiveTrue(userId).stream()
                 .map(assignment -> {
                     VehiculoClientResponse vehiculo = externalCatalogService

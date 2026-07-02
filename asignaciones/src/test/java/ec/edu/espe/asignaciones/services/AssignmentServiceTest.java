@@ -56,9 +56,9 @@ class AssignmentServiceTest {
         request.setUserId(userId);
         request.setVehicleId(vehicleId);
 
-        when(externalCatalogService.validarUsuarioActivo(userId)).thenReturn(new UsuarioClientResponse());
+        when(externalCatalogService.validarUsuarioActivo(userId, null)).thenReturn(new UsuarioClientResponse());
         when(externalCatalogService.validarVehiculoActivo(vehicleId)).thenReturn(new VehiculoClientResponse());
-        when(externalCatalogService.validarRolAutorizadoParaAsignacion(userId))
+        when(externalCatalogService.validarRolAutorizadoParaAsignacion(userId, null))
                 .thenReturn(new UserRoleAssignmentResponse());
         when(assignmentRepository.findByIdVehicleIdAndActiveTrue(vehicleId))
                 .thenReturn(Optional.of(VehicleAssignment.builder()
@@ -67,7 +67,7 @@ class AssignmentServiceTest {
                         .build()));
 
         assertThrows(ReglaNegocioException.class,
-                () -> assignmentService.crearAsignacion(request));
+                () -> assignmentService.crearAsignacion(request, null));
 
         verifyNoInteractions(eventPublisher);
         verifyNoInteractions(auditRepository);
@@ -79,7 +79,7 @@ class AssignmentServiceTest {
         UUID vehicleId = UUID.randomUUID();
         UUID otherUserId = UUID.randomUUID();
 
-        when(externalCatalogService.validarUsuarioActivo(userId)).thenReturn(new UsuarioClientResponse());
+        when(externalCatalogService.validarUsuarioActivo(userId, null)).thenReturn(new UsuarioClientResponse());
         when(externalCatalogService.validarVehiculoActivo(vehicleId)).thenReturn(new VehiculoClientResponse());
         when(assignmentRepository.findByIdVehicleIdAndActiveTrue(vehicleId))
                 .thenReturn(Optional.of(VehicleAssignment.builder()
@@ -88,7 +88,7 @@ class AssignmentServiceTest {
                         .build()));
 
         assertThrows(ReglaNegocioException.class,
-                () -> assignmentService.reactivarAsignacion(userId, vehicleId));
+                () -> assignmentService.reactivarAsignacion(userId, vehicleId, null));
 
         verifyNoInteractions(eventPublisher);
         verifyNoInteractions(auditRepository);
@@ -108,15 +108,15 @@ class AssignmentServiceTest {
                 .build();
         when(assignmentRepository.findById(new AssignmentId(userId, vehicleId)))
                 .thenReturn(Optional.of(suspendida));
-        when(externalCatalogService.validarUsuarioActivo(userId)).thenReturn(new UsuarioClientResponse());
-        when(externalCatalogService.validarRolAutorizadoParaAsignacion(userId))
+        when(externalCatalogService.validarUsuarioActivo(userId, null)).thenReturn(new UsuarioClientResponse());
+        when(externalCatalogService.validarRolAutorizadoParaAsignacion(userId, null))
                 .thenThrow(new ReglaNegocioException("El usuario no tiene un rol activo"));
 
         UpdateAssignmentRequest request = new UpdateAssignmentRequest();
         request.setStatus(AssignmentStatus.ACTIVA);
 
         assertThrows(ReglaNegocioException.class,
-                () -> assignmentService.modificarAsignacion(userId, vehicleId, request));
+                () -> assignmentService.modificarAsignacion(userId, vehicleId, request, null));
 
         verifyNoInteractions(eventPublisher);
         verifyNoInteractions(auditRepository);
