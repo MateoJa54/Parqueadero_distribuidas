@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -43,6 +44,20 @@ public class GlobalExceptionHandler {
                 .body(baseBody(HttpStatus.CONFLICT, ex.getMessage()));
     }
 
+    /**
+     * La autorizacion por metodo ({@code @PreAuthorize}) lanza
+     * {@link AccessDeniedException} (y su subtipo AuthorizationDeniedException)
+     * dentro del controlador, por lo que llega a este advice en lugar de al
+     * accessDeniedHandler del filtro. Sin este handler caeria en el manejador
+     * generico de RuntimeException y devolveria 500 en vez de 403.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(baseBody(HttpStatus.FORBIDDEN,
+                        "No tiene permisos para realizar esta operacion"));
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleIntegridad(DataIntegrityViolationException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -53,6 +68,8 @@ public class GlobalExceptionHandler {
     /** El servicio externo no responde (conexion rechazada / timeout). */
     @ExceptionHandler(ResourceAccessException.class)
     public ResponseEntity<Map<String, Object>> handleServicioCaido(ResourceAccessException ex) {
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class)
+                .warn("Dependencia externa no disponible: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(baseBody(HttpStatus.SERVICE_UNAVAILABLE,
                         "Un microservicio dependiente no esta disponible"));

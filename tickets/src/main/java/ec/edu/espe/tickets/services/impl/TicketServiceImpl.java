@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,6 +71,13 @@ public class TicketServiceImpl implements TicketService {
                             "El espacio ya tiene un ticket activo: " + t.getCodigo());
                 });
 
+        // Categoria para la tarifa diferenciada por rol: se toma el rol del
+        // propietario (o, en su defecto, el tipo de asignacion) como snapshot.
+        String categoria = (asignacion.getRolAutorizacion() != null
+                && !asignacion.getRolAutorizacion().isBlank())
+                        ? asignacion.getRolAutorizacion()
+                        : asignacion.getAssignmentType();
+
         Ticket ticket = Ticket.builder()
                 .codigo(generadorCodigo.generar())
                 .idEspacio(espacio.getId())
@@ -79,13 +87,24 @@ public class TicketServiceImpl implements TicketService {
                 .idVehiculo(vehiculo.getId())
                 .placa(placa)
                 .tipoVehiculo(vehiculo.getTipo())
+                .categoriaTarifa(categoria)
                 .fechaHoraIngreso(OffsetDateTime.now())
                 .estadoTicket(EstadoTicket.ACTIVO)
                 .idEmpleado(idEmpleado)
                 .valorRecaudado(BigDecimal.ZERO)
                 .build();
 
-        Ticket guardado = ticketRepository.save(ticket);
+        // saveAndFlush fuerza el INSERT ahora: si dos ingresos concurrentes
+        // compiten por el mismo vehiculo o espacio, el indice unico parcial de la
+        // BD rechaza al segundo y lo traducimos a un error de negocio claro.
+        Ticket guardado;
+        try {
+            guardado = ticketRepository.saveAndFlush(ticket);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ReglaNegocioException(
+                    "No se pudo registrar el ingreso: el vehiculo o el espacio ya tiene un "
+                            + "ticket activo (conflicto de concurrencia)");
+        }
 
         // Ultimo paso: ocupar el espacio. Si el PATCH remoto falla, la excepcion
         // propaga y @Transactional revierte la insercion del ticket.
@@ -107,6 +126,7 @@ public class TicketServiceImpl implements TicketService {
         OffsetDateTime salida = OffsetDateTime.now();
         BigDecimal valor = calculadoraTarifa.calcular(
                 ticket.getTipoVehiculo(), ticket.getTipoEspacio(),
+                ticket.getCategoriaTarifa(),
                 ticket.getFechaHoraIngreso(), salida);
 
         ticket.setFechaHoraSalida(salida);

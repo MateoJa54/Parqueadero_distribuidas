@@ -45,6 +45,7 @@ public class ZonaServicioImpl implements ZonaServicio {
     }
 
     @Override
+    @Transactional
     public ZonaRespondeDto crearZona(ZonaRequestDto request) {
 
         String nombre = request.getNombre().trim();
@@ -162,6 +163,7 @@ public class ZonaServicioImpl implements ZonaServicio {
                 .activo(espacio.isActivo())
                 .estado(espacio.getEstado())
                 .idZona(espacio.getZona() != null ? espacio.getZona().getId() : null)
+                .nombreZona(espacio.getZona() != null ? espacio.getZona().getNombre() : null)
                 .build();
     }
 

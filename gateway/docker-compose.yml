@@ -13,7 +13,8 @@
 #   8001 -> admin  (API de administracion / inspeccion de Kong)
 #
 # Requisito: las APIs deben estar levantadas en el host en
-#   usuarios 8081, zonas 8080, vehiculos 3000.
+#   usuarios 8081, zonas 8080, vehiculos 3000,
+#   asignaciones 8082, tickets 8083.
 # =====================================================================
 services:
   kong:

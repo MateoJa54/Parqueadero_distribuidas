@@ -41,17 +41,38 @@ public class CalculadoraTarifa {
         return tarifaProperties.getMatriz().getOrDefault(clave, tarifaProperties.getPorDefecto());
     }
 
-    /** Calcula el valor total del ticket entre el ingreso y la salida. */
-    public BigDecimal calcular(String tipoVehiculo, String tipoEspacio,
+    /**
+     * Factor multiplicador de la tarifa segun el rol/categoria del propietario.
+     * Cae al factor por defecto si el rol es nulo o no esta configurado.
+     */
+    public BigDecimal factorRol(String categoria) {
+        if (categoria == null || categoria.isBlank()) {
+            return tarifaProperties.getFactorRolDefecto();
+        }
+        return tarifaProperties.getFactorRol()
+                .getOrDefault(categoria.trim().toUpperCase(), tarifaProperties.getFactorRolDefecto());
+    }
+
+    /**
+     * Calcula el valor total del ticket entre el ingreso y la salida, aplicando la
+     * tarifa diferenciada por rol/categoria del propietario.
+     */
+    public BigDecimal calcular(String tipoVehiculo, String tipoEspacio, String categoria,
             OffsetDateTime ingreso, OffsetDateTime salida) {
         if (salida.isBefore(ingreso)) {
             throw new ReglaNegocioException(
                     "La fecha de salida no puede ser anterior a la de ingreso");
         }
         long horas = horasCobrables(ingreso, salida);
-        return tarifaPorHora(tipoVehiculo, tipoEspacio)
-                .multiply(BigDecimal.valueOf(horas))
-                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal base = tarifaPorHora(tipoVehiculo, tipoEspacio)
+                .multiply(BigDecimal.valueOf(horas));
+        return base.multiply(factorRol(categoria)).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /** Variante sin categoria: aplica el factor por defecto (compatibilidad). */
+    public BigDecimal calcular(String tipoVehiculo, String tipoEspacio,
+            OffsetDateTime ingreso, OffsetDateTime salida) {
+        return calcular(tipoVehiculo, tipoEspacio, null, ingreso, salida);
     }
 
     /** Horas a cobrar: fraccion iniciada cuenta como hora completa; minimo 1. */

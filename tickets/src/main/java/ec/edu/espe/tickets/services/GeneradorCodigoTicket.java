@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Genera codigos legibles y unicos para los tickets con formato {@code TKT-000001}.
- * Parte del total de tickets existentes y avanza hasta encontrar un codigo libre,
- * evitando colisiones ante borrados logicos o concurrencia.
+ * Usa una secuencia de la base de datos (atomica y thread-safe), por lo que dos
+ * ingresos concurrentes nunca obtienen el mismo codigo.
  */
 @Service
 @RequiredArgsConstructor
@@ -20,12 +20,7 @@ public class GeneradorCodigoTicket {
     private final TicketRepository ticketRepository;
 
     public String generar() {
-        long siguiente = ticketRepository.count() + 1;
-        String codigo = String.format(FORMATO, siguiente);
-        while (ticketRepository.existsByCodigo(codigo)) {
-            siguiente++;
-            codigo = String.format(FORMATO, siguiente);
-        }
-        return codigo;
+        long siguiente = ticketRepository.siguienteNumeroCodigoTicket();
+        return String.format(FORMATO, siguiente);
     }
 }

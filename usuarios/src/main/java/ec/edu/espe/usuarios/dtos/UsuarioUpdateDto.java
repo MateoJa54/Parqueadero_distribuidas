@@ -34,7 +34,13 @@ public class UsuarioUpdateDto {
     @Pattern(regexp = "^[a-zA-Z0-9._-]+$", message = "El username solo puede contener letras, numeros, punto, guion y guion bajo (sin espacios)")
     private String username;
 
-    @Size(min = 6, max = 30, message = "La contrasena debe tener entre 6 y 30 caracteres")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$", message = "La contrasena debe incluir al menos una mayuscula, una minuscula y un numero")
+    // El password es OPCIONAL en la edicion: si llega nulo o vacio se conserva
+    // la contrasena actual (el servicio lo trata asi). El patron admite la
+    // cadena vacia ("") o, si se envia una contrasena, exige 6-30 caracteres con
+    // al menos una mayuscula, una minuscula y un numero. Asi la validacion honra
+    // el contrato documentado en vez de rechazar el valor vacio.
+    @Pattern(
+            regexp = "^$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{6,30}$",
+            message = "Si se envia, la contrasena debe tener entre 6 y 30 caracteres e incluir al menos una mayuscula, una minuscula y un numero")
     private String password;
 }

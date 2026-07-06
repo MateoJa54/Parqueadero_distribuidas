@@ -1,10 +1,12 @@
 package ec.edu.espe.asignaciones.services;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -26,7 +28,12 @@ public class ExternalCatalogService {
             RestClient.Builder restClientBuilder,
             @Value("${services.usuarios-url}") String usuariosUrl,
             @Value("${services.vehiculos-url}") String vehiculosUrl) {
-        this.restClient = restClientBuilder.build();
+        // Timeouts explicitos: evita que una dependencia colgada bloquee el hilo
+        // indefinidamente (connect 3s, read 5s).
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(Duration.ofSeconds(3));
+        requestFactory.setReadTimeout(Duration.ofSeconds(5));
+        this.restClient = restClientBuilder.requestFactory(requestFactory).build();
         this.usuariosUrl = usuariosUrl;
         this.vehiculosUrl = vehiculosUrl;
     }
@@ -52,11 +59,12 @@ public class ExternalCatalogService {
         return usuario;
     }
 
-    public VehiculoClientResponse validarVehiculoActivo(UUID vehicleId) {
+    public VehiculoClientResponse validarVehiculoActivo(UUID vehicleId, String authorization) {
         VehiculoClientResponse vehiculo;
         try {
             vehiculo = restClient.get()
                     .uri(vehiculosUrl + "/api/vehiculos/{id}", vehicleId)
+                    .headers(headers -> agregarAuthorization(headers, authorization))
                     .retrieve()
                     .body(VehiculoClientResponse.class);
         } catch (HttpClientErrorException.NotFound ex) {

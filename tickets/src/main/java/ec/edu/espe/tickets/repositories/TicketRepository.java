@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import ec.edu.espe.tickets.entities.EstadoTicket;
 import ec.edu.espe.tickets.entities.Ticket;
@@ -12,6 +13,14 @@ import ec.edu.espe.tickets.entities.Ticket;
 public interface TicketRepository extends JpaRepository<Ticket, UUID> {
 
     boolean existsByCodigo(String codigo);
+
+    /**
+     * Siguiente numero para el codigo de ticket, tomado de una secuencia de la BD.
+     * Es atomico y thread-safe (a diferencia de count()+1), evitando codigos
+     * duplicados ante concurrencia.
+     */
+    @Query(value = "SELECT nextval('ticket_codigo_seq')", nativeQuery = true)
+    long siguienteNumeroCodigoTicket();
 
     Optional<Ticket> findByCodigo(String codigo);
 

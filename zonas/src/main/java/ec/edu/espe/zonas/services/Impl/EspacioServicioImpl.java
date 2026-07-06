@@ -120,7 +120,7 @@ public class EspacioServicioImpl implements EspacioServicio {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EspacioRespondeDto> obtnerEspacioPOrEstado(EstadoEspacio estado) {
+    public List<EspacioRespondeDto> obtenerEspacioPorEstado(EstadoEspacio estado) {
         if (estado == null) {
             throw new IllegalArgumentException("El estado es obligatorio");
         }
@@ -141,7 +141,8 @@ public class EspacioServicioImpl implements EspacioServicio {
         return espacioRepositorio.findByZonaAndEstado(objZona, estado).stream()
                 .findFirst()
                 .map(maper::toResponseDto)
-                .orElse(null);
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No hay ningun espacio en estado " + estado + " para la zona con ID: " + idZona));
     }
 
     @Override

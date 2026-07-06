@@ -38,8 +38,13 @@ export class VehiculosService {
     return this.repositoryVehiculo.save(vehiculo);
   }
 
-  async findAll(): Promise<Vehiculo[]> {
-    return this.repositoryVehiculo.find();
+  // Por defecto solo lista vehiculos ACTIVOS (soft-delete). Con
+  // incluirInactivos=true se devuelven tambien los desactivados.
+  async findAll(incluirInactivos = false): Promise<Vehiculo[]> {
+    if (incluirInactivos) {
+      return this.repositoryVehiculo.find();
+    }
+    return this.repositoryVehiculo.find({ where: { activo: true } });
   }
 
   async findOne(id: string): Promise<Vehiculo> {

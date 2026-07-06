@@ -1,11 +1,17 @@
 package ec.edu.espe.tickets.services;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import ec.edu.espe.tickets.dtos.AsignacionActivaResponse;
 import ec.edu.espe.tickets.dtos.EspacioClientResponse;
@@ -31,7 +37,17 @@ public class CatalogoExternoService {
             @Value("${services.vehiculos-url}") String vehiculosUrl,
             @Value("${services.asignaciones-url}") String asignacionesUrl,
             @Value("${services.zonas-url}") String zonasUrl) {
-        this.restClient = restClientBuilder.build();
+        // Timeouts explicitos: una dependencia colgada no debe bloquear el hilo ni
+        // mantener abierta la transaccion de ingreso/pago (connect 3s, read 5s).
+        // Se usa JdkClientHttpRequestFactory (java.net.http.HttpClient) porque el
+        // HttpURLConnection de SimpleClientHttpRequestFactory NO soporta el metodo
+        // PATCH (lanza ProtocolException), necesario para cambiar el estado del espacio.
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(3))
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofSeconds(5));
+        this.restClient = restClientBuilder.requestFactory(requestFactory).build();
         this.vehiculosUrl = vehiculosUrl;
         this.asignacionesUrl = asignacionesUrl;
         this.zonasUrl = zonasUrl;
@@ -42,6 +58,7 @@ public class CatalogoExternoService {
         try {
             VehiculoClientResponse vehiculo = restClient.get()
                     .uri(vehiculosUrl + "/api/vehiculos/placa/{placa}", placa)
+                    .headers(this::reenviarAuthorization)
                     .retrieve()
                     .body(VehiculoClientResponse.class);
             if (vehiculo == null) {
@@ -58,6 +75,7 @@ public class CatalogoExternoService {
         try {
             AsignacionActivaResponse asignacion = restClient.get()
                     .uri(asignacionesUrl + "/api/v1/asignaciones-vehiculos/vehiculo/{vehicleId}", vehicleId)
+                    .headers(this::reenviarAuthorization)
                     .retrieve()
                     .body(AsignacionActivaResponse.class);
             if (asignacion == null) {
@@ -76,6 +94,7 @@ public class CatalogoExternoService {
         try {
             EspacioClientResponse espacio = restClient.get()
                     .uri(zonasUrl + "/api/v1/espacios/{idEspacio}", idEspacio)
+                    .headers(this::reenviarAuthorization)
                     .retrieve()
                     .body(EspacioClientResponse.class);
             if (espacio == null) {
@@ -91,7 +110,24 @@ public class CatalogoExternoService {
     public void cambiarEstadoEspacio(UUID idEspacio, String estado) {
         restClient.patch()
                 .uri(zonasUrl + "/api/v1/espacios/{idEspacio}/estado?estado={estado}", idEspacio, estado)
+                .headers(this::reenviarAuthorization)
                 .retrieve()
                 .toBodilessEntity();
+    }
+
+    /**
+     * Reenvia el header Authorization de la peticion HTTP entrante (el JWT del
+     * empleado que opera el ticket) hacia el microservicio dependiente: todos
+     * ahora exigen un token valido, y no comparten sesion entre si.
+     */
+    private void reenviarAuthorization(HttpHeaders headers) {
+        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) {
+            return;
+        }
+        String authorization = attrs.getRequest().getHeader("Authorization");
+        if (authorization != null && !authorization.isBlank()) {
+            headers.set("Authorization", authorization);
+        }
     }
 }

@@ -1,5 +1,5 @@
 export class ResponseVehiculoDto {
-  id!: number;
+  id!: string;
   placa!: string;
   marca!: string;
   modelo!: string;

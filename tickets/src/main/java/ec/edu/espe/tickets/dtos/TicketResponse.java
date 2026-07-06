@@ -25,6 +25,9 @@ public class TicketResponse {
     private String placa;
     private String tipoVehiculo;
 
+    /** Categoria/rol del propietario usada para la tarifa diferenciada. */
+    private String categoriaTarifa;
+
     private OffsetDateTime fechaHoraIngreso;
     private OffsetDateTime fechaHoraSalida;
 

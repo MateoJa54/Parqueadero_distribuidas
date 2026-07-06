@@ -43,7 +43,7 @@ public class AssignmentService {
         UUID userId = request.getUserId();
         UUID vehicleId = request.getVehicleId();
         externalCatalogService.validarUsuarioActivo(userId, authorization);
-        externalCatalogService.validarVehiculoActivo(vehicleId);
+        externalCatalogService.validarVehiculoActivo(vehicleId, authorization);
         UserRoleAssignmentResponse authorizationRole = externalCatalogService
                 .validarRolAutorizadoParaAsignacion(userId, authorization);
 
@@ -158,7 +158,7 @@ public class AssignmentService {
     @Transactional
     public AssignmentResponse reactivarAsignacion(UUID userId, UUID vehicleId, String authorization) {
         externalCatalogService.validarUsuarioActivo(userId, authorization);
-        externalCatalogService.validarVehiculoActivo(vehicleId);
+        externalCatalogService.validarVehiculoActivo(vehicleId, authorization);
 
         assignmentRepository.findByIdVehicleIdAndActiveTrue(vehicleId)
                 .ifPresent(existing -> {
@@ -191,7 +191,7 @@ public class AssignmentService {
         return assignmentRepository.findByIdUserIdAndActiveTrue(userId).stream()
                 .map(assignment -> {
                     VehiculoClientResponse vehiculo = externalCatalogService
-                            .validarVehiculoActivo(assignment.getId().getVehicleId());
+                            .validarVehiculoActivo(assignment.getId().getVehicleId(), authorization);
                     return FleetVehicleResponse.builder()
                             .userId(userId)
                             .vehicleId(assignment.getId().getVehicleId())
