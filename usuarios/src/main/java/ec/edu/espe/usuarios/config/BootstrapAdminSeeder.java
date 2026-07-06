@@ -4,6 +4,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import ec.edu.espe.usuarios.entidades.Persona;
 import ec.edu.espe.usuarios.entidades.Rol;
@@ -48,12 +49,16 @@ public class BootstrapAdminSeeder implements ApplicationRunner {
     private final UsuarioRolRepositorio usuarioRolRepositorio;
 
     @Override
+    @Transactional
     public void run(ApplicationArguments args) {
         if (usuarioRepositorio.existsByUsernameIgnoreCase(ROOT_USERNAME)) {
             return;
         }
 
-        // Persona (identidad) del usuario root. Se reutiliza si ya existe por dni.
+        // Todo el sembrado ocurre en UNA sola transaccion: asi la Persona queda
+        // 'managed' en el mismo contexto de persistencia y el Usuario (que
+        // comparte su PK via @MapsId) puede referenciarla sin que Hibernate la
+        // considere 'detached' (evita 'detached entity passed to persist').
         Persona persona = personaRepositorio.findByDni(ROOT_DNI)
                 .orElseGet(() -> personaRepositorio.save(Persona.builder()
                         .firstName("Root")

@@ -62,7 +62,7 @@ public class EspacioController {
 
     @GetMapping("/estado/{estado}")
     public ResponseEntity<List<EspacioRespondeDto>> listarPorEstado(@PathVariable EstadoEspacio estado) {
-        return ResponseEntity.ok(espacioServicio.obtnerEspacioPOrEstado(estado));
+        return ResponseEntity.ok(espacioServicio.obtenerEspacioPorEstado(estado));
     }
 
     // Lista de espacios DISPONIBLES, filtrable por zona y/o tipo.

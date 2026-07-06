@@ -20,7 +20,7 @@ import { TipoMoto } from '../entities/motocicleta.entity';
 const ANIO_MIN = 1886; // Benz Patent-Motorwagen, primer automóvil de la historia
 const ANIO_MAX = new Date().getFullYear() + 1; // permite pre-registro del modelo del año siguiente
 
-class BaseVehiculoDto {
+export class BaseVehiculoDto {
   @IsString()
   @IsNotEmpty({ message: 'La placa no puede estar vacía' })
   @Matches(/^[A-Z]{3}-\d{4}$/, {
@@ -68,7 +68,7 @@ class BaseVehiculoDto {
   clasificacion!: Clasificacion;
 }
 
-class AutoDto extends BaseVehiculoDto {
+export class AutoDto extends BaseVehiculoDto {
   @IsInt({ message: 'El número de puertas debe ser un entero' })
   @Min(2, { message: 'Un auto debe tener al menos 2 puertas' })
   @Max(5, { message: 'Un auto no puede tener más de 5 puertas' })
@@ -80,7 +80,7 @@ class AutoDto extends BaseVehiculoDto {
   capacidadMaletero!: number;
 }
 
-class MotocicletaDto extends BaseVehiculoDto {
+export class MotocicletaDto extends BaseVehiculoDto {
   // Las motos en Ecuador usan el formato AB-123A
   @IsString()
   @IsNotEmpty({ message: 'La placa no puede estar vacía' })
@@ -100,7 +100,7 @@ class MotocicletaDto extends BaseVehiculoDto {
   tipoMoto!: TipoMoto;
 }
 
-class CamionetaDto extends BaseVehiculoDto {
+export class CamionetaDto extends BaseVehiculoDto {
   @IsIn([2, 4], { message: 'La cabina debe ser simple (2) o doble (4)' })
   cabina!: number;
 

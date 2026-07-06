@@ -1,8 +1,11 @@
 package ec.edu.espe.tickets.services;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -31,7 +34,17 @@ public class CatalogoExternoService {
             @Value("${services.vehiculos-url}") String vehiculosUrl,
             @Value("${services.asignaciones-url}") String asignacionesUrl,
             @Value("${services.zonas-url}") String zonasUrl) {
-        this.restClient = restClientBuilder.build();
+        // Timeouts explicitos: una dependencia colgada no debe bloquear el hilo ni
+        // mantener abierta la transaccion de ingreso/pago (connect 3s, read 5s).
+        // Se usa JdkClientHttpRequestFactory (java.net.http.HttpClient) porque el
+        // HttpURLConnection de SimpleClientHttpRequestFactory NO soporta el metodo
+        // PATCH (lanza ProtocolException), necesario para cambiar el estado del espacio.
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(3))
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofSeconds(5));
+        this.restClient = restClientBuilder.requestFactory(requestFactory).build();
         this.vehiculosUrl = vehiculosUrl;
         this.asignacionesUrl = asignacionesUrl;
         this.zonasUrl = zonasUrl;

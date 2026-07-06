@@ -20,6 +20,7 @@ public final class TicketMapper {
                 .idVehiculo(ticket.getIdVehiculo())
                 .placa(ticket.getPlaca())
                 .tipoVehiculo(ticket.getTipoVehiculo())
+                .categoriaTarifa(ticket.getCategoriaTarifa())
                 .fechaHoraIngreso(ticket.getFechaHoraIngreso())
                 .fechaHoraSalida(ticket.getFechaHoraSalida())
                 .estadoTicket(ticket.getEstadoTicket())

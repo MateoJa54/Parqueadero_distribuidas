@@ -37,6 +37,7 @@ services:
           policy: local
 
   # ---------------- Microservicio ZONAS -------------------
+  # Todas sus rutas son de gestion -> JWT a nivel de servicio.
   - name: zonas
     url: http://host.docker.internal:8080
     routes:
@@ -50,8 +51,13 @@ services:
         config:
           minute: 100
           policy: local
+      - name: jwt
+        config:
+          claims_to_verify:
+            - exp
 
   # ---------------- Microservicio VEHICULOS ---------------
+  # Catalogo de vehiculos -> JWT a nivel de servicio.
   - name: vehiculos
     url: http://host.docker.internal:3000
     routes:
@@ -64,8 +70,13 @@ services:
         config:
           minute: 100
           policy: local
+      - name: jwt
+        config:
+          claims_to_verify:
+            - exp
 
   # ---------------- Microservicio ASIGNACIONES ------------
+  # Relacion vehiculo<->dueño -> JWT a nivel de servicio.
   - name: asignaciones
     url: http://host.docker.internal:8082
     routes:
@@ -79,6 +90,30 @@ services:
         config:
           minute: 100
           policy: local
+      - name: jwt
+        config:
+          claims_to_verify:
+            - exp
+
+  # ---------------- Microservicio TICKETS (NUCLEO) --------
+  # Motor de ingreso/salida/cobro. Antes NO estaba expuesto por Kong.
+  # Todas sus rutas exigen JWT (ademas el propio MS valida el token).
+  - name: tickets
+    url: http://host.docker.internal:8083
+    routes:
+      - name: tickets-routes
+        strip_path: false
+        paths:
+          - /api/v1/tickets
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+      - name: jwt
+        config:
+          claims_to_verify:
+            - exp
 
 # ---------------- Plugins GLOBALES (a todo el trafico) ----
 plugins:
@@ -116,7 +151,10 @@ plugins:
 consumers:
   - username: parqueadero-app
     jwt_secrets:
+      # El algoritmo DEBE coincidir con el de firma del microservicio usuarios
+      # (JJWT firma en HS512). Si aqui se pone HS256, Kong rechaza todo token
+      # con 401 "Invalid algorithm".
       - key: parqueadero
-        algorithm: HS256
+        algorithm: HS512
         secret: "parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026"
 

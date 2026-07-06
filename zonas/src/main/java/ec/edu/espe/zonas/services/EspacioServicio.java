@@ -24,7 +24,7 @@ public interface EspacioServicio {
 
     void desactivarEspacio(UUID idEspacio);
 
-    List<EspacioRespondeDto> obtnerEspacioPOrEstado(EstadoEspacio estado);
+    List<EspacioRespondeDto> obtenerEspacioPorEstado(EstadoEspacio estado);
 
     EspacioRespondeDto obtenerEspacioPorZonaEstado(UUID idZona, EstadoEspacio estado);
 

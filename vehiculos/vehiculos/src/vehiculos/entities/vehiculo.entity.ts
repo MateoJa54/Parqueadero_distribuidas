@@ -1,4 +1,7 @@
 import {
+  AfterInsert,
+  AfterLoad,
+  AfterUpdate,
   Column,
   Entity,
   PrimaryGeneratedColumn,
@@ -40,5 +43,18 @@ export abstract class Vehiculo {
   @Column({ default: true })
   activo!: boolean;
 
+  // Discriminador expuesto en las respuestas JSON. NO lleva @Column: TypeORM ya
+  // gestiona la columna 'tipo' de la herencia (STI). Se rellena tras cargar,
+  // insertar o actualizar para que los microservicios consumidores (p. ej.
+  // tickets, que valida la compatibilidad vehiculo/espacio) conozcan el tipo.
+  tipo?: string;
+
   abstract obtenerTipo(): string;
+
+  @AfterLoad()
+  @AfterInsert()
+  @AfterUpdate()
+  protected exponerTipo(): void {
+    this.tipo = this.obtenerTipo();
+  }
 }

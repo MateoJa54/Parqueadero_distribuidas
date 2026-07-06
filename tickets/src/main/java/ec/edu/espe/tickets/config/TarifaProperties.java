@@ -28,4 +28,14 @@ public class TarifaProperties {
 
     /** Tarifa de respaldo si una combinacion no esta configurada. */
     private BigDecimal porDefecto = BigDecimal.ONE;
+
+    /**
+     * Factor multiplicador de la tarifa segun el rol/categoria del propietario
+     * (tarifa diferenciada por rol). Clave = nombre del rol en MAYUSCULAS
+     * (ej. INVITADO, CLIENTE). Un factor 1.00 es tarifa plena; 0.60 = 40% dcto.
+     */
+    private Map<String, BigDecimal> factorRol = new HashMap<>();
+
+    /** Factor a aplicar cuando el rol no esta en {@link #factorRol}. */
+    private BigDecimal factorRolDefecto = BigDecimal.ONE;
 }

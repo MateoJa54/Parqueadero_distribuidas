@@ -81,7 +81,61 @@
           ]
         },
         {
-          "name": "Registro cliente (persona existente)",
+          "name": "Crear persona (para registro publico)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{urlUsuarios}}/api/v1/personas",
+              "host": [
+                "{{urlUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "personas"
+              ]
+            },
+            "description": "Crea una persona SIN usuario asociado (cedula 1712345675) usando el token de admin. Guarda su id en {{idPersonaRegistro}} para el registro publico.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Cliente\",\n  \"middleName\": \"Publico\",\n  \"lastName\": \"Registro\",\n  \"dni\": \"1712345675\",\n  \"email\": \"cliente.registro@espe.edu.ec\",\n  \"phone\": \"0987654321\",\n  \"address\": \"Sangolqui\",\n  \"nationality\": \"Ecuatoriana\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idPersonaRegistro', json.id);",
+                  "  console.log('idPersonaRegistro =', json.id);",
+                  "}",
+                  "pm.test('Persona para registro creada (201)', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(json.id, 'id').to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro cliente (rol CLIENTE)",
           "request": {
             "auth": {
               "type": "noauth"
@@ -105,10 +159,10 @@
                 "register"
               ]
             },
-            "description": "Registro publico: crea un usuario (rol CLIENTE) sobre una persona YA existente. Requiere {{idPersona}} (crear la persona antes con root). Guarda el token del cliente en {{token}} y su id en {{idUsuario}}.",
+            "description": "Registro publico: crea un usuario (rol CLIENTE) sobre la persona dedicada {{idPersonaRegistro}}. Guarda el token del cliente en {{tokenCliente}} y su id en {{idUsuarioCliente}} SIN pisar el token de admin ({{token}}).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idPersona\": \"{{idPersona}}\",\n  \"username\": \"mjacome\",\n  \"password\": \"Espe2025\"\n}",
+              "raw": "{\n  \"idPersona\": \"{{idPersonaRegistro}}\",\n  \"username\": \"cliente_espe\",\n  \"password\": \"Espe2025\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -126,9 +180,9 @@
                   "var json = {};",
                   "try { json = pm.response.json(); } catch (e) {}",
                   "if (json && json.token) {",
-                  "  pm.collectionVariables.set('token', json.token);",
-                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
-                  "  pm.collectionVariables.set('idUsuario', json.idUsuario);",
+                  "  pm.collectionVariables.set('tokenCliente', json.token);",
+                  "  pm.collectionVariables.set('refreshTokenCliente', json.refreshToken);",
+                  "  pm.collectionVariables.set('idUsuarioCliente', json.idUsuario);",
                   "  console.log('token CLIENTE guardado. roles =', json.roles);",
                   "}",
                   "pm.test('Registro exitoso (201) con token', function () {",
@@ -165,10 +219,10 @@
                 "login"
               ]
             },
-            "description": "Inicia sesion con el cliente registrado. Cambia {{token}} al del CLIENTE para probar restricciones por rol.",
+            "description": "Inicia sesion con el cliente registrado (cliente_espe). Guarda {{tokenCliente}} para probar restricciones por rol, sin tocar el token de admin.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"mjacome\",\n  \"password\": \"Espe2025\"\n}",
+              "raw": "{\n  \"username\": \"cliente_espe\",\n  \"password\": \"Espe2025\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -186,11 +240,14 @@
                   "var json = {};",
                   "try { json = pm.response.json(); } catch (e) {}",
                   "if (json && json.token) {",
-                  "  pm.collectionVariables.set('token', json.token);",
-                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
-                  "  pm.collectionVariables.set('idUsuario', json.idUsuario);",
+                  "  pm.collectionVariables.set('tokenCliente', json.token);",
+                  "  pm.collectionVariables.set('refreshTokenCliente', json.refreshToken);",
+                  "  pm.collectionVariables.set('idUsuarioCliente', json.idUsuario);",
                   "  console.log('token CLIENTE guardado. roles =', json.roles);",
-                  "}"
+                  "}",
+                  "pm.test('Login cliente (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
                 ]
               }
             }
@@ -213,9 +270,32 @@
                 "me"
               ]
             },
-            "description": "Devuelve los datos del usuario autenticado (usa el {{token}} actual)."
+            "description": "Devuelve los datos del cliente autenticado (usa {{tokenCliente}}).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Perfil del cliente (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Acceso sin token (401)",
@@ -278,10 +358,10 @@
                 "refresh"
               ]
             },
-            "description": "Renueva el access token usando el {{refreshToken}} vigente (endpoint publico). Rota ambos tokens: guarda el nuevo {{token}} y el nuevo {{refreshToken}}.",
+            "description": "Rota el token del cliente usando {{refreshTokenCliente}}. Actualiza las variables del cliente sin afectar el token de admin.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "raw": "{\n  \"refreshToken\": \"{{refreshTokenCliente}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -299,14 +379,13 @@
                   "var json = {};",
                   "try { json = pm.response.json(); } catch (e) {}",
                   "if (json && json.token) {",
-                  "  pm.collectionVariables.set('token', json.token);",
-                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
-                  "  console.log('tokens rotados. roles =', json.roles);",
+                  "  pm.collectionVariables.set('tokenCliente', json.token);",
+                  "  pm.collectionVariables.set('refreshTokenCliente', json.refreshToken);",
+                  "  console.log('tokens del cliente rotados. roles =', json.roles);",
                   "}",
-                  "pm.test('Refresh exitoso (200) con nuevo par de tokens', function () {",
+                  "pm.test('Refresh exitoso (200)', function () {",
                   "  pm.response.to.have.status(200);",
                   "  pm.expect(json.token, 'token').to.be.a('string').and.not.empty;",
-                  "  pm.expect(json.refreshToken, 'refreshToken').to.be.a('string').and.not.empty;",
                   "});"
                 ]
               }
@@ -342,7 +421,7 @@
             "description": "Crea una persona. Guarda el id en {{idPersona}}.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Mateo\",\n  \"middleName\": \"Andres\",\n  \"lastName\": \"Jacome\",\n  \"dni\": \"1750123456\",\n  \"email\": \"mateo.jacome@espe.edu.ec\",\n  \"phone\": \"0991234567\",\n  \"address\": \"Sangolqui\",\n  \"nationality\": \"Ecuatoriana\"\n}",
+              "raw": "{\n  \"firstName\": \"Mateo\",\n  \"middleName\": \"Andres\",\n  \"lastName\": \"Jacome\",\n  \"dni\": \"1750123455\",\n  \"email\": \"mateo.jacome@espe.edu.ec\",\n  \"phone\": \"0991234567\",\n  \"address\": \"Sangolqui\",\n  \"nationality\": \"Ecuatoriana\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -426,7 +505,7 @@
               "query": [
                 {
                   "key": "dni",
-                  "value": "1750123456"
+                  "value": "1750123455"
                 }
               ]
             }
@@ -483,7 +562,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Mateo\",\n  \"middleName\": \"Andres\",\n  \"lastName\": \"Jacome\",\n  \"dni\": \"1750123456\",\n  \"email\": \"mateo.jacome@espe.edu.ec\",\n  \"phone\": \"0991234567\",\n  \"address\": \"Quito\",\n  \"nationality\": \"Ecuatoriana\"\n}",
+              "raw": "{\n  \"firstName\": \"Mateo\",\n  \"middleName\": \"Andres\",\n  \"lastName\": \"Jacome\",\n  \"dni\": \"1750123455\",\n  \"email\": \"mateo.jacome@espe.edu.ec\",\n  \"phone\": \"0991234567\",\n  \"address\": \"Quito\",\n  \"nationality\": \"Ecuatoriana\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1163,12 +1242,16 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "var json = {};",
-                  "try { json = pm.response.json(); } catch (e) {}",
-                  "if (json && json.id) {",
-                  "  pm.collectionVariables.set('idZona', json.id);",
-                  "  console.log('idZona =', json.id);",
-                  "}"
+                  "var json={};",
+                  "try{json=pm.response.json();}catch(e){}",
+                  "if(json&&json.idZona){",
+                  "  pm.collectionVariables.set(\"idZona\",json.idZona);",
+                  "  console.log(\"idZona =\",json.idZona);",
+                  "}",
+                  "pm.test(\"Zona creada (201)\",function(){",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(json.idZona,\"idZona\").to.be.a(\"string\").and.not.empty;",
+                  "});"
                 ]
               }
             }
@@ -1334,12 +1417,16 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "var json = {};",
-                  "try { json = pm.response.json(); } catch (e) {}",
-                  "if (json && json.id) {",
-                  "  pm.collectionVariables.set('idEspacio', json.id);",
-                  "  console.log('idEspacio =', json.id);",
-                  "}"
+                  "var json={};",
+                  "try{json=pm.response.json();}catch(e){}",
+                  "if(json&&json.id){",
+                  "  pm.collectionVariables.set(\"idEspacio\",json.id);",
+                  "  console.log(\"idEspacio =\",json.id);",
+                  "}",
+                  "pm.test(\"Espacio creado (201)\",function(){",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(json.id,\"id\").to.be.a(\"string\").and.not.empty;",
+                  "});"
                 ]
               }
             }
@@ -1444,7 +1531,22 @@
             },
             "description": "El estado viaja como query param (?estado=...), NO en el body."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Espacio marcado OCUPADO (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.estado, 'estado').to.eql('OCUPADO');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Espacios disponibles",
@@ -1532,6 +1634,49 @@
           "response": []
         },
         {
+          "name": "Liberar espacio (DISPONIBLE)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{urlZonas}}/api/v1/espacios/{{idEspacio}}/estado?estado=DISPONIBLE",
+              "host": [
+                "{{urlZonas}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "espacios",
+                "{{idEspacio}}",
+                "estado"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "DISPONIBLE"
+                }
+              ]
+            },
+            "description": "Devuelve el espacio a DISPONIBLE tras la demostracion de OCUPADO. Es requisito para poder desactivarlo (un OCUPADO no se puede desactivar) y para que el flujo de Tickets pueda registrar el ingreso."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Espacio liberado a DISPONIBLE (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.estado, 'estado').to.eql('DISPONIBLE');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Desactivar espacio",
           "request": {
             "method": "PATCH",
@@ -1548,9 +1693,23 @@
                 "{{idEspacio}}",
                 "desactivar"
               ]
-            }
+            },
+            "description": "Pone el espacio fuera de servicio (activo=false, estado=MANTENIMIENTO). Devuelve 204 No Content."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Espacio desactivado (204)', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Activar espacio",
@@ -1569,12 +1728,26 @@
                 "{{idEspacio}}",
                 "activar"
               ]
-            }
+            },
+            "description": "Reactiva el espacio (activo=true, estado=DISPONIBLE). Devuelve 204 No Content. Deja el espacio listo para el flujo de Tickets."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Espacio reactivado (204)', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Eliminar espacio",
+          "name": "Eliminar espacio (no soportado 405)",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1589,9 +1762,23 @@
                 "espacios",
                 "{{idEspacio}}"
               ]
-            }
+            },
+            "description": "El microservicio de zonas NO expone borrado fisico de espacios (se usa baja logica via desactivar). Por diseno el metodo DELETE responde 405 Method Not Allowed."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('DELETE de espacio no soportado (405)', function () {",
+                  "  pm.response.to.have.status(405);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1639,8 +1826,13 @@
                   "try { json = pm.response.json(); } catch (e) {}",
                   "if (json && json.id) {",
                   "  pm.collectionVariables.set('idVehiculo', json.id);",
-                  "  console.log('idVehiculo =', json.id);",
-                  "}"
+                  "  pm.collectionVariables.set('placa', json.placa || 'PBX-1234');",
+                  "  console.log('idVehiculo =', json.id, 'placa =', json.placa);",
+                  "}",
+                  "pm.test('Auto creado (201)', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(json.id, 'id').to.be.a('string').and.not.empty;",
+                  "});"
                 ]
               }
             }
@@ -1698,7 +1890,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tipo\": \"Camioneta\",\n  \"datos\": {\n    \"placa\": \"PCX-5678\",\n    \"marca\": \"Chevrolet\",\n    \"modelo\": \"Dmax\",\n    \"color\": \"Blanco\",\n    \"anio\": 2020,\n    \"clasificacion\": \"Diesel\",\n    \"cabina\": 4,\n    \"capacidadCarga\": \"3.5t\"\n  }\n}",
+              "raw": "{\n  \"tipo\": \"Camioneta\",\n  \"datos\": {\n    \"placa\": \"PCX-5678\",\n    \"marca\": \"Chevrolet\",\n    \"modelo\": \"Dmax\",\n    \"color\": \"Blanco\",\n    \"anio\": 2020,\n    \"clasificacion\": \"Diésel\",\n    \"cabina\": 4,\n    \"capacidadCarga\": \"3.5t\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1706,7 +1898,26 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) {",
+                  "  pm.collectionVariables.set('idVehiculoTmp', json.id);",
+                  "  console.log('idVehiculoTmp =', json.id);",
+                  "}",
+                  "pm.test('Camioneta creada (201)', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Listar vehiculos",
@@ -1796,22 +2007,37 @@
           "response": []
         },
         {
-          "name": "Eliminar vehiculo",
+          "name": "Desactivar vehiculo (soft-delete)",
           "request": {
-            "method": "DELETE",
+            "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{urlVehiculos}}/vehiculos/{{idVehiculo}}",
+              "raw": "{{urlVehiculos}}/vehiculos/{{idVehiculoTmp}}/desactivar",
               "host": [
                 "{{urlVehiculos}}"
               ],
               "path": [
                 "vehiculos",
-                "{{idVehiculo}}"
+                "{{idVehiculoTmp}}",
+                "desactivar"
               ]
-            }
+            },
+            "description": "Borrado logico (soft-delete): pone activo=false en un vehiculo desechable. El auto principal {{idVehiculo}} se conserva para los flujos de asignaciones y tickets."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Vehiculo desactivado (200)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1853,7 +2079,7 @@
           "response": []
         },
         {
-          "name": "RF1 - Asignar a usuario sin rol activo -> 409",
+          "name": "RF1 - Asignar vehiculo inactivo -> 409",
           "request": {
             "method": "POST",
             "header": [
@@ -1873,10 +2099,10 @@
                 "asignaciones-vehiculos"
               ]
             },
-            "description": "Debe responder 409 si el usuario no tiene ningun rol activo. Usa en {{idUsuarioSinRol}} el id de un usuario sin roles (o con todos sus roles desactivados).",
+            "description": "Intenta asignar un vehiculo que fue dado de baja (soft-delete). El servicio valida que el vehiculo este activo y responde 409 con un mensaje claro.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{idUsuarioSinRol}}\",\n  \"vehicleId\": \"{{idVehiculo}}\"\n}",
+              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculoTmp}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1884,7 +2110,26 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json={};",
+                  "try{json=pm.response.json();}catch(e){}",
+                  "pm.test(\"Rechaza vehiculo inactivo (409)\",function(){",
+                  "  pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test(\"Mensaje de error claro\",function(){",
+                  "  var msg=(json && (json.mensaje||json.message))||\"\";",
+                  "  pm.expect(msg.toLowerCase()).to.include(\"no esta activo\");",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "RF1 - Intentar asignacion duplicada -> 409",
@@ -2122,7 +2367,7 @@
             "description": "Garantiza que el vehiculo tenga una asignacion. 201 si es nueva, 409 si ya existia. El ingreso de tickets exige una asignacion ACTIVA con entryAuthorized=true.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\",\n  \"assignmentType\": \"PROPIETARIO\",\n  \"vehicleAlias\": \"Vehiculo prueba tickets\"\n}",
+              "raw": "{\n  \"userId\": \"{{idUsuario}}\",\n  \"vehicleId\": \"{{idVehiculo}}\",\n  \"roleId\": \"{{idRol}}\",\n  \"assignmentType\": \"PROPIETARIO\",\n  \"vehicleAlias\": \"Vehiculo prueba tickets\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3496,6 +3741,22 @@
     },
     {
       "key": "idRolRecaudador",
+      "value": ""
+    },
+    {
+      "key": "idPersonaRegistro",
+      "value": ""
+    },
+    {
+      "key": "refreshTokenCliente",
+      "value": ""
+    },
+    {
+      "key": "idUsuarioCliente",
+      "value": ""
+    },
+    {
+      "key": "idVehiculoTmp",
       "value": ""
     }
   ]

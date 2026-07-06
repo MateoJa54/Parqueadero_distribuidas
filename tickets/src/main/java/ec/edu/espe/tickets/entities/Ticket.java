@@ -74,6 +74,14 @@ public class Ticket {
     @Column(name = "tipo_vehiculo", nullable = false, length = 20)
     private String tipoVehiculo;
 
+    /**
+     * Categoria usada para la tarifa diferenciada por rol (snapshot del rol del
+     * propietario al momento del ingreso, ej. CLIENTE, INVITADO). Se guarda para
+     * que el cobro sea reproducible aunque el rol cambie despues.
+     */
+    @Column(name = "categoria_tarifa", length = 40)
+    private String categoriaTarifa;
+
     // --- Tiempos ---
     @Column(name = "fecha_hora_ingreso", nullable = false)
     private OffsetDateTime fechaHoraIngreso;

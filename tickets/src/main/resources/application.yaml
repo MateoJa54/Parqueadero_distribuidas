@@ -9,10 +9,16 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    # Ejecuta schema.sql DESPUES de que Hibernate cree las tablas, para poder
+    # crear indices unicos parciales y la secuencia de codigos sobre 'tickets'.
+    defer-datasource-initialization: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+  sql:
+    init:
+      mode: always
 
 server:
   port: 8083
@@ -38,3 +44,12 @@ tarifas:
     AUTO_AUTO: ${TARIFA_AUTO_AUTO:1.50}
     MOTOCICLETA_MOTO: ${TARIFA_MOTOCICLETA_MOTO:0.75}
     CAMIONETA_BUSETA: ${TARIFA_CAMIONETA_BUSETA:2.00}
+  # Tarifa diferenciada por ROL del propietario. Factor multiplicador sobre la
+  # tarifa base: 1.00 = tarifa plena (visitante externo), <1 = descuento comunidad.
+  factor-rol-defecto: ${TARIFA_FACTOR_DEFECTO:1.00}
+  factor-rol:
+    INVITADO: ${TARIFA_FACTOR_INVITADO:1.00}
+    CLIENTE: ${TARIFA_FACTOR_CLIENTE:0.60}
+    RECAUDADOR: ${TARIFA_FACTOR_RECAUDADOR:0.50}
+    ADMIN: ${TARIFA_FACTOR_ADMIN:0.50}
+    ROOT: ${TARIFA_FACTOR_ROOT:0.00}

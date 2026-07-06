@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query } from '@nestjs/common';
 import { VehiculosService } from './vehiculos.service';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
@@ -13,8 +13,8 @@ export class VehiculosController {
   }
 
   @Get()
-  findAll() {
-    return this.vehiculosService.findAll();
+  findAll(@Query('incluirInactivos') incluirInactivos?: string) {
+    return this.vehiculosService.findAll(incluirInactivos === 'true');
   }
 
   // Ruta literal antes de ':id' para que no sea capturada como id.
