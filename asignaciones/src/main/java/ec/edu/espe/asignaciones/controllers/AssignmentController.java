@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,7 @@ import ec.edu.espe.asignaciones.dtos.AssignmentResponse;
 import ec.edu.espe.asignaciones.dtos.AuditEventResponse;
 import ec.edu.espe.asignaciones.dtos.CreateAssignmentRequest;
 import ec.edu.espe.asignaciones.dtos.UpdateAssignmentRequest;
+import ec.edu.espe.asignaciones.security.RolesAsignaciones;
 import ec.edu.espe.asignaciones.services.AssignmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class AssignmentController {
     private final AssignmentService assignmentService;
 
     @PostMapping
+    @PreAuthorize(RolesAsignaciones.PUEDE_ADMINISTRAR)
     public ResponseEntity<AssignmentResponse> crearAsignacion(
             @Valid @RequestBody CreateAssignmentRequest request,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
@@ -39,6 +42,7 @@ public class AssignmentController {
     }
 
     @PatchMapping("/{userId}/{vehicleId}")
+    @PreAuthorize(RolesAsignaciones.PUEDE_ADMINISTRAR)
     public ResponseEntity<AssignmentResponse> modificarAsignacion(
             @PathVariable UUID userId,
             @PathVariable UUID vehicleId,
@@ -48,6 +52,7 @@ public class AssignmentController {
     }
 
     @PatchMapping("/{userId}/{vehicleId}/desactivar")
+    @PreAuthorize(RolesAsignaciones.PUEDE_ADMINISTRAR)
     public ResponseEntity<AssignmentResponse> desactivarAsignacion(
             @PathVariable UUID userId,
             @PathVariable UUID vehicleId) {
@@ -55,6 +60,7 @@ public class AssignmentController {
     }
 
     @PatchMapping("/{userId}/{vehicleId}/activar")
+    @PreAuthorize(RolesAsignaciones.PUEDE_ADMINISTRAR)
     public ResponseEntity<AssignmentResponse> reactivarAsignacion(
             @PathVariable UUID userId,
             @PathVariable UUID vehicleId,
@@ -63,12 +69,14 @@ public class AssignmentController {
     }
 
     @GetMapping("/vehiculo/{vehicleId}")
+    @PreAuthorize(RolesAsignaciones.PUEDE_CONSULTAR_VEHICULO)
     public ResponseEntity<AssignmentResponse> consultarAsignacionActivaPorVehiculo(
             @PathVariable UUID vehicleId) {
         return ResponseEntity.ok(assignmentService.consultarAsignacionActivaPorVehiculo(vehicleId));
     }
 
     @GetMapping("/{userId}/{vehicleId}/trazabilidad")
+    @PreAuthorize(RolesAsignaciones.PUEDE_ADMINISTRAR)
     public ResponseEntity<List<AuditEventResponse>> consultarTrazabilidad(
             @PathVariable UUID userId,
             @PathVariable UUID vehicleId) {

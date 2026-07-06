@@ -59,11 +59,12 @@ public class ExternalCatalogService {
         return usuario;
     }
 
-    public VehiculoClientResponse validarVehiculoActivo(UUID vehicleId) {
+    public VehiculoClientResponse validarVehiculoActivo(UUID vehicleId, String authorization) {
         VehiculoClientResponse vehiculo;
         try {
             vehiculo = restClient.get()
                     .uri(vehiculosUrl + "/api/vehiculos/{id}", vehicleId)
+                    .headers(headers -> agregarAuthorization(headers, authorization))
                     .retrieve()
                     .body(VehiculoClientResponse.class);
         } catch (HttpClientErrorException.NotFound ex) {

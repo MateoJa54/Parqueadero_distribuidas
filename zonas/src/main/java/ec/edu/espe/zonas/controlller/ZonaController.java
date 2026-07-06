@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ec.edu.espe.zonas.dtos.ZonaRequestDto;
 import ec.edu.espe.zonas.dtos.ZonaRespondeDto;
+import ec.edu.espe.zonas.security.RolesZonas;
 import ec.edu.espe.zonas.services.ZonaServicio;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,11 +40,13 @@ public class ZonaController {
     }
 
     @PostMapping
+    @PreAuthorize(RolesZonas.PUEDE_ADMINISTRAR)
     public ResponseEntity<ZonaRespondeDto> crearZona(@Valid @RequestBody ZonaRequestDto request) {
         return new ResponseEntity<>(zonaServicio.crearZona(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/{idZona}")
+    @PreAuthorize(RolesZonas.PUEDE_ADMINISTRAR)
     public ResponseEntity<ZonaRespondeDto> actualizarZona(
             @PathVariable UUID idZona,
             @Valid @RequestBody ZonaRequestDto request) {
@@ -50,12 +54,14 @@ public class ZonaController {
     }
 
     @PatchMapping("/{idZona}/activar")
+    @PreAuthorize(RolesZonas.PUEDE_ADMINISTRAR)
     public ResponseEntity<Void> activarZona(@PathVariable UUID idZona) {
         zonaServicio.activarZona(idZona);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{idZona}/desactivar")
+    @PreAuthorize(RolesZonas.PUEDE_ADMINISTRAR)
     public ResponseEntity<Void> desactivarZona(@PathVariable UUID idZona) {
         zonaServicio.desactivarZona(idZona);
         return ResponseEntity.noContent().build();

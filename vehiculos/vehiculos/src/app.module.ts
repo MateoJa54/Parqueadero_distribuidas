@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { VehiculosModule } from './vehiculos/vehiculos.module';
@@ -6,6 +7,8 @@ import { Vehiculo } from './vehiculos/entities/vehiculo.entity';
 import { Auto } from './vehiculos/entities/auto.entity';
 import { Motocicleta } from './vehiculos/entities/motocicleta.entity';
 import { Camioneta } from './vehiculos/entities/camioneta.entity';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './auth/roles.guard';
 
 @Module({
   imports: [
@@ -29,6 +32,11 @@ import { Camioneta } from './vehiculos/entities/camioneta.entity';
       inject: [ConfigService],
     }),
     VehiculosModule,
+  ],
+  providers: [
+    // Toda ruta exige JWT valido; @Roles() en el controller decide el resto.
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

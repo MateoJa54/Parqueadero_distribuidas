@@ -13,3 +13,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+
+jwt:
+  secret: ${JWT_SECRET:parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026}
+  issuer: ${JWT_ISSUER:parqueadero}

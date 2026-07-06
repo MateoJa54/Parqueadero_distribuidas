@@ -57,7 +57,7 @@ class AssignmentServiceTest {
         request.setVehicleId(vehicleId);
 
         when(externalCatalogService.validarUsuarioActivo(userId, null)).thenReturn(new UsuarioClientResponse());
-        when(externalCatalogService.validarVehiculoActivo(vehicleId)).thenReturn(new VehiculoClientResponse());
+        when(externalCatalogService.validarVehiculoActivo(vehicleId, null)).thenReturn(new VehiculoClientResponse());
         when(externalCatalogService.validarRolAutorizadoParaAsignacion(userId, null))
                 .thenReturn(new UserRoleAssignmentResponse());
         when(assignmentRepository.findByIdVehicleIdAndActiveTrue(vehicleId))
@@ -80,7 +80,7 @@ class AssignmentServiceTest {
         UUID otherUserId = UUID.randomUUID();
 
         when(externalCatalogService.validarUsuarioActivo(userId, null)).thenReturn(new UsuarioClientResponse());
-        when(externalCatalogService.validarVehiculoActivo(vehicleId)).thenReturn(new VehiculoClientResponse());
+        when(externalCatalogService.validarVehiculoActivo(vehicleId, null)).thenReturn(new VehiculoClientResponse());
         when(assignmentRepository.findByIdVehicleIdAndActiveTrue(vehicleId))
                 .thenReturn(Optional.of(VehicleAssignment.builder()
                         .id(new AssignmentId(otherUserId, vehicleId))
