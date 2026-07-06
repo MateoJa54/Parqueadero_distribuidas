@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,7 @@ import ec.edu.espe.asignaciones.dtos.AssignmentResponse;
 import ec.edu.espe.asignaciones.dtos.AuditEventResponse;
 import ec.edu.espe.asignaciones.dtos.CreateAssignmentRequest;
 import ec.edu.espe.asignaciones.dtos.UpdateAssignmentRequest;
+import ec.edu.espe.asignaciones.security.RolesAsignaciones;
 import ec.edu.espe.asignaciones.services.AssignmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/asignaciones-vehiculos")
 @RequiredArgsConstructor
+@PreAuthorize(RolesAsignaciones.PUEDE_ADMINISTRAR)
 public class AssignmentController {
 
     private final AssignmentService assignmentService;
@@ -62,7 +65,9 @@ public class AssignmentController {
         return ResponseEntity.ok(assignmentService.reactivarAsignacion(userId, vehicleId, authorization));
     }
 
+    // RECAUDADOR incluido: lo invoca tickets al registrar un ingreso.
     @GetMapping("/vehiculo/{vehicleId}")
+    @PreAuthorize(RolesAsignaciones.PUEDE_CONSULTAR_ASIGNACION_VEHICULO)
     public ResponseEntity<AssignmentResponse> consultarAsignacionActivaPorVehiculo(
             @PathVariable UUID vehicleId) {
         return ResponseEntity.ok(assignmentService.consultarAsignacionActivaPorVehiculo(vehicleId));

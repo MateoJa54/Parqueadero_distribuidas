@@ -4,6 +4,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import ec.edu.espe.usuarios.entidades.Persona;
 import ec.edu.espe.usuarios.entidades.Rol;
@@ -48,6 +49,7 @@ public class BootstrapAdminSeeder implements ApplicationRunner {
     private final UsuarioRolRepositorio usuarioRolRepositorio;
 
     @Override
+    @Transactional
     public void run(ApplicationArguments args) {
         if (usuarioRepositorio.existsByUsernameIgnoreCase(ROOT_USERNAME)) {
             return;

@@ -12,13 +12,13 @@ import ec.edu.espe.tickets.entities.EstadoTicket;
 public interface TicketService {
 
     /** Registra el ingreso de un vehiculo (por placa) a un espacio. */
-    TicketResponse registrarIngreso(RegistrarIngresoRequest request, UUID idEmpleado);
+    TicketResponse registrarIngreso(RegistrarIngresoRequest request, UUID idEmpleado, String authorization);
 
     /** Cierra el ticket cobrando la estadia y libera el espacio. */
-    TicketResponse pagar(UUID idTicket, UUID idEmpleado);
+    TicketResponse pagar(UUID idTicket, UUID idEmpleado, String authorization);
 
     /** Anula un ticket activo por error humano y libera el espacio. */
-    TicketResponse anular(UUID idTicket, AnularTicketRequest request, UUID idEmpleado);
+    TicketResponse anular(UUID idTicket, AnularTicketRequest request, UUID idEmpleado, String authorization);
 
     TicketResponse obtenerPorId(UUID idTicket);
 

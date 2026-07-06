@@ -24,3 +24,9 @@ server:
 services:
   usuarios-url: ${USUARIOS_URL:http://localhost:8081}
   vehiculos-url: ${VEHICULOS_URL:http://localhost:3000}
+
+# Mismo secreto/emisor que el microservicio usuarios: permite validar el JWT
+# de forma stateless sin llamar a usuarios en cada peticion.
+jwt:
+  secret: ${JWT_SECRET:parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026}
+  issuer: ${JWT_ISSUER:parqueadero}

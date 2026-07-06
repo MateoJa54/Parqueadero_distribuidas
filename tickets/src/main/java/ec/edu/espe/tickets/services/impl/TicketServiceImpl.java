@@ -42,16 +42,16 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
-    public TicketResponse registrarIngreso(RegistrarIngresoRequest request, UUID idEmpleado) {
+    public TicketResponse registrarIngreso(RegistrarIngresoRequest request, UUID idEmpleado, String authorization) {
         String placa = request.getPlaca().trim().toUpperCase();
 
-        VehiculoClientResponse vehiculo = catalogo.obtenerVehiculoPorPlaca(placa);
+        VehiculoClientResponse vehiculo = catalogo.obtenerVehiculoPorPlaca(placa, authorization);
         if (!vehiculo.isActivo()) {
             throw new ReglaNegocioException("El vehiculo con placa " + placa + " esta inactivo");
         }
 
         AsignacionActivaResponse asignacion =
-                catalogo.obtenerAsignacionActivaPorVehiculo(vehiculo.getId());
+                catalogo.obtenerAsignacionActivaPorVehiculo(vehiculo.getId(), authorization);
         validarAsignacion(asignacion, placa);
 
         ticketRepository.findByIdVehiculoAndEstadoTicket(vehiculo.getId(), EstadoTicket.ACTIVO)
@@ -60,7 +60,7 @@ public class TicketServiceImpl implements TicketService {
                             "El vehiculo ya tiene un ticket activo: " + t.getCodigo());
                 });
 
-        EspacioClientResponse espacio = catalogo.obtenerEspacio(request.getIdEspacio());
+        EspacioClientResponse espacio = catalogo.obtenerEspacio(request.getIdEspacio(), authorization);
         validarEspacioDisponible(espacio);
         validarCompatibilidad(vehiculo.getTipo(), espacio.getTipo());
 
@@ -89,14 +89,14 @@ public class TicketServiceImpl implements TicketService {
 
         // Ultimo paso: ocupar el espacio. Si el PATCH remoto falla, la excepcion
         // propaga y @Transactional revierte la insercion del ticket.
-        catalogo.cambiarEstadoEspacio(espacio.getId(), ESTADO_ESPACIO_OCUPADO);
+        catalogo.cambiarEstadoEspacio(espacio.getId(), ESTADO_ESPACIO_OCUPADO, authorization);
 
         return TicketMapper.aResponse(guardado);
     }
 
     @Override
     @Transactional
-    public TicketResponse pagar(UUID idTicket, UUID idEmpleado) {
+    public TicketResponse pagar(UUID idTicket, UUID idEmpleado, String authorization) {
         Ticket ticket = buscar(idTicket);
         if (ticket.getEstadoTicket() != EstadoTicket.ACTIVO) {
             throw new ReglaNegocioException(
@@ -115,14 +115,14 @@ public class TicketServiceImpl implements TicketService {
         ticket.setIdEmpleado(idEmpleado);
         Ticket guardado = ticketRepository.save(ticket);
 
-        catalogo.cambiarEstadoEspacio(ticket.getIdEspacio(), ESTADO_ESPACIO_DISPONIBLE);
+        catalogo.cambiarEstadoEspacio(ticket.getIdEspacio(), ESTADO_ESPACIO_DISPONIBLE, authorization);
 
         return TicketMapper.aResponse(guardado);
     }
 
     @Override
     @Transactional
-    public TicketResponse anular(UUID idTicket, AnularTicketRequest request, UUID idEmpleado) {
+    public TicketResponse anular(UUID idTicket, AnularTicketRequest request, UUID idEmpleado, String authorization) {
         Ticket ticket = buscar(idTicket);
         if (ticket.getEstadoTicket() != EstadoTicket.ACTIVO) {
             throw new ReglaNegocioException(
@@ -137,7 +137,7 @@ public class TicketServiceImpl implements TicketService {
         ticket.setIdEmpleado(idEmpleado);
         Ticket guardado = ticketRepository.save(ticket);
 
-        catalogo.cambiarEstadoEspacio(ticket.getIdEspacio(), ESTADO_ESPACIO_DISPONIBLE);
+        catalogo.cambiarEstadoEspacio(ticket.getIdEspacio(), ESTADO_ESPACIO_DISPONIBLE, authorization);
 
         return TicketMapper.aResponse(guardado);
     }

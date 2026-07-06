@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -128,6 +130,15 @@ public class UsuarioServicioImpl implements UsuarioServicio {
     public UsuarioResponseDto desactivarUsuario(UUID idUsuario) {
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
+
+        // Un administrador no puede desactivar su propia cuenta: se bloquearia a si
+        // mismo (el token vigente sigue sirviendo hasta que expire, pero no podria
+        // volver a iniciar sesion ni refrescar). Cubre tanto el endpoint directo como
+        // la cascada desde PersonaServicio.desactivarPersona.
+        Authentication autenticacion = SecurityContextHolder.getContext().getAuthentication();
+        if (autenticacion != null && idUsuario.toString().equals(autenticacion.getName())) {
+            throw new ReglaNegocioException("No puede desactivar su propio usuario");
+        }
 
         // Cascada logica: revocar el acceso del usuario tambien retira sus roles activos.
         // (Composicion: el usuario "posee" sus asignaciones de rol.)

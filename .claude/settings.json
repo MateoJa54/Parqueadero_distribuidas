@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\\\\n\" -X POST http://localhost:8080/api/v1/zonas -H \"Content-Type: application/json\" -d '{\"nombre\":\"ZonaSinToken\",\"tipo\":\"REGULAR\",\"capacidad\":5}')",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\\\\n\" -X POST http://localhost:3000/api/vehiculos -H \"Content-Type: application/json\" -d '{\"tipo\":\"Auto\",\"datos\":{\"placa\":\"SEC-0001\",\"marca\":\"Test\",\"modelo\":\"Test\",\"color\":\"Negro\",\"anio\":2023,\"clasificacion\":\"Gasolina\",\"numeroPuertas\":4,\"capacidadMaletero\":300}}')",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\\\\n\" -X GET http://localhost:8082/api/v1/asignaciones-vehiculos/vehiculo/00000000-0000-0000-0000-000000000000)",
+      "Bash(./mvnw.cmd -q -o test)",
+      "Bash(npm install *)"
+    ]
+  }
+}

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,8 +42,9 @@ public class TicketController {
     @PostMapping
     public ResponseEntity<TicketResponse> registrarIngreso(
             @Valid @RequestBody RegistrarIngresoRequest request,
-            @AuthenticationPrincipal String idEmpleado) {
-        TicketResponse ticket = ticketService.registrarIngreso(request, UUID.fromString(idEmpleado));
+            @AuthenticationPrincipal String idEmpleado,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        TicketResponse ticket = ticketService.registrarIngreso(request, UUID.fromString(idEmpleado), authorization);
         return ResponseEntity.status(HttpStatus.CREATED).body(ticket);
     }
 
@@ -50,8 +52,9 @@ public class TicketController {
     @PatchMapping("/{id}/pagar")
     public ResponseEntity<TicketResponse> pagar(
             @PathVariable UUID id,
-            @AuthenticationPrincipal String idEmpleado) {
-        return ResponseEntity.ok(ticketService.pagar(id, UUID.fromString(idEmpleado)));
+            @AuthenticationPrincipal String idEmpleado,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        return ResponseEntity.ok(ticketService.pagar(id, UUID.fromString(idEmpleado), authorization));
     }
 
     /** Anula un ticket activo por error humano. */
@@ -59,8 +62,9 @@ public class TicketController {
     public ResponseEntity<TicketResponse> anular(
             @PathVariable UUID id,
             @Valid @RequestBody AnularTicketRequest request,
-            @AuthenticationPrincipal String idEmpleado) {
-        return ResponseEntity.ok(ticketService.anular(id, request, UUID.fromString(idEmpleado)));
+            @AuthenticationPrincipal String idEmpleado,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        return ResponseEntity.ok(ticketService.anular(id, request, UUID.fromString(idEmpleado), authorization));
     }
 
     @GetMapping("/{id}")

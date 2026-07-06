@@ -3,6 +3,7 @@ package ec.edu.espe.tickets.services;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -17,6 +18,9 @@ import ec.edu.espe.tickets.utils.RecursoNoEncontradoException;
  * zonas/espacios. Encapsula las llamadas HTTP y traduce el 404 remoto a
  * {@link RecursoNoEncontradoException}; el resto de errores se propagan al
  * manejador global (5xx remoto, servicio caido, etc.).
+ *
+ * <p>Todas las llamadas reenvian el {@code Authorization} del llamante original:
+ * vehiculos, asignaciones y zonas exigen un JWT valido en sus propios endpoints.
  */
 @Service
 public class CatalogoExternoService {
@@ -38,10 +42,11 @@ public class CatalogoExternoService {
     }
 
     /** Busca el vehiculo por placa en el microservicio vehiculos. */
-    public VehiculoClientResponse obtenerVehiculoPorPlaca(String placa) {
+    public VehiculoClientResponse obtenerVehiculoPorPlaca(String placa, String authorization) {
         try {
             VehiculoClientResponse vehiculo = restClient.get()
                     .uri(vehiculosUrl + "/api/vehiculos/placa/{placa}", placa)
+                    .headers(headers -> agregarAuthorization(headers, authorization))
                     .retrieve()
                     .body(VehiculoClientResponse.class);
             if (vehiculo == null) {
@@ -54,10 +59,11 @@ public class CatalogoExternoService {
     }
 
     /** Obtiene la (unica) asignacion activa del vehiculo en el microservicio asignaciones. */
-    public AsignacionActivaResponse obtenerAsignacionActivaPorVehiculo(UUID vehicleId) {
+    public AsignacionActivaResponse obtenerAsignacionActivaPorVehiculo(UUID vehicleId, String authorization) {
         try {
             AsignacionActivaResponse asignacion = restClient.get()
                     .uri(asignacionesUrl + "/api/v1/asignaciones-vehiculos/vehiculo/{vehicleId}", vehicleId)
+                    .headers(headers -> agregarAuthorization(headers, authorization))
                     .retrieve()
                     .body(AsignacionActivaResponse.class);
             if (asignacion == null) {
@@ -72,10 +78,11 @@ public class CatalogoExternoService {
     }
 
     /** Obtiene el espacio por id en el microservicio zonas. */
-    public EspacioClientResponse obtenerEspacio(UUID idEspacio) {
+    public EspacioClientResponse obtenerEspacio(UUID idEspacio, String authorization) {
         try {
             EspacioClientResponse espacio = restClient.get()
                     .uri(zonasUrl + "/api/v1/espacios/{idEspacio}", idEspacio)
+                    .headers(headers -> agregarAuthorization(headers, authorization))
                     .retrieve()
                     .body(EspacioClientResponse.class);
             if (espacio == null) {
@@ -88,10 +95,17 @@ public class CatalogoExternoService {
     }
 
     /** Cambia el estado de un espacio (OCUPADO al ingresar, DISPONIBLE al salir/anular). */
-    public void cambiarEstadoEspacio(UUID idEspacio, String estado) {
+    public void cambiarEstadoEspacio(UUID idEspacio, String estado, String authorization) {
         restClient.patch()
                 .uri(zonasUrl + "/api/v1/espacios/{idEspacio}/estado?estado={estado}", idEspacio, estado)
+                .headers(headers -> agregarAuthorization(headers, authorization))
                 .retrieve()
                 .toBodilessEntity();
+    }
+
+    private void agregarAuthorization(HttpHeaders headers, String authorization) {
+        if (authorization != null && !authorization.isBlank()) {
+            headers.set("Authorization", authorization);
+        }
     }
 }

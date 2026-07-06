@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { VehiculosModule } from './vehiculos/vehiculos.module';
 import { Vehiculo } from './vehiculos/entities/vehiculo.entity';
 import { Auto } from './vehiculos/entities/auto.entity';
 import { Motocicleta } from './vehiculos/entities/motocicleta.entity';
 import { Camioneta } from './vehiculos/entities/camioneta.entity';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './auth/roles.guard';
 
 @Module({
   imports: [
@@ -29,6 +32,12 @@ import { Camioneta } from './vehiculos/entities/camioneta.entity';
       inject: [ConfigService],
     }),
     VehiculosModule,
+  ],
+  providers: [
+    // Orden de registro = orden de ejecucion: primero autentica (401), luego
+    // autoriza por rol (403). Ambos se aplican a TODAS las rutas del servicio.
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

@@ -37,6 +37,9 @@ services:
           policy: local
 
   # ---------------- Microservicio ZONAS -------------------
+  # zonas ahora exige JWT valido en todos sus endpoints (el control fino por
+  # rol -ADMIN/ROOT para mutar, RECAUDADOR para cambiar estado- lo hace el
+  # propio microservicio con @PreAuthorize).
   - name: zonas
     url: http://host.docker.internal:8080
     routes:
@@ -45,6 +48,11 @@ services:
         paths:
           - /api/v1/zonas
           - /api/v1/espacios
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
     plugins:
       - name: rate-limiting
         config:
@@ -59,6 +67,11 @@ services:
         strip_path: false
         paths:
           - /api/vehiculos
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
     plugins:
       - name: rate-limiting
         config:
@@ -74,6 +87,11 @@ services:
         paths:
           - /api/v1/asignaciones-vehiculos
           - /api/v1/propietarios
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
     plugins:
       - name: rate-limiting
         config:
@@ -112,11 +130,16 @@ plugins:
 # El plugin jwt valida la firma del token usando este secreto compartido.
 # 'key' debe coincidir con el claim 'iss' del token (jwt.issuer en usuarios) y
 # 'secret' debe ser identico a JWT_SECRET del microservicio usuarios.
+# 'algorithm' debe ser HS512: jjwt (Jwts.builder().signWith(key)) selecciona
+# automaticamente el algoritmo HMAC mas fuerte segun el tamano de la clave: con
+# el secreto de 66+ caracteres del proyecto, elige HS512 (no HS256 pese a lo
+# que dice el comentario original en JwtService). Con HS256 aqui, Kong
+# rechazaba TODO token valido con 401 "Invalid algorithm".
 # En produccion, sobre-escribir ambos por variables/secretos seguros.
 consumers:
   - username: parqueadero-app
     jwt_secrets:
       - key: parqueadero
-        algorithm: HS256
+        algorithm: HS512
         secret: "parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026"
 

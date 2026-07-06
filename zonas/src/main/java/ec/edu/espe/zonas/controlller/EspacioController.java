@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +21,7 @@ import ec.edu.espe.zonas.dtos.EspacioRequestDto;
 import ec.edu.espe.zonas.dtos.EspacioRespondeDto;
 import ec.edu.espe.zonas.entidades.EstadoEspacio;
 import ec.edu.espe.zonas.entidades.TipoEspacio;
+import ec.edu.espe.zonas.security.RolesZonas;
 import ec.edu.espe.zonas.services.EspacioServicio;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,18 +44,23 @@ public class EspacioController {
     }
 
     @PostMapping
+    @PreAuthorize(RolesZonas.PUEDE_ADMINISTRAR)
     public ResponseEntity<EspacioRespondeDto> crearEspacio(@Valid @RequestBody EspacioRequestDto request) {
         return new ResponseEntity<>(espacioServicio.crearEspacio(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/{idEspacio}")
+    @PreAuthorize(RolesZonas.PUEDE_ADMINISTRAR)
     public ResponseEntity<EspacioRespondeDto> actualizarEspacio(
             @PathVariable UUID idEspacio,
             @Valid @RequestBody EspacioRequestDto request) {
         return ResponseEntity.ok(espacioServicio.actualizarEspacio(idEspacio, request));
     }
 
+    // RECAUDADOR incluido: este endpoint lo invoca el microservicio tickets al
+    // ocupar/liberar un espacio durante el ingreso, pago o anulacion de un ticket.
     @PatchMapping("/{idEspacio}/estado")
+    @PreAuthorize(RolesZonas.PUEDE_CAMBIAR_ESTADO)
     public ResponseEntity<EspacioRespondeDto> cambiarEstado(
             @PathVariable UUID idEspacio,
             @RequestParam EstadoEspacio estado) {
@@ -88,12 +95,14 @@ public class EspacioController {
     }
 
     @PatchMapping("/{idEspacio}/activar")
+    @PreAuthorize(RolesZonas.PUEDE_ADMINISTRAR)
     public ResponseEntity<Void> activarEspacio(@PathVariable UUID idEspacio) {
         espacioServicio.activarEspacio(idEspacio);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{idEspacio}/desactivar")
+    @PreAuthorize(RolesZonas.PUEDE_ADMINISTRAR)
     public ResponseEntity<Void> desactivarEspacio(@PathVariable UUID idEspacio) {
         espacioServicio.desactivarEspacio(idEspacio);
         return ResponseEntity.noContent().build();

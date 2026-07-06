@@ -41,4 +41,13 @@ export abstract class Vehiculo {
   activo!: boolean;
 
   abstract obtenerTipo(): string;
+
+  // 'tipo' es la columna discriminadora de @TableInheritance: TypeORM la usa
+  // para saber que subclase hidratar, pero no la expone como propiedad propia,
+  // asi que JSON.stringify() nunca la incluye por si sola. Sin este toJSON,
+  // todo consumidor externo (ej. tickets validando compatibilidad vehiculo/
+  // espacio) recibe 'tipo: null'.
+  toJSON() {
+    return { ...this, tipo: this.obtenerTipo() };
+  }
 }
