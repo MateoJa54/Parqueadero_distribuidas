@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ec.edu.espe.usuarios.audit.AuditPublisher;
 import ec.edu.espe.usuarios.dtos.RolRequestDto;
 import ec.edu.espe.usuarios.dtos.RolResponseDto;
 import ec.edu.espe.usuarios.entidades.Rol;
@@ -23,9 +24,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RolServicioImpl implements RolServicio {
 
+    private static final String ENTIDAD = "ROL";
+
     private final RolRepositorio rolRepositorio;
     private final UsuarioRolRepositorio usuarioRolRepositorio;
     private final UtilMappers mapper;
+    private final AuditPublisher auditPublisher;
 
     /**
      * Normaliza el nombre del rol: quita espacios extremos y lo pasa a MAYUSCULAS
@@ -67,7 +71,9 @@ public class RolServicioImpl implements RolServicio {
                 .active(true)
                 .build();
 
-        return mapper.toRolResponse(rolRepositorio.save(rol));
+        Rol rolGuardado = rolRepositorio.save(rol);
+        auditPublisher.publicar("CREATE", ENTIDAD, rolGuardado);
+        return mapper.toRolResponse(rolGuardado);
     }
 
     @Override
@@ -85,7 +91,9 @@ public class RolServicioImpl implements RolServicio {
         rol.setName(nombre);
         rol.setDescription(request.getDescription());
 
-        return mapper.toRolResponse(rolRepositorio.save(rol));
+        Rol rolActualizado = rolRepositorio.save(rol);
+        auditPublisher.publicar("UPDATE", ENTIDAD, rolActualizado);
+        return mapper.toRolResponse(rolActualizado);
     }
 
     @Override
@@ -95,7 +103,9 @@ public class RolServicioImpl implements RolServicio {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Rol no encontrado con ID: " + idRol));
 
         rol.setActive(true);
-        return mapper.toRolResponse(rolRepositorio.save(rol));
+        Rol rolActivado = rolRepositorio.save(rol);
+        auditPublisher.publicar("UPDATE", ENTIDAD, rolActivado);
+        return mapper.toRolResponse(rolActivado);
     }
 
     @Override
@@ -115,6 +125,8 @@ public class RolServicioImpl implements RolServicio {
         }
 
         rol.setActive(false);
-        return mapper.toRolResponse(rolRepositorio.save(rol));
+        Rol rolDesactivado = rolRepositorio.save(rol);
+        auditPublisher.publicar("UPDATE", ENTIDAD, rolDesactivado);
+        return mapper.toRolResponse(rolDesactivado);
     }
 }

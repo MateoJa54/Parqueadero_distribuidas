@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ec.edu.espe.usuarios.audit.AuditPublisher;
 import ec.edu.espe.usuarios.dtos.AsignarRolRequestDto;
 import ec.edu.espe.usuarios.dtos.UsuarioRequestDto;
 import ec.edu.espe.usuarios.dtos.UsuarioResponseDto;
@@ -45,12 +46,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthServicioImpl implements AuthServicio {
 
+    private static final String ENTIDAD = "USUARIO";
+
     private final UsuarioRepositorio usuarioRepositorio;
     private final UsuarioRolRepositorio usuarioRolRepositorio;
     private final RolRepositorio rolRepositorio;
     private final UsuarioServicio usuarioServicio;
     private final AsignacionServicio asignacionServicio;
     private final JwtService jwtService;
+    private final AuditPublisher auditPublisher;
 
     @Override
     @Transactional
@@ -67,9 +71,16 @@ public class AuthServicioImpl implements AuthServicio {
         }
 
         usuario.setLastLogin(LocalDateTime.now());
-        usuarioRepositorio.save(usuario);
+        Usuario usuarioActualizado = usuarioRepositorio.save(usuario);
 
-        return construirRespuesta(usuario, rolesActivos(usuario));
+        // En este punto todavia no existe una sesion autenticada (el login ES
+        // el proceso de conseguirla), asi que AuditPublisher no tiene forma de
+        // inferir el actor desde el JWT/SecurityContext. Se pasa explicito.
+        List<String> roles = rolesActivos(usuarioActualizado);
+        auditPublisher.publicar("LOGIN", ENTIDAD, usuarioActualizado,
+                usuarioActualizado.getUsername(), roles.isEmpty() ? null : roles.get(0));
+
+        return construirRespuesta(usuarioActualizado, roles);
     }
 
     @Override

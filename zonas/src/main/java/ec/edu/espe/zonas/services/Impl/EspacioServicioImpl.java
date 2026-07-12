@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ec.edu.espe.zonas.audit.AuditPublisher;
 import ec.edu.espe.zonas.dtos.DisponibilidadResponseDto;
 import ec.edu.espe.zonas.dtos.EspacioRequestDto;
 import ec.edu.espe.zonas.dtos.EspacioRespondeDto;
@@ -27,9 +28,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EspacioServicioImpl implements EspacioServicio {
 
+    private static final String ENTIDAD = "ESPACIO";
+
     private final EspacioRepositorio espacioRepositorio;
     private final ZonaRepositorio zonaRepositorio;
     private final UtilMapers maper;
+    private final AuditPublisher auditPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -74,6 +78,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setEstado(EstadoEspacio.DISPONIBLE);
 
         Espacio espacioSaved = espacioRepositorio.save(espacio);
+        auditPublisher.publicar("CREATE", ENTIDAD, espacioSaved);
         return maper.toResponseDto(espacioSaved);
     }
 
@@ -89,7 +94,9 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setDescripcion(dto.getDescripcion());
         espacio.setTipoEspacio(dto.getTipo());
 
-        return maper.toResponseDto(espacioRepositorio.save(espacio));
+        Espacio espacioActualizado = espacioRepositorio.save(espacio);
+        auditPublisher.publicar("UPDATE", ENTIDAD, espacioActualizado);
+        return maper.toResponseDto(espacioActualizado);
     }
 
     @Override
@@ -115,7 +122,9 @@ public class EspacioServicioImpl implements EspacioServicio {
 
         espacio.setEstado(estado);
 
-        return maper.toResponseDto(espacioRepositorio.save(espacio));
+        Espacio espacioActualizado = espacioRepositorio.save(espacio);
+        auditPublisher.publicar("UPDATE", ENTIDAD, espacioActualizado);
+        return maper.toResponseDto(espacioActualizado);
     }
 
     @Override
@@ -202,6 +211,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setActivo(true);
         espacio.setEstado(EstadoEspacio.DISPONIBLE);
         espacioRepositorio.save(espacio);
+        auditPublisher.publicar("UPDATE", ENTIDAD, espacio);
     }
 
     @Override
@@ -218,6 +228,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setActivo(false);
         espacio.setEstado(EstadoEspacio.MANTENIMIENTO);
         espacioRepositorio.save(espacio);
+        auditPublisher.publicar("UPDATE", ENTIDAD, espacio);
     }
 
     private String generarCodigoEspacio(EspacioRequestDto dto) {

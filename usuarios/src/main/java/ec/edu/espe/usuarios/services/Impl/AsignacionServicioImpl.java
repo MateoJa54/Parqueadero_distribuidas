@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ec.edu.espe.usuarios.audit.AuditPublisher;
 import ec.edu.espe.usuarios.dtos.AsignacionResponseDto;
 import ec.edu.espe.usuarios.dtos.AsignarRolRequestDto;
 import ec.edu.espe.usuarios.entidades.Rol;
@@ -26,10 +27,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AsignacionServicioImpl implements AsignacionServicio {
 
+    private static final String ENTIDAD = "ASIGNACION-ROL";
+
     private final UsuarioRolRepositorio usuarioRolRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
     private final RolRepositorio rolRepositorio;
     private final UtilMappers mapper;
+    private final AuditPublisher auditPublisher;
 
     @Override
     @Transactional
@@ -61,7 +65,9 @@ public class AsignacionServicioImpl implements AsignacionServicio {
                 .active(true)
                 .build();
 
-        return mapper.toAsignacionResponse(usuarioRolRepositorio.save(asignacion));
+        UsuarioRol asignacionGuardada = usuarioRolRepositorio.save(asignacion);
+        auditPublisher.publicar("CREATE", ENTIDAD, asignacionGuardada);
+        return mapper.toAsignacionResponse(asignacionGuardada);
     }
 
     @Override
@@ -90,7 +96,9 @@ public class AsignacionServicioImpl implements AsignacionServicio {
                         "No existe asignacion para el usuario " + idUsuario + " y el rol " + idRol));
 
         asignacion.setActive(false);
-        return mapper.toAsignacionResponse(usuarioRolRepositorio.save(asignacion));
+        UsuarioRol asignacionDesactivada = usuarioRolRepositorio.save(asignacion);
+        auditPublisher.publicar("UPDATE", ENTIDAD, asignacionDesactivada);
+        return mapper.toAsignacionResponse(asignacionDesactivada);
     }
 
     @Override
@@ -109,6 +117,8 @@ public class AsignacionServicioImpl implements AsignacionServicio {
         }
 
         asignacion.setActive(true);
-        return mapper.toAsignacionResponse(usuarioRolRepositorio.save(asignacion));
+        UsuarioRol asignacionActivada = usuarioRolRepositorio.save(asignacion);
+        auditPublisher.publicar("UPDATE", ENTIDAD, asignacionActivada);
+        return mapper.toAsignacionResponse(asignacionActivada);
     }
 }

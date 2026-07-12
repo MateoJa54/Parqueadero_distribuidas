@@ -53,6 +53,17 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
+		<!-- Permite a Jackson serializar entidades JPA con relaciones lazy
+		     (proxies de Hibernate) al publicar eventos de auditoria; sin esto,
+		     un OneToOne/OneToMany LAZY hace fallar la publicacion en silencio. -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-hibernate6</artifactId>
+		</dependency>
 
 		<!-- BCrypt (con salt) para el hash de contrasenas. Incluido tambien por starter-security. -->
 		<dependency>

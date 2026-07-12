@@ -13,6 +13,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -49,6 +50,9 @@ public class Usuario {
     @Column(name = "username", unique = true, nullable = false, length = 15)
     private String username;
 
+    // Nunca debe salir en un JSON: ni en la API (no aplica, se usa DTO aparte)
+    // ni en los eventos de auditoria (que serializan esta entidad tal cual).
+    @JsonIgnore
     @Column(name = "password_hash", nullable = false, length = 60)
     private String passwordHash;
 

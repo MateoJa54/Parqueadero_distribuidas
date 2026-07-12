@@ -3758,6 +3758,27 @@
     {
       "key": "idVehiculoTmp",
       "value": ""
+    },
+    {
+      "key": "macDispositivo",
+      "value": "AA:BB:CC:DD:EE:01"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Header X-Device-Mac automatico para el sistema de auditoria (ms-audit).",
+          "// Cambia el valor en la variable de coleccion/environment 'macDispositivo'",
+          "// si quieres simular otro dispositivo; si no existe, cae en un valor fijo.",
+          "pm.request.headers.upsert({",
+          "    key: 'X-Device-Mac',",
+          "    value: pm.variables.get('macDispositivo') || 'AA:BB:CC:DD:EE:01'",
+          "});"
+        ]
+      }
     }
   ]
 }

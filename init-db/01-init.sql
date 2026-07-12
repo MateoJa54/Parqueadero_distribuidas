@@ -25,3 +25,9 @@ CREATE DATABASE tickets OWNER tickets;
 -- ---------- API vehiculos (NestJS / TypeORM) ----------
 -- Usa el superusuario 'postgres' (definido en docker-compose).
 CREATE DATABASE vehiculos_db OWNER postgres;
+
+-- ---------- API ms-audit (NestJS / TypeORM) ----------
+-- Almacena los eventos de auditoria consumidos desde RabbitMQ
+-- (exchange audit_exchange) de todos los demas microservicios.
+CREATE USER audit_user WITH PASSWORD 'audit_pass';
+CREATE DATABASE audit_db OWNER audit_user;

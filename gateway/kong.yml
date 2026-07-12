@@ -115,6 +115,28 @@ services:
           claims_to_verify:
             - exp
 
+  # ---------------- Microservicio MS-AUDIT -----------------
+  # Consulta del trail de auditoria (quien hizo que, desde donde). Contiene
+  # datos sensibles (ip, mac, usuario) -> todas sus rutas exigen JWT, igual
+  # que tickets. La escritura real llega por RabbitMQ, no por HTTP; el POST
+  # queda igual protegido por si se usa para pruebas/reenvios manuales.
+  - name: ms-audit
+    url: http://host.docker.internal:3002
+    routes:
+      - name: ms-audit-routes
+        strip_path: false
+        paths:
+          - /api/v1/audit
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+      - name: jwt
+        config:
+          claims_to_verify:
+            - exp
+
 # ---------------- Plugins GLOBALES (a todo el trafico) ----
 plugins:
   # CORS: permite que un frontend en otro origen consuma el gateway.

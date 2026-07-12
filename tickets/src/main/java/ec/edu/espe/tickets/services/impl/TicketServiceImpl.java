@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ec.edu.espe.tickets.audit.AuditPublisher;
 import ec.edu.espe.tickets.dtos.AnularTicketRequest;
 import ec.edu.espe.tickets.dtos.AsignacionActivaResponse;
 import ec.edu.espe.tickets.dtos.EspacioClientResponse;
@@ -35,11 +36,13 @@ public class TicketServiceImpl implements TicketService {
     private static final String ESTADO_ASIGNACION_ACTIVA = "ACTIVA";
     private static final String ESTADO_ESPACIO_DISPONIBLE = "DISPONIBLE";
     private static final String ESTADO_ESPACIO_OCUPADO = "OCUPADO";
+    private static final String ENTIDAD = "TICKET";
 
     private final TicketRepository ticketRepository;
     private final CatalogoExternoService catalogo;
     private final CalculadoraTarifa calculadoraTarifa;
     private final GeneradorCodigoTicket generadorCodigo;
+    private final AuditPublisher auditPublisher;
 
     @Override
     @Transactional
@@ -110,6 +113,7 @@ public class TicketServiceImpl implements TicketService {
         // propaga y @Transactional revierte la insercion del ticket.
         catalogo.cambiarEstadoEspacio(espacio.getId(), ESTADO_ESPACIO_OCUPADO);
 
+        auditPublisher.publicar("CREATE", ENTIDAD, guardado);
         return TicketMapper.aResponse(guardado);
     }
 
@@ -137,6 +141,7 @@ public class TicketServiceImpl implements TicketService {
 
         catalogo.cambiarEstadoEspacio(ticket.getIdEspacio(), ESTADO_ESPACIO_DISPONIBLE);
 
+        auditPublisher.publicar("UPDATE", ENTIDAD, guardado);
         return TicketMapper.aResponse(guardado);
     }
 
@@ -159,6 +164,7 @@ public class TicketServiceImpl implements TicketService {
 
         catalogo.cambiarEstadoEspacio(ticket.getIdEspacio(), ESTADO_ESPACIO_DISPONIBLE);
 
+        auditPublisher.publicar("UPDATE", ENTIDAD, guardado);
         return TicketMapper.aResponse(guardado);
     }
 

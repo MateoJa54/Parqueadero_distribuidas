@@ -19,6 +19,11 @@ spring:
   sql:
     init:
       mode: always
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
 server:
   port: 8083
@@ -53,3 +58,10 @@ tarifas:
     RECAUDADOR: ${TARIFA_FACTOR_RECAUDADOR:0.50}
     ADMIN: ${TARIFA_FACTOR_ADMIN:0.50}
     ROOT: ${TARIFA_FACTOR_ROOT:0.00}
+
+# Auditoria: publica eventos de CRUD hacia ms-audit via RabbitMQ.
+# El exchange se declara "durable" en AuditConfig; ms-audit crea la cola y
+# el binding "audit.#" que atrapa cualquier routing key "audit.*".
+audit:
+  exchange: ${RABBITMQ_EXCHANGE:audit_exchange}
+  routing-key: ${RABBITMQ_ROUTING_KEY:audit.event}

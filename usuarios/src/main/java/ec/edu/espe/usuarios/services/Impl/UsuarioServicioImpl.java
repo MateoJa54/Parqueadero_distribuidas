@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ec.edu.espe.usuarios.audit.AuditPublisher;
 import ec.edu.espe.usuarios.dtos.UsuarioRequestDto;
 import ec.edu.espe.usuarios.dtos.UsuarioResponseDto;
 import ec.edu.espe.usuarios.dtos.UsuarioUpdateDto;
@@ -26,10 +27,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UsuarioServicioImpl implements UsuarioServicio {
 
+    private static final String ENTIDAD = "USUARIO";
+
     private final UsuarioRepositorio usuarioRepositorio;
     private final PersonaRepositorio personaRepositorio;
     private final UsuarioRolRepositorio usuarioRolRepositorio;
     private final UtilMappers mapper;
+    private final AuditPublisher auditPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -79,7 +83,9 @@ public class UsuarioServicioImpl implements UsuarioServicio {
                 .active(true)
                 .build();
 
-        return mapper.toUsuarioResponse(usuarioRepositorio.save(usuario));
+        Usuario usuarioGuardado = usuarioRepositorio.save(usuario);
+        auditPublisher.publicar("CREATE", ENTIDAD, usuarioGuardado);
+        return mapper.toUsuarioResponse(usuarioGuardado);
     }
 
     @Override
@@ -105,7 +111,9 @@ public class UsuarioServicioImpl implements UsuarioServicio {
             usuario.setPasswordHash(PasswordUtil.hash(request.getPassword()));
         }
 
-        return mapper.toUsuarioResponse(usuarioRepositorio.save(usuario));
+        Usuario usuarioActualizado = usuarioRepositorio.save(usuario);
+        auditPublisher.publicar("UPDATE", ENTIDAD, usuarioActualizado);
+        return mapper.toUsuarioResponse(usuarioActualizado);
     }
 
     @Override
@@ -120,7 +128,9 @@ public class UsuarioServicioImpl implements UsuarioServicio {
         }
 
         usuario.setActive(true);
-        return mapper.toUsuarioResponse(usuarioRepositorio.save(usuario));
+        Usuario usuarioActivado = usuarioRepositorio.save(usuario);
+        auditPublisher.publicar("UPDATE", ENTIDAD, usuarioActivado);
+        return mapper.toUsuarioResponse(usuarioActivado);
     }
 
     @Override
@@ -139,7 +149,9 @@ public class UsuarioServicioImpl implements UsuarioServicio {
         });
 
         usuario.setActive(false);
-        return mapper.toUsuarioResponse(usuarioRepositorio.save(usuario));
+        Usuario usuarioDesactivado = usuarioRepositorio.save(usuario);
+        auditPublisher.publicar("UPDATE", ENTIDAD, usuarioDesactivado);
+        return mapper.toUsuarioResponse(usuarioDesactivado);
     }
 
     @Override
