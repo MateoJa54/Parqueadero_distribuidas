@@ -1,0 +1,119 @@
+/* ===== Dashboard de monitoreo de espacios ===== */
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Indicador de conexión SSE */
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+.dot-on {
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  animation: pulse 1.8s infinite;
+}
+.dot-off {
+  background: #ef4444;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+/* Tarjetas de resumen */
+.resumen-card {
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+.resumen-num {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.resumen-lbl {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+/* Tarjeta de espacio */
+.espacio-card {
+  border-radius: 0.75rem;
+  padding: 1rem;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 96px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.4s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+.espacio-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+.espacio-codigo {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.espacio-meta {
+  font-size: 0.72rem;
+  opacity: 0.9;
+}
+.espacio-estado {
+  margin-top: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 9999px;
+  padding: 0.15rem 0.55rem;
+  align-self: flex-start;
+}
+
+/* Colores por estado */
+.bg-disponible   { background: #16a34a; }  /* verde  */
+.bg-ocupado      { background: #dc2626; }  /* rojo   */
+.bg-reservado    { background: #d97706; }  /* ámbar  */
+.bg-mantenimiento{ background: #64748b; }  /* gris   */
+
+/* Espacio inactivo */
+.espacio-inactivo { opacity: 0.55; }
+
+/* Parpadeo al recibir un cambio */
+.flash {
+  animation: flash 0.9s ease;
+}
+@keyframes flash {
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.9); }
+  40%  { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.35); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+/* Encabezado de zona */
+.zona-titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.zona-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #475569;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  padding: 0.1rem 0.6rem;
+}

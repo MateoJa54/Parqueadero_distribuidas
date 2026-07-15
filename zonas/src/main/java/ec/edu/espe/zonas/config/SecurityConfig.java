@@ -45,6 +45,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Canal SSE del dashboard: solo lectura y sin datos sensibles.
+                        // EventSource no puede enviar el token, por eso es publico.
+                        .requestMatchers("/api/v1/sse/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> escribirError(res,

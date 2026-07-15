@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitoreo de Espacios | Parqueadero</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+  <header class="bg-slate-900 text-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between flex-wrap gap-4">
+      <div>
+        <h1 class="text-2xl font-bold flex items-center gap-2">
+          <span class="text-3xl">🅿️</span> Monitoreo de Espacios
+        </h1>
+        <p class="text-slate-400 text-sm">Estado de los espacios en tiempo real</p>
+      </div>
+      <div class="flex items-center gap-3 bg-slate-800 rounded-full px-4 py-2">
+        <span id="dotConexion" class="dot dot-off"></span>
+        <span id="statusConexion" class="text-sm font-medium">Conectando…</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="max-w-7xl mx-auto px-6 py-4">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="resumen">
+      <div class="resumen-card">
+        <span class="resumen-num" id="numTotal">0</span>
+        <span class="resumen-lbl">Total</span>
+      </div>
+      <div class="resumen-card border-l-4 border-emerald-500">
+        <span class="resumen-num text-emerald-600" id="numDisponible">0</span>
+        <span class="resumen-lbl">Disponibles</span>
+      </div>
+      <div class="resumen-card border-l-4 border-rose-500">
+        <span class="resumen-num text-rose-600" id="numOcupado">0</span>
+        <span class="resumen-lbl">Ocupados</span>
+      </div>
+      <div class="resumen-card border-l-4 border-amber-500">
+        <span class="resumen-num text-amber-600" id="numOtros">0</span>
+        <span class="resumen-lbl">Reservados / Mant.</span>
+      </div>
+    </div>
+  </section>
+
+  <main id="zonasContainer" class="max-w-7xl mx-auto px-6 pb-16 space-y-8">
+    <p id="vacio" class="text-center text-slate-400 py-20">Esperando datos de los espacios…</p>
+  </main>
+
+  <footer class="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur border-t border-slate-200 text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-6 py-2 flex justify-between">
+      <span>Servidor: <span id="apiUrl"></span></span>
+      <span>Última actualización: <span id="lastUpdate">—</span></span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

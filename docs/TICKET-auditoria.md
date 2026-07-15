@@ -85,7 +85,7 @@ Un mensaje que no cumpla el DTO se **descarta** (`channel.nack(msg, false, false
 ### 3.4 Seguridad de `ms-audit`
 
 - **Kong**: ruta `/api/v1/audit` con plugins `jwt` + `rate-limiting` (igual que `tickets`).
-- **A nivel de aplicación**: `JwtAuthGuard` propio (copiado del patrón de `vehiculos`) aplicado globalmente vía `APP_GUARD`, para que quede protegido aunque alguien acceda directo al puerto 3002 sin pasar por Kong. Verifica firma + emisor + `type: "access"` contra el mismo secreto (`JWT_SECRET`/`JWT_ISSUER`) que usan todos los microservicios.
+- **A nivel de aplicación**: `JwtAuthGuard` propio (copiado del patrón de `vehiculos`) aplicado globalmente vía `APP_GUARD`, para que quede protegido aunque alguien acceda directo al puerto 3002 sin pasar por Kong. Verifica firma (RS256, clave **pública** `JWT_PUBLIC_KEY`) + emisor + `type: "access"`. Al ser firma asimétrica, solo `usuarios` (dueño de la clave privada) puede emitir tokens; el resto únicamente verifica.
 
 ---
 

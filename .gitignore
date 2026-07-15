@@ -26,6 +26,13 @@ coverage/
 .env.*
 !.env.example
 
+# ---------- Claves JWT (RS256) ----------
+# La clave PRIVADA jamas se versiona (solo usuarios la usa para firmar).
+# La clave PUBLICA puede compartirse; se genera con scripts/setup_jwt_keys.sh.
+keys/jwt_private.pem
+keys/*.p8
+keys/*.key
+
 # ---------- IDE / Editor ----------
 .idea/
 *.iml

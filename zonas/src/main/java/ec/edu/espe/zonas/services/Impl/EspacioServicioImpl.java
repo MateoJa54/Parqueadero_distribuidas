@@ -18,6 +18,7 @@ import ec.edu.espe.zonas.entidades.Zona;
 import ec.edu.espe.zonas.repositorios.EspacioRepositorio;
 import ec.edu.espe.zonas.repositorios.ZonaRepositorio;
 import ec.edu.espe.zonas.services.EspacioServicio;
+import ec.edu.espe.zonas.sse.SseService;
 import ec.edu.espe.zonas.utils.RecursoNoEncontradoException;
 import ec.edu.espe.zonas.utils.ReglaNegocioException;
 import ec.edu.espe.zonas.utils.UtilMapers;
@@ -30,10 +31,15 @@ public class EspacioServicioImpl implements EspacioServicio {
 
     private static final String ENTIDAD = "ESPACIO";
 
+    // Nombres de los eventos que consume el dashboard de monitoreo (SSE).
+    private static final String EVENTO_CREADO = "espacio-creado";
+    private static final String EVENTO_ACTUALIZADO = "espacio-actualizado";
+
     private final EspacioRepositorio espacioRepositorio;
     private final ZonaRepositorio zonaRepositorio;
     private final UtilMapers maper;
     private final AuditPublisher auditPublisher;
+    private final SseService sseService;
 
     @Override
     @Transactional(readOnly = true)
@@ -79,7 +85,10 @@ public class EspacioServicioImpl implements EspacioServicio {
 
         Espacio espacioSaved = espacioRepositorio.save(espacio);
         auditPublisher.publicar("CREATE", ENTIDAD, espacioSaved);
-        return maper.toResponseDto(espacioSaved);
+
+        EspacioRespondeDto respuesta = maper.toResponseDto(espacioSaved);
+        sseService.emitir(EVENTO_CREADO, respuesta);
+        return respuesta;
     }
 
     @Override
@@ -96,7 +105,10 @@ public class EspacioServicioImpl implements EspacioServicio {
 
         Espacio espacioActualizado = espacioRepositorio.save(espacio);
         auditPublisher.publicar("UPDATE", ENTIDAD, espacioActualizado);
-        return maper.toResponseDto(espacioActualizado);
+
+        EspacioRespondeDto respuesta = maper.toResponseDto(espacioActualizado);
+        sseService.emitir(EVENTO_ACTUALIZADO, respuesta);
+        return respuesta;
     }
 
     @Override
@@ -124,7 +136,12 @@ public class EspacioServicioImpl implements EspacioServicio {
 
         Espacio espacioActualizado = espacioRepositorio.save(espacio);
         auditPublisher.publicar("UPDATE", ENTIDAD, espacioActualizado);
-        return maper.toResponseDto(espacioActualizado);
+
+        // Este es el punto por el que pasa el ticket: al emitir/pagar/anular, el
+        // microservicio de tickets llama al PATCH de estado y aqui se difunde.
+        EspacioRespondeDto respuesta = maper.toResponseDto(espacioActualizado);
+        sseService.emitir(EVENTO_ACTUALIZADO, respuesta);
+        return respuesta;
     }
 
     @Override
@@ -212,6 +229,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setEstado(EstadoEspacio.DISPONIBLE);
         espacioRepositorio.save(espacio);
         auditPublisher.publicar("UPDATE", ENTIDAD, espacio);
+        sseService.emitir(EVENTO_ACTUALIZADO, maper.toResponseDto(espacio));
     }
 
     @Override
@@ -229,6 +247,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setEstado(EstadoEspacio.MANTENIMIENTO);
         espacioRepositorio.save(espacio);
         auditPublisher.publicar("UPDATE", ENTIDAD, espacio);
+        sseService.emitir(EVENTO_ACTUALIZADO, maper.toResponseDto(espacio));
     }
 
     private String generarCodigoEspacio(EspacioRequestDto dto) {

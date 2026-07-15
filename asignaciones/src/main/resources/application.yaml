@@ -31,7 +31,8 @@ services:
   vehiculos-url: ${VEHICULOS_URL:http://localhost:3000}
 
 jwt:
-  secret: ${JWT_SECRET:parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026}
+  # RS256: este servicio SOLO verifica con la clave PUBLICA (ruta a PEM o PEM en base64).
+  public-key: ${JWT_PUBLIC_KEY:keys/jwt_public.pem}
   issuer: ${JWT_ISSUER:parqueadero}
 
 # Auditoria: publica eventos de CRUD hacia ms-audit via RabbitMQ.

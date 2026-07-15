@@ -16,8 +16,9 @@ export interface JwtPayload {
 }
 
 /**
- * Valida el JWT emitido por el microservicio usuarios (mismo jwt.secret e
- * issuer). Adjunta el payload decodificado a request.user para que
+ * Valida el JWT emitido por el microservicio usuarios (RS256). Solo verifica la
+ * firma con la clave PUBLICA (JWT_PUBLIC_KEY); no puede emitir ni re-firmar
+ * tokens. Adjunta el payload decodificado a request.user para que
  * RolesGuard pueda leer los roles.
  */
 @Injectable()
@@ -33,13 +34,14 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const token = header.substring('Bearer '.length).trim();
-    const secret =
-      this.configService.get<string>('JWT_SECRET') ??
-      'parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026';
+    const publicKey = this.resolvePublicKey();
     const issuer = this.configService.get<string>('JWT_ISSUER') ?? 'parqueadero';
 
     try {
-      const payload = jwt.verify(token, secret, { issuer }) as JwtPayload;
+      const payload = jwt.verify(token, publicKey, {
+        issuer,
+        algorithms: ['RS256'],
+      }) as JwtPayload;
       if (payload.type !== 'access') {
         throw new UnauthorizedException('Se esperaba un access token');
       }
@@ -48,5 +50,25 @@ export class JwtAuthGuard implements CanActivate {
     } catch {
       throw new UnauthorizedException('Token ausente o invalido: inicie sesion');
     }
+  }
+
+  /**
+   * Carga la clave PUBLICA RSA usada solo para VERIFICAR la firma. Acepta el PEM
+   * directo o el PEM codificado en base64 (variable JWT_PUBLIC_KEY). No existe
+   * valor por defecto: sin clave publica no se verifica, evitando secretos
+   * hardcodeados. Al ser asimetrica, este servicio NO puede firmar/re-firmar
+   * tokens: solo usuarios (dueno de la clave privada) puede emitirlos.
+   */
+  private resolvePublicKey(): string {
+    const material = this.configService.get<string>('JWT_PUBLIC_KEY');
+    if (!material) {
+      throw new UnauthorizedException(
+        'Configuracion invalida: falta JWT_PUBLIC_KEY',
+      );
+    }
+    const value = material.trim();
+    return value.includes('BEGIN')
+      ? value
+      : Buffer.from(value, 'base64').toString('utf8');
   }
 }

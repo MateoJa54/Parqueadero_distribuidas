@@ -110,6 +110,10 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<!-- La app forkeada corre desde la raiz del repo (padre del modulo),
+					     asi la ruta relativa keys/jwt_*.pem se resuelve contra la raiz
+					     y no contra la carpeta del modulo. -->
+					<workingDirectory>${project.basedir}/..</workingDirectory>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>

@@ -38,7 +38,8 @@ services:
 # Mismo secreto/emisor que el microservicio usuarios: permite validar el JWT
 # de forma stateless sin llamar a usuarios en cada peticion.
 jwt:
-  secret: ${JWT_SECRET:parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026}
+  # RS256: este servicio SOLO verifica con la clave PUBLICA (ruta a PEM o PEM en base64).
+  public-key: ${JWT_PUBLIC_KEY:keys/jwt_public.pem}
   issuer: ${JWT_ISSUER:parqueadero}
 
 # Tarifas por hora segun (tipo de vehiculo _ tipo de espacio). Los valores se
