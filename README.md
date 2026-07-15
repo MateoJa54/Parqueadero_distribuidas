@@ -10,7 +10,10 @@ Proyecto de **Sistemas Distribuidos** (Parcial 2 · backend). El sistema está c
 | **zonas** | Spring Boot 3.5 (Java 25) | `8080` | `zonas` |
 | **vehiculos** | NestJS 11 + TypeORM | `3000` (prefijo `/api`) | `vehiculos_db` |
 | **asignaciones** | Spring Boot 3.5 (Java 25) | `8082` | `asignaciones` |
-| **PostgreSQL** | Docker (postgres:16) | `5433` | las 4 anteriores |
+| **tickets** | Spring Boot 3.5 (Java 25) | `8083` | `tickets` |
+| **ms-audit** | NestJS 11 + TypeORM | `3002` (prefijo `/api/v1`) | `audit_db` |
+| **PostgreSQL** | Docker (postgres:16) | `5433` | todas las anteriores |
+| **RabbitMQ** | Docker (rabbitmq:3-management) | `5672` AMQP / `15672` panel | — |
 | **Kong Gateway** | Docker (kong:3.7, DB-less) | `8000` proxy / `8001` admin | — |
 
 ```
@@ -54,17 +57,23 @@ git clone https://github.com/MateoJa54/Parqueadero_distribuidas.git
 cd Parqueadero_distribuidas
 ```
 
-### 2) Levantar la base de datos (Docker)
-Una sola instancia de PostgreSQL crea **automáticamente** las 4 bases la primera vez
-(gracias a `init-db/01-init.sql`):
+### 2) Levantar la base de datos y RabbitMQ (Docker)
+Una sola instancia de PostgreSQL crea **automáticamente** todas las bases (incluida
+`audit_db`) la primera vez (gracias a `init-db/01-init.sql`), y RabbitMQ es el bus de
+eventos que usa el sistema de auditoría:
 ```bash
 docker compose up -d
 ```
-Verifica que esté arriba:
+Verifica que estén arriba:
 ```bash
-docker compose ps          # parqueadero-postgres debe verse "healthy" y publica localhost:5433
+docker compose ps          # parqueadero-postgres y parqueadero-rabbitmq deben verse "healthy"
 ```
+Panel de RabbitMQ: http://localhost:15672 (usuario/clave `guest`/`guest`).
+
 > Detener sin borrar datos: `docker compose down` · Borrar TODO (resetear): `docker compose down -v`
+> Si ya tenías el volumen de Postgres de una instalación anterior (sin `audit_db`), el script de
+> init no se re-ejecuta solo; crea la base manualmente una vez:
+> `docker exec parqueadero-postgres psql -U postgres -c "CREATE USER audit_user WITH PASSWORD 'audit_pass';" -c "CREATE DATABASE audit_db OWNER audit_user;"`
 
 ### 3) Levantar el microservicio **usuarios** (puerto 8081)
 
@@ -124,6 +133,42 @@ export JAVA_HOME=/ruta/al/jdk-25
 ./mvnw spring-boot:run
 ```
 
+### 7) Levantar el microservicio **ms-audit** (puerto 3002)
+En **otra terminal**. Consume desde RabbitMQ (exchange `audit_exchange`) los eventos que
+publican los demás microservicios y los persiste en `audit_db`:
+```bash
+cd ms-audit
+npm install
+npm run start:dev
+```
+Consultar los eventos guardados: `GET http://localhost:3002/api/v1/audit`.
+
+---
+
+## 🕵️ Sistema de auditoría (ms-audit + RabbitMQ)
+
+Cada microservicio publica un evento por cada operación de escritura relevante (alta,
+edición, activar/desactivar, login) hacia el exchange `audit_exchange` (topic, durable) de
+RabbitMQ, con la routing key `audit.event`. `ms-audit` mantiene una cola (`audit_queue`)
+ligada con el patrón `audit.#`, valida cada mensaje y lo guarda en `audit_db`.
+
+Campos del evento (ver `ms-audit/src/audit/dto/create-audit.dto.ts`):
+
+| Campo | Obligatorio | Formato |
+|---|---|---|
+| `servicio` | sí | `ms-<nombre>`, ej. `ms-vehiculos` |
+| `accion` | sí | `CREATE` \| `UPDATE` \| `DELETE` \| `LOGIN` \| `LOGOUT` \| `SELECT` |
+| `entidad` | sí | mayúsculas y guiones, ej. `VEHICULO` |
+| `datos` | no | objeto libre con el registro afectado |
+| `usuario` | no | usuario/UUID de quien hizo la acción |
+| `rol` | no | rol del usuario |
+| `ip` | sí | IPv4 de la petición |
+| `mac` | sí | dirección MAC del dispositivo cliente, enviada por el frontend/kiosko en el header `X-Device-Mac` (si no llega, se usa `00:00:00:00:00:00`) |
+
+> Nota: la `RABBITMQ_ROUTING_KEY=audit.#` de los `.env` va **entre comillas**. Sin comillas,
+> `dotenv` interpreta `#` como inicio de comentario y trunca el valor a `audit.`, rompiendo
+> el binding de la cola.
+
 ---
 
 ## 🌐 API Gateway con Kong
@@ -149,6 +194,13 @@ A partir de aquí, **todas** las peticiones entran por el puerto **8000** (los p
 | vehiculos | `http://localhost:3000/api/vehiculos` | `http://localhost:8000/api/vehiculos` |
 | asignaciones | `http://localhost:8082/api/v1/asignaciones-vehiculos` | `http://localhost:8000/api/v1/asignaciones-vehiculos` |
 | flota propietario | `http://localhost:8082/api/v1/propietarios/{id}/vehiculos` | `http://localhost:8000/api/v1/propietarios/{id}/vehiculos` |
+| tickets | `http://localhost:8083/api/v1/tickets` | `http://localhost:8000/api/v1/tickets` |
+| auditoría (ms-audit) | `http://localhost:3002/api/v1/audit` | `http://localhost:8000/api/v1/audit` |
+
+Todas las rutas de `tickets` y `ms-audit` exigen JWT en Kong (plugin `jwt`), igual que
+`asignaciones`, `zonas` y `vehiculos`; solo las rutas de gestión de `usuarios` (no las de
+`/api/v1/auth`) lo exigen. `ms-audit` además valida el token en el propio microservicio
+(no solo en Kong), porque contiene datos sensibles (ip, mac, usuario).
 
 ### Reglas (plugins) activas en Kong
 - **rate-limiting** — máx. 100 peticiones/minuto por servicio (devuelve `429` si se supera).
@@ -220,14 +272,16 @@ GET /api/v1/espacios/{id}/disponibilidad             # ¿este espacio está libr
 ## 🗂️ Estructura del repositorio
 ```
 .
-├── docker-compose.yml        # PostgreSQL unificado (4 bases, host 5433)
+├── docker-compose.yml        # PostgreSQL unificado + RabbitMQ (host 5433 / 5672)
 ├── init-db/                  # script que crea las bases la 1ª vez
 ├── gateway/                  # Kong (kong.yml + docker-compose.yml)
 ├── postman/                  # environment compartido
 ├── usuarios/                 # microservicio Spring Boot (8081)
 ├── zonas/                    # microservicio Spring Boot (8080)
 ├── vehiculos/vehiculos/      # microservicio NestJS (3000)
-└── asignaciones/             # microservicio Spring Boot (8082)
+├── asignaciones/             # microservicio Spring Boot (8082)
+├── tickets/                  # microservicio Spring Boot (8083)
+└── ms-audit/                 # microservicio de auditoria, NestJS (3002)
 ```
 
 ---
@@ -237,11 +291,12 @@ GET /api/v1/espacios/{id}/disponibilidad             # ¿este espacio está libr
 | Problema | Causa / Solución |
 |---|---|
 | `JAVA_HOME` no encontrado / compila con otra versión | Define `JAVA_HOME` apuntando al **JDK 25**. Windows: variable de entorno; Linux/mac: `export JAVA_HOME=...`. |
-| Puerto en uso (8080/8081/8082/3000/5433/8000) | Cierra el proceso que lo ocupa o cambia el puerto del servicio. El repo usa `5433` para no chocar con PostgreSQL local en `5432`. |
-| Las bases no se crearon | Se crean solo con el **volumen vacío**. Resetea: `docker compose down -v && docker compose up -d`. |
+| Puerto en uso (8080/8081/8082/8083/3000/3002/5433/5672/8000) | Cierra el proceso que lo ocupa o cambia el puerto del servicio. El repo usa `5433` para no chocar con PostgreSQL local en `5432`. |
+| Las bases no se crearon (falta `audit_db`, etc.) | Se crean solo con el **volumen vacío**. Resetea: `docker compose down -v && docker compose up -d`. Si no quieres perder datos existentes, crea `audit_db` a mano (ver paso 2). |
 | Kong responde `502 Bad Gateway` | Las APIs deben estar **levantadas en el host** antes de probar por Kong. |
 | `host.docker.internal` no resuelve (Linux) | Ya está resuelto con `extra_hosts: host-gateway` en `gateway/docker-compose.yml`. |
 | `npm install` falla | Usa Node 20+. Borra `node_modules` y reintenta. |
+| `ms-audit` no guarda nada aunque los demás servicios publiquen eventos | Revisa que `RABBITMQ_ROUTING_KEY="audit.#"` esté **entre comillas** en el `.env`; sin comillas `dotenv` la trunca a `audit.` y la cola no recibe mensajes. |
 
 ---
 

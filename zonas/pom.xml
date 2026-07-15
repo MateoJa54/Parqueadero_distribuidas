@@ -52,6 +52,17 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
+		<!-- Permite a Jackson serializar entidades JPA con relaciones lazy
+		     (proxies de Hibernate) al publicar eventos de auditoria; sin esto,
+		     un OneToOne/OneToMany LAZY hace fallar la publicacion en silencio. -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-hibernate6</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
 			<version>0.12.6</version>
@@ -99,6 +110,10 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<!-- La app forkeada corre desde la raiz del repo (padre del modulo),
+					     asi la ruta relativa keys/jwt_*.pem se resuelve contra la raiz
+					     y no contra la carpeta del modulo. -->
+					<workingDirectory>${project.basedir}/..</workingDirectory>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>

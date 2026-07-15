@@ -1,8 +1,13 @@
 package ec.edu.espe.tickets.security;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
-import javax.crypto.SecretKey;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -10,14 +15,14 @@ import org.springframework.stereotype.Service;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 
 /**
- * Verificacion de los JWT emitidos por el microservicio usuarios.
+ * Verificacion de los JWT emitidos por el microservicio usuarios (RS256).
  *
- * <p>Este servicio solo VALIDA (no emite): comparte el mismo {@code jwt.secret}
- * e {@code issuer} que usuarios, por lo que puede autenticar peticiones de forma
- * stateless sin llamar a usuarios en cada request.
+ * <p>Este servicio solo VALIDA (no emite): posee unicamente la clave PUBLICA
+ * (jwt.public-key), por lo que puede comprobar la firma de forma stateless pero
+ * NO puede generar ni re-firmar tokens. Solo usuarios, dueno de la clave
+ * privada, puede emitirlos.
  */
 @Service
 public class JwtService {
@@ -25,13 +30,13 @@ public class JwtService {
     private static final String CLAIM_TYPE = "type";
     private static final String TYPE_ACCESS = "access";
 
-    private final SecretKey key;
+    private final PublicKey publicKey;
     private final String issuer;
 
     public JwtService(
-            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.public-key}") String publicKeyMaterial,
             @Value("${jwt.issuer}") String issuer) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.publicKey = RsaKeys.loadPublic(publicKeyMaterial);
         this.issuer = issuer;
     }
 
@@ -42,7 +47,7 @@ public class JwtService {
      */
     public Claims validarAccessToken(String token) {
         Claims claims = Jwts.parser()
-                .verifyWith(key)
+                .verifyWith(publicKey)
                 .requireIssuer(issuer)
                 .build()
                 .parseSignedClaims(token)
@@ -53,5 +58,40 @@ public class JwtService {
             throw new JwtException("Se esperaba un access token");
         }
         return claims;
+    }
+
+    /**
+     * Utilidad para cargar la clave PUBLICA RSA a partir de PEM. El "material"
+     * puede ser una ruta a un archivo PEM o el contenido PEM codificado en base64.
+     */
+    static final class RsaKeys {
+
+        private RsaKeys() {
+        }
+
+        static PublicKey loadPublic(String material) {
+            try {
+                byte[] der = Base64.getDecoder().decode(pemBody(readMaterial(material)));
+                return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(der));
+            } catch (Exception ex) {
+                throw new IllegalStateException("No se pudo cargar la clave publica RSA (jwt.public-key)", ex);
+            }
+        }
+
+        private static String readMaterial(String material) throws IOException {
+            String value = material == null ? "" : material.trim();
+            Path path = Path.of(value);
+            if (Files.exists(path)) {
+                return Files.readString(path, StandardCharsets.UTF_8);
+            }
+            return new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
+        }
+
+        private static String pemBody(String pem) {
+            return pem
+                    .replaceAll("-----BEGIN [^-]+-----", "")
+                    .replaceAll("-----END [^-]+-----", "")
+                    .replaceAll("\\s", "");
+        }
     }
 }

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ec.edu.espe.zonas.audit.AuditPublisher;
 import ec.edu.espe.zonas.dtos.DisponibilidadResponseDto;
 import ec.edu.espe.zonas.dtos.EspacioRequestDto;
 import ec.edu.espe.zonas.dtos.EspacioRespondeDto;
@@ -17,6 +18,7 @@ import ec.edu.espe.zonas.entidades.Zona;
 import ec.edu.espe.zonas.repositorios.EspacioRepositorio;
 import ec.edu.espe.zonas.repositorios.ZonaRepositorio;
 import ec.edu.espe.zonas.services.EspacioServicio;
+import ec.edu.espe.zonas.sse.SseService;
 import ec.edu.espe.zonas.utils.RecursoNoEncontradoException;
 import ec.edu.espe.zonas.utils.ReglaNegocioException;
 import ec.edu.espe.zonas.utils.UtilMapers;
@@ -27,9 +29,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EspacioServicioImpl implements EspacioServicio {
 
+    private static final String ENTIDAD = "ESPACIO";
+
+    // Nombres de los eventos que consume el dashboard de monitoreo (SSE).
+    private static final String EVENTO_CREADO = "espacio-creado";
+    private static final String EVENTO_ACTUALIZADO = "espacio-actualizado";
+
     private final EspacioRepositorio espacioRepositorio;
     private final ZonaRepositorio zonaRepositorio;
     private final UtilMapers maper;
+    private final AuditPublisher auditPublisher;
+    private final SseService sseService;
 
     @Override
     @Transactional(readOnly = true)
@@ -74,7 +84,11 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setEstado(EstadoEspacio.DISPONIBLE);
 
         Espacio espacioSaved = espacioRepositorio.save(espacio);
-        return maper.toResponseDto(espacioSaved);
+        auditPublisher.publicar("CREATE", ENTIDAD, espacioSaved);
+
+        EspacioRespondeDto respuesta = maper.toResponseDto(espacioSaved);
+        sseService.emitir(EVENTO_CREADO, respuesta);
+        return respuesta;
     }
 
     @Override
@@ -89,7 +103,12 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setDescripcion(dto.getDescripcion());
         espacio.setTipoEspacio(dto.getTipo());
 
-        return maper.toResponseDto(espacioRepositorio.save(espacio));
+        Espacio espacioActualizado = espacioRepositorio.save(espacio);
+        auditPublisher.publicar("UPDATE", ENTIDAD, espacioActualizado);
+
+        EspacioRespondeDto respuesta = maper.toResponseDto(espacioActualizado);
+        sseService.emitir(EVENTO_ACTUALIZADO, respuesta);
+        return respuesta;
     }
 
     @Override
@@ -115,7 +134,14 @@ public class EspacioServicioImpl implements EspacioServicio {
 
         espacio.setEstado(estado);
 
-        return maper.toResponseDto(espacioRepositorio.save(espacio));
+        Espacio espacioActualizado = espacioRepositorio.save(espacio);
+        auditPublisher.publicar("UPDATE", ENTIDAD, espacioActualizado);
+
+        // Este es el punto por el que pasa el ticket: al emitir/pagar/anular, el
+        // microservicio de tickets llama al PATCH de estado y aqui se difunde.
+        EspacioRespondeDto respuesta = maper.toResponseDto(espacioActualizado);
+        sseService.emitir(EVENTO_ACTUALIZADO, respuesta);
+        return respuesta;
     }
 
     @Override
@@ -202,6 +228,8 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setActivo(true);
         espacio.setEstado(EstadoEspacio.DISPONIBLE);
         espacioRepositorio.save(espacio);
+        auditPublisher.publicar("UPDATE", ENTIDAD, espacio);
+        sseService.emitir(EVENTO_ACTUALIZADO, maper.toResponseDto(espacio));
     }
 
     @Override
@@ -218,6 +246,8 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setActivo(false);
         espacio.setEstado(EstadoEspacio.MANTENIMIENTO);
         espacioRepositorio.save(espacio);
+        auditPublisher.publicar("UPDATE", ENTIDAD, espacio);
+        sseService.emitir(EVENTO_ACTUALIZADO, maper.toResponseDto(espacio));
     }
 
     private String generarCodigoEspacio(EspacioRequestDto dto) {

@@ -10,15 +10,50 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Not, Repository } from 'typeorm';
 import { Vehiculo } from './entities/vehiculo.entity';
 import { FactoryVehiculos } from './factory/factory.vehiculo';
+import { AuditEvent, EventPublisher } from './event-publisher.service';
+
+// Datos de la petición HTTP que viajan en cada evento de auditoría
+// (quién hizo la acción y desde dónde). El controller los arma a partir
+// del JWT y de los headers de la petición.
+export interface AuditContext {
+  usuario?: string;
+  rol?: string;
+  ip: string;
+  mac: string;
+}
 
 @Injectable()
 export class VehiculosService {
   constructor(
     @InjectRepository(Vehiculo)
     private readonly repositoryVehiculo: Repository<Vehiculo>,
+    private eventPublisher: EventPublisher,
   ) {}
 
-  async create(createVehiculoDto: CreateVehiculoDto): Promise<Vehiculo> {
+  // Método auxiliar para publicar eventos
+  private async emitEvent(
+    accion: string,
+    vehiculo: Vehiculo,
+    auditContext: AuditContext,
+    datosExtra?: any,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-vehiculos',
+      accion,
+      entidad: 'VEHICULO',
+      datos: { ...vehiculo, ...datosExtra },
+      usuario: auditContext.usuario,
+      rol: auditContext.rol,
+      ip: auditContext.ip,
+      mac: auditContext.mac,
+    };
+    await this.eventPublisher.publish(event);
+  }
+
+  async create(
+    createVehiculoDto: CreateVehiculoDto,
+    auditContext: AuditContext,
+  ): Promise<Vehiculo> {
     const placa = createVehiculoDto.datos?.placa?.trim().toUpperCase();
     if (!placa) {
       throw new BadRequestException('La placa es requerida en datos');
@@ -35,7 +70,10 @@ export class VehiculosService {
     }
 
     const vehiculo = FactoryVehiculos.crear(createVehiculoDto);
-    return this.repositoryVehiculo.save(vehiculo);
+    const saved = await this.repositoryVehiculo.save(vehiculo);
+    await this.emitEvent('CREATE', saved, auditContext);
+
+    return saved;
   }
 
   // Por defecto solo lista vehiculos ACTIVOS (soft-delete). Con
@@ -75,7 +113,11 @@ export class VehiculosService {
     return existe;
   }
 
-  async update(id: string, updateVehiculoDto: UpdateVehiculoDto): Promise<Vehiculo> {
+  async update(
+    id: string,
+    updateVehiculoDto: UpdateVehiculoDto,
+    auditContext: AuditContext,
+  ): Promise<Vehiculo> {
     const existe = await this.repositoryVehiculo.findOne({ where: { id } });
     if (!existe) {
       throw new NotFoundException('Vehículo no encontrado con ID: ' + id);
@@ -108,10 +150,12 @@ export class VehiculosService {
     }
 
     const updated = this.repositoryVehiculo.merge(existe, partialDatos);
-    return this.repositoryVehiculo.save(updated);
+    const saved = await this.repositoryVehiculo.save(updated);
+    await this.emitEvent('UPDATE', saved, auditContext);
+    return saved;
   }
 
-  async desactivar(id: string): Promise<Vehiculo> {
+  async desactivar(id: string, auditContext: AuditContext): Promise<Vehiculo> {
     const existe = await this.repositoryVehiculo.findOne({ where: { id } });
     if (!existe) {
       throw new NotFoundException('Vehículo no encontrado con ID: ' + id);
@@ -120,10 +164,14 @@ export class VehiculosService {
       throw new ConflictException('El vehículo ya está inactivo');
     }
     existe.activo = false;
-    return this.repositoryVehiculo.save(existe);
+    const saved = await this.repositoryVehiculo.save(existe);
+    await this.emitEvent('UPDATE', saved, auditContext, {
+      accionDetalle: 'DESACTIVAR',
+    });
+    return saved;
   }
 
-  async activar(id: string): Promise<Vehiculo> {
+  async activar(id: string, auditContext: AuditContext): Promise<Vehiculo> {
     const existe = await this.repositoryVehiculo.findOne({ where: { id } });
     if (!existe) {
       throw new NotFoundException('Vehículo no encontrado con ID: ' + id);
@@ -132,6 +180,10 @@ export class VehiculosService {
       throw new ConflictException('El vehículo ya está activo');
     }
     existe.activo = true;
-    return this.repositoryVehiculo.save(existe);
+    const saved = await this.repositoryVehiculo.save(existe);
+    await this.emitEvent('UPDATE', saved, auditContext, {
+      accionDetalle: 'ACTIVAR',
+    });
+    return saved;
   }
 }

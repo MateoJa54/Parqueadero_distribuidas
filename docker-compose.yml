@@ -2,14 +2,21 @@
 # Base de datos UNIFICADA para el sistema de parqueadero.
 #
 # Una sola instancia PostgreSQL (puerto host 5433) que aloja las
-# cuatro bases de datos usadas por las APIs:
-#   - zonas         (Spring Boot)  usuario: zonas      / zonas123
-#   - usuarios      (Spring Boot)  usuario: usuarios   / usuarios123
+# bases de datos usadas por las APIs:
+#   - zonas         (Spring Boot)  usuario: zonas        / zonas123
+#   - usuarios      (Spring Boot)  usuario: usuarios     / usuarios123
 #   - asignaciones  (Spring Boot)  usuario: asignaciones / asignaciones123
-#   - vehiculos_db  (NestJS)       usuario: postgres   / postgres
+#   - tickets       (Spring Boot)  usuario: tickets      / tickets123
+#   - vehiculos_db  (NestJS)       usuario: postgres     / postgres
+#   - audit_db      (NestJS, ms-audit) usuario: audit_user / audit_pass
 #
 # Las bases y usuarios se crean automáticamente con los scripts
 # de ./init-db la primera vez que se levanta el volumen.
+#
+# RabbitMQ (puerto host 5672, panel de administracion 15672) es el
+# bus de eventos de auditoria: cada microservicio publica sus eventos
+# de CRUD/login en el exchange "audit_exchange" y ms-audit los consume
+# y persiste en audit_db.
 #
 # Uso:
 #   docker compose up -d        # levantar
@@ -36,5 +43,24 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: parqueadero-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"    # AMQP (lo usan todos los microservicios)
+      - "15672:15672"  # Panel de administracion: http://localhost:15672
+    volumes:
+      - parqueadero_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   parqueadero_pgdata:
+  parqueadero_rabbitmq_data:

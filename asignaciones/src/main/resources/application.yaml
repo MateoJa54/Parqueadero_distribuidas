@@ -17,6 +17,11 @@ spring:
   sql:
     init:
       mode: always
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
 server:
   port: 8082
@@ -26,5 +31,13 @@ services:
   vehiculos-url: ${VEHICULOS_URL:http://localhost:3000}
 
 jwt:
-  secret: ${JWT_SECRET:parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026}
+  # RS256: este servicio SOLO verifica con la clave PUBLICA (ruta a PEM o PEM en base64).
+  public-key: ${JWT_PUBLIC_KEY:keys/jwt_public.pem}
   issuer: ${JWT_ISSUER:parqueadero}
+
+# Auditoria: publica eventos de CRUD hacia ms-audit via RabbitMQ.
+# El exchange se declara "durable" en AuditConfig; ms-audit crea la cola y
+# el binding "audit.#" que atrapa cualquier routing key "audit.*".
+audit:
+  exchange: ${RABBITMQ_EXCHANGE:audit_exchange}
+  routing-key: ${RABBITMQ_ROUTING_KEY:audit.event}

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ec.edu.espe.usuarios.audit.AuditPublisher;
 import ec.edu.espe.usuarios.dtos.PersonaRequestDto;
 import ec.edu.espe.usuarios.dtos.PersonaResponseDto;
 import ec.edu.espe.usuarios.entidades.Persona;
@@ -23,10 +24,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PersonaServicioImpl implements PersonaServicio {
 
+    private static final String ENTIDAD = "PERSONA";
+
     private final PersonaRepositorio personaRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
     private final UsuarioServicio usuarioServicio;
     private final UtilMappers mapper;
+    private final AuditPublisher auditPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -74,7 +78,9 @@ public class PersonaServicioImpl implements PersonaServicio {
                 .active(true)
                 .build();
 
-        return mapper.toPersonaResponse(personaRepositorio.save(persona));
+        Persona personaGuardada = personaRepositorio.save(persona);
+        auditPublisher.publicar("CREATE", ENTIDAD, personaGuardada);
+        return mapper.toPersonaResponse(personaGuardada);
     }
 
     @Override
@@ -106,7 +112,9 @@ public class PersonaServicioImpl implements PersonaServicio {
         persona.setAddress(request.getAddress());
         persona.setNationality(request.getNationality());
 
-        return mapper.toPersonaResponse(personaRepositorio.save(persona));
+        Persona personaActualizada = personaRepositorio.save(persona);
+        auditPublisher.publicar("UPDATE", ENTIDAD, personaActualizada);
+        return mapper.toPersonaResponse(personaActualizada);
     }
 
     @Override
@@ -118,7 +126,9 @@ public class PersonaServicioImpl implements PersonaServicio {
         persona.setActive(true);
         // No se reactiva el usuario en cascada: reactivar la identidad no implica
         // devolver el acceso. El usuario se reactiva de forma explicita (minimo privilegio).
-        return mapper.toPersonaResponse(personaRepositorio.save(persona));
+        Persona personaActivada = personaRepositorio.save(persona);
+        auditPublisher.publicar("UPDATE", ENTIDAD, personaActivada);
+        return mapper.toPersonaResponse(personaActivada);
     }
 
     @Override
@@ -135,7 +145,9 @@ public class PersonaServicioImpl implements PersonaServicio {
         }
 
         persona.setActive(false);
-        return mapper.toPersonaResponse(personaRepositorio.save(persona));
+        Persona personaDesactivada = personaRepositorio.save(persona);
+        auditPublisher.publicar("UPDATE", ENTIDAD, personaDesactivada);
+        return mapper.toPersonaResponse(personaDesactivada);
     }
 
     @Override

@@ -14,7 +14,7 @@
 #
 # Requisito: las APIs deben estar levantadas en el host en
 #   usuarios 8081, zonas 8080, vehiculos 3000,
-#   asignaciones 8082, tickets 8083.
+#   asignaciones 8082, tickets 8083, ms-audit 3002.
 # =====================================================================
 services:
   kong:

@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ec.edu.espe.zonas.audit.AuditPublisher;
 import ec.edu.espe.zonas.dtos.EspacioRespondeDto;
 import ec.edu.espe.zonas.dtos.ZonaRequestDto;
 import ec.edu.espe.zonas.dtos.ZonaRespondeDto;
@@ -25,8 +26,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ZonaServicioImpl implements ZonaServicio {
 
+    private static final String ENTIDAD = "ZONA";
+
     private final ZonaRepositorio repositorioZona;
     private final EspacioRepositorio repositorioEspacio;
+    private final AuditPublisher auditPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -65,6 +69,7 @@ public class ZonaServicioImpl implements ZonaServicio {
         objZona.setCapacidad(request.getCapacidad());
 
         repositorioZona.save(objZona);
+        auditPublisher.publicar("CREATE", ENTIDAD, objZona);
         return mapToDto(objZona);
     }
 
@@ -93,6 +98,7 @@ public class ZonaServicioImpl implements ZonaServicio {
         zona.setCapacidad(request.getCapacidad());
 
         repositorioZona.save(zona);
+        auditPublisher.publicar("UPDATE", ENTIDAD, zona);
         return mapToDto(zona);
     }
 
@@ -111,6 +117,7 @@ public class ZonaServicioImpl implements ZonaServicio {
 
         zona.setActivo(true);
         repositorioZona.save(zona);
+        auditPublisher.publicar("UPDATE", ENTIDAD, zona);
     }
 
     @Override
@@ -136,6 +143,7 @@ public class ZonaServicioImpl implements ZonaServicio {
 
         zona.setActivo(false);
         repositorioZona.save(zona);
+        auditPublisher.publicar("UPDATE", ENTIDAD, zona);
     }
 
 

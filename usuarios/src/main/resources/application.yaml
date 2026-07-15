@@ -13,11 +13,29 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 server:
   port: 8081
 
 jwt:
-  secret: ${JWT_SECRET:parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026}
+  # RS256 asimetrico: usuarios FIRMA con la clave PRIVADA; el resto de servicios
+  # solo VERIFICAN con la PUBLICA. Asi nadie puede re-firmar un token (jwt.io)
+  # cambiando roles sin la clave privada. El valor puede ser una RUTA a un PEM
+  # (desarrollo) o el PEM codificado en BASE64 (contenedores/variables de entorno).
+  # La clave privada NO se versiona (ver .gitignore).
+  private-key: ${JWT_PRIVATE_KEY:keys/jwt_private.pem}
+  public-key: ${JWT_PUBLIC_KEY:keys/jwt_public.pem}
   issuer: ${JWT_ISSUER:parqueadero}
   expiration-minutes: ${JWT_EXP_MIN:120}
   refresh-expiration-minutes: ${JWT_REFRESH_EXP_MIN:10080}
+
+# Auditoria: publica eventos de CRUD hacia ms-audit via RabbitMQ.
+# El exchange se declara "durable" en AuditConfig; ms-audit crea la cola y
+# el binding "audit.#" que atrapa cualquier routing key "audit.*".
+audit:
+  exchange: ${RABBITMQ_EXCHANGE:audit_exchange}
+  routing-key: ${RABBITMQ_ROUTING_KEY:audit.event}

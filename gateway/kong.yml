@@ -115,6 +115,28 @@ services:
           claims_to_verify:
             - exp
 
+  # ---------------- Microservicio MS-AUDIT -----------------
+  # Consulta del trail de auditoria (quien hizo que, desde donde). Contiene
+  # datos sensibles (ip, mac, usuario) -> todas sus rutas exigen JWT, igual
+  # que tickets. La escritura real llega por RabbitMQ, no por HTTP; el POST
+  # queda igual protegido por si se usa para pruebas/reenvios manuales.
+  - name: ms-audit
+    url: http://host.docker.internal:3002
+    routes:
+      - name: ms-audit-routes
+        strip_path: false
+        paths:
+          - /api/v1/audit
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 100
+          policy: local
+      - name: jwt
+        config:
+          claims_to_verify:
+            - exp
+
 # ---------------- Plugins GLOBALES (a todo el trafico) ----
 plugins:
   # CORS: permite que un frontend en otro origen consuma el gateway.
@@ -144,17 +166,26 @@ plugins:
       echo_downstream: true
 
 # ---------------- Consumidores / credenciales JWT --------
-# El plugin jwt valida la firma del token usando este secreto compartido.
-# 'key' debe coincidir con el claim 'iss' del token (jwt.issuer en usuarios) y
-# 'secret' debe ser identico a JWT_SECRET del microservicio usuarios.
-# En produccion, sobre-escribir ambos por variables/secretos seguros.
+# Firma ASIMETRICA RS256: Kong solo necesita la clave PUBLICA para VERIFICAR la
+# firma; nunca ve la clave privada. 'key' debe coincidir con el claim 'iss' del
+# token (jwt.issuer en usuarios). La clave publica no es secreta: puede vivir en
+# el repo sin riesgo, porque sin la clave privada nadie puede re-firmar un token.
+# Para rotar las claves: regenerar el par (scripts/setup_jwt_keys.sh) y pegar
+# aqui el nuevo contenido de keys/jwt_public.pem.
 consumers:
   - username: parqueadero-app
     jwt_secrets:
-      # El algoritmo DEBE coincidir con el de firma del microservicio usuarios
-      # (JJWT firma en HS512). Si aqui se pone HS256, Kong rechaza todo token
-      # con 401 "Invalid algorithm".
+      # El algoritmo DEBE coincidir con el de firma de usuarios (RS256).
       - key: parqueadero
-        algorithm: HS512
-        secret: "parqueadero-espe-clave-secreta-jwt-cambia-esto-en-produccion-2026"
+        algorithm: RS256
+        rsa_public_key: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7FvwwKf6bc6VnjO45J0X
+          7yOrE4TLdSu001gTsvIAqk6GzVD1pY2DDJVyfh6dKFwYU7lAl+hFkSEqE3nGKSWJ
+          LlvrnuPK1i04XJkExpuCHSnIEx6Ev+znREBTBYfjAQC4yejo3qRzuXH8smXmHydr
+          /ybRpvnch4xsbSW18dfdYq0bBAblJYcmzjIyQrLxGdqncoOsPdBo4BoIiPgnmq2K
+          I6Q5nGNoL3Y7QBg/hn/vqHgYfJw3lJGTv3sBmCbfk4Che75I/8x8ijGrH1equbBS
+          cdVTet2+sA9UxfQ1gYRXqUsGyj6/pdNOnv6Qcl1ZDZRmIM0HdKacpSJkGJ8/lpNz
+          lwIDAQAB
+          -----END PUBLIC KEY-----
 
