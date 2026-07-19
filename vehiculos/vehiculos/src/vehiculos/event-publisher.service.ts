@@ -55,10 +55,10 @@ export class EventPublisher implements OnModuleInit, OnModuleDestroy {
   }
 
   private async doConnect(): Promise<void> {
-    const host = this.configService.get('RABBITMQ_HOST');
-    const port = this.configService.get('RABBITMQ_PORT');
-    const user = this.configService.get('RABBITMQ_USER');
-    const pass = this.configService.get('RABBITMQ_PASSWORD');
+    const host = this.configService.get('RABBITMQ_HOST') ?? 'localhost';
+    const port = this.configService.get('RABBITMQ_PORT') ?? '5672';
+    const user = this.configService.get('RABBITMQ_USER') ?? 'guest';
+    const pass = this.configService.get('RABBITMQ_PASSWORD') ?? 'guest';
     const url = `amqp://${user}:${pass}@${host}:${port}`;
 
     try {
