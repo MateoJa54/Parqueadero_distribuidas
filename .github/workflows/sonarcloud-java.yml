@@ -1,0 +1,113 @@
+name: SonarCloud - Java services
+
+# Analiza los 4 microservicios Spring Boot (usuarios, zonas, asignaciones, tickets).
+#
+# Nota sobre JDK: el pom.xml de cada servicio pide <java.version>25</java.version>,
+# pero JaCoCo (hasta la version 0.8.13, la mas reciente disponible) no soporta
+# instrumentar una JVM Java 26 (falla en clases internas del propio JDK, no del
+# codigo del proyecto). Por eso este workflow compila y corre los tests con JDK 21
+# (-Dmaven.compiler.release=21), solo para el pipeline de analisis/cobertura.
+# El build de produccion (Dockerfile, despliegue) puede seguir usando JDK 25 aparte.
+
+on:
+  push:
+    branches: [main, proyecto_aseguramiento]
+    paths:
+      - "usuarios/**"
+      - "zonas/**"
+      - "asignaciones/**"
+      - "tickets/**"
+      - ".github/workflows/sonarcloud-java.yml"
+  pull_request:
+    paths:
+      - "usuarios/**"
+      - "zonas/**"
+      - "asignaciones/**"
+      - "tickets/**"
+      - ".github/workflows/sonarcloud-java.yml"
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analyze ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # tickets no requiere Postgres para sus tests (son unitarios puros),
+          # por eso corre suite completa + cobertura real.
+          - module: tickets
+            project_key: parqueadero-tickets
+            skip_tests: false
+          # usuarios, zonas y asignaciones tienen tests de contexto Spring que
+          # requieren PostgreSQL vivo (@SpringBootTest). Se saltan aqui para
+          # mantener el analisis estatico independiente de infraestructura;
+          # sus tests de integracion corren en su propio pipeline si existe.
+          - module: usuarios
+            project_key: parqueadero-usuarios
+            skip_tests: true
+          - module: zonas
+            project_key: parqueadero-zonas
+            skip_tests: true
+          - module: asignaciones
+            project_key: parqueadero-asignaciones
+            skip_tests: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # SonarCloud necesita el historial completo para blame/new code
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ matrix.module }}-${{ hashFiles(format('{0}/pom.xml', matrix.module)) }}
+          restore-keys: ${{ runner.os }}-m2-${{ matrix.module }}-
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar-${{ matrix.module }}
+          restore-keys: ${{ runner.os }}-sonar-${{ matrix.module }}
+
+      - name: Build, test and analyze (with coverage)
+        if: matrix.skip_tests == false
+        working-directory: ${{ matrix.module }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ./mvnw -B clean \
+            org.jacoco:jacoco-maven-plugin:0.8.13:prepare-agent \
+            test \
+            org.jacoco:jacoco-maven-plugin:0.8.13:report \
+            sonar:sonar \
+            -Dmaven.compiler.release=21 \
+            -Dsonar.projectKey=${{ matrix.project_key }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+
+      - name: Build and analyze (static only, sin tests)
+        if: matrix.skip_tests == true
+        working-directory: ${{ matrix.module }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ./mvnw -B clean verify sonar:sonar \
+            -DskipTests=true \
+            -Dmaven.compiler.release=21 \
+            -Dsonar.projectKey=${{ matrix.project_key }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+            -Dsonar.host.url=https://sonarcloud.io

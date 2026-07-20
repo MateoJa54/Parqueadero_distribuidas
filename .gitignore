@@ -51,3 +51,14 @@ Thumbs.db
 
 # ---------- Docker ----------
 *.pid
+
+
+# ---------- Herramientas locales (no versionar binarios sueltos) ----------
+kubectl
+
+# ---------- SonarQube / analisis estatico ----------
+.scannerwork/
+.sonar/
+
+# ---------- SDD / Engram ----------
+.atl/
