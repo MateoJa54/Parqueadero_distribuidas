@@ -7,7 +7,7 @@ name: SonarCloud - Frontend
 
 on:
   push:
-    branches: [main, proyecto_aseguramiento]
+    branches: [proyecto_aseguramiento]
     paths:
       - "frontend/**"
       - ".github/workflows/sonarcloud-frontend.yml"

@@ -8,7 +8,7 @@ name: SonarCloud - NestJS services
 
 on:
   push:
-    branches: [main, proyecto_aseguramiento]
+    branches: [proyecto_aseguramiento]
     paths:
       - "vehiculos/**"
       - "ms-audit/**"

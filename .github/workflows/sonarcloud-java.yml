@@ -11,7 +11,7 @@ name: SonarCloud - Java services
 
 on:
   push:
-    branches: [main, proyecto_aseguramiento]
+    branches: [proyecto_aseguramiento]
     paths:
       - "usuarios/**"
       - "zonas/**"
