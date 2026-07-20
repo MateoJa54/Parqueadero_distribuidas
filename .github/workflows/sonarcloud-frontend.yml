@@ -21,6 +21,7 @@ jobs:
   analyze:
     name: Analyze frontend
     runs-on: ubuntu-latest
+    environment: SonarqubeActions
     steps:
       - name: Checkout
         uses: actions/checkout@v4

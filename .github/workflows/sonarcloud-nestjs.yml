@@ -24,6 +24,7 @@ jobs:
   analyze:
     name: Analyze ${{ matrix.module }}
     runs-on: ubuntu-latest
+    environment: SonarqubeActions
     strategy:
       fail-fast: false
       matrix:
