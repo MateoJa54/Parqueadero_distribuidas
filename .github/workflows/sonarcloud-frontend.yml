@@ -52,3 +52,5 @@ jobs:
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.sources=src
             -Dsonar.exclusions=**/node_modules/**,**/dist/**
+
+            

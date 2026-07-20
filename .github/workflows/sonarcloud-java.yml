@@ -112,3 +112,5 @@ jobs:
             -Dsonar.projectKey=${{ matrix.project_key }} \
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
             -Dsonar.host.url=https://sonarcloud.io
+
+            
