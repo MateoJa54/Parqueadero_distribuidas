@@ -1,0 +1,58 @@
+﻿RequirementID,Modulo,Descripcion,TestCaseID,TipoPrueba,Estado,Evidencia
+RF-AUTH-01,1. Auth,Login root (happy) 200,POSTMAN::Login root (happy) 200,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-AUTH-02,1. Auth,Login credenciales invalidas 401,POSTMAN::Login credenciales invalidas 401,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-AUTH-03,1. Auth,Login sin password 400,POSTMAN::Login sin password 400,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-AUTH-04,1. Auth,GET /me con token 200,POSTMAN::GET /me con token 200,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-AUTH-05,1. Auth,GET /me sin token 401,POSTMAN::GET /me sin token 401,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-PER-01,2. Personas,Crear persona (happy) 201,POSTMAN::Crear persona (happy) 201,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-PER-02,2. Personas,Crear persona dni invalido 400,POSTMAN::Crear persona dni invalido 400,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-PER-03,2. Personas,Crear persona sin token 401,POSTMAN::Crear persona sin token 401,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-USR-01,3. Usuarios,Register CLIENTE (happy) 201,POSTMAN::Register CLIENTE (happy) 201,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-USR-02,3. Usuarios,Register username corto 400,POSTMAN::Register username corto 400,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ZON-01,4. Zonas,Crear zona REGULAR (happy) 201,POSTMAN::Crear zona REGULAR (happy) 201,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ZON-02,4. Zonas,Crear zona capacidad 0 -> 400,POSTMAN::Crear zona capacidad 0 -> 400,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ZON-03,4. Zonas,Crear zona con rol CLIENTE -> 403,POSTMAN::Crear zona con rol CLIENTE -> 403,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ESP-01,5. Espacios,Crear espacio A (AUTO) 201,POSTMAN::Crear espacio A (AUTO) 201,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ESP-02,5. Espacios,Crear espacio B (AUTO) 201,POSTMAN::Crear espacio B (AUTO) 201,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ESP-03,5. Espacios,Crear espacio sin idZona 400 (validacion DTO),POSTMAN::Crear espacio sin idZona 400 (validacion DTO),API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ESP-04,5. Espacios,Crear espacio tipo invalido 400 (enum no permitido),POSTMAN::Crear espacio tipo invalido 400 (enum no permitido),API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ESP-05,5. Espacios,GET espacios disponibles 200,POSTMAN::GET espacios disponibles 200,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-VEH-01,6. Vehiculos,Crear vehiculo V1 (Auto) 201,POSTMAN::Crear vehiculo V1 (Auto) 201,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-VEH-02,6. Vehiculos,Crear vehiculo V2 (Auto) 201,POSTMAN::Crear vehiculo V2 (Auto) 201,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-VEH-03,6. Vehiculos,Crear vehiculo placa invalida 400,POSTMAN::Crear vehiculo placa invalida 400,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-VEH-04,6. Vehiculos,Crear vehiculo placa duplicada 409,POSTMAN::Crear vehiculo placa duplicada 409,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ASG-01,7. Asignaciones-vehiculos,Asignar V1 -> Cliente 201,POSTMAN::Asignar V1 -> Cliente 201,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ASG-02,7. Asignaciones-vehiculos,Asignar V2 -> Cliente 201,POSTMAN::Asignar V2 -> Cliente 201,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ASG-03,7. Asignaciones-vehiculos,Asignar V1 duplicada 409,POSTMAN::Asignar V1 duplicada 409,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-ASG-04,7. Asignaciones-vehiculos,GET asignacion por vehiculo V1 200,POSTMAN::GET asignacion por vehiculo V1 200,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-01,8. Tickets (flujo + reglas de negocio),Ingreso placa1 -> Espacio A 201 (ACTIVO),POSTMAN::Ingreso placa1 -> Espacio A 201 (ACTIVO),API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-02,8. Tickets (flujo + reglas de negocio),[Regla] Vehiculo ya tiene ticket activo 409,POSTMAN::[Regla] Vehiculo ya tiene ticket activo 409,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-03,8. Tickets (flujo + reglas de negocio),[Regla] Espacio A ocupado (2 autos mismo espacio) 409,POSTMAN::[Regla] Espacio A ocupado (2 autos mismo espacio) 409,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-04,8. Tickets (flujo + reglas de negocio),Ingreso placa inexistente 404,POSTMAN::Ingreso placa inexistente 404,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-05,8. Tickets (flujo + reglas de negocio),Ingreso sin token 401,POSTMAN::Ingreso sin token 401,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-06,8. Tickets (flujo + reglas de negocio),Ingreso sin placa 400,POSTMAN::Ingreso sin placa 400,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-07,8. Tickets (flujo + reglas de negocio),GET ticket por id 200,POSTMAN::GET ticket por id 200,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-08,8. Tickets (flujo + reglas de negocio),Listar tickets ?estado=ACTIVO 200 (Page),POSTMAN::Listar tickets ?estado=ACTIVO 200 (Page),API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-09,8. Tickets (flujo + reglas de negocio),"Pagar ticket 200 (PAGADO, cobro 0.90)","POSTMAN::Pagar ticket 200 (PAGADO, cobro 0.90)",API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-10,8. Tickets (flujo + reglas de negocio),[Regla] Pagar ticket ya pagado 409,POSTMAN::[Regla] Pagar ticket ya pagado 409,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-TCK-11,8. Tickets (flujo + reglas de negocio),[Regla] Anular ticket ya pagado 409,POSTMAN::[Regla] Anular ticket ya pagado 409,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-AUD-01,9. Auditoria (ms-audit),Crear evento auditoria 201,POSTMAN::Crear evento auditoria 201,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-AUD-02,9. Auditoria (ms-audit),Listar auditoria 200,POSTMAN::Listar auditoria 200,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-AUD-03,9. Auditoria (ms-audit),Auditoria sin token 401,POSTMAN::Auditoria sin token 401,API funcional (Postman/Newman),EJECUTADO-PASS,Tests/evidence/newman-result.json
+RF-FE-RBAC-01,Frontend - RBAC,permisosDe: unión de permisos de todos los roles del usuario,VITEST::rbac.test.ts::permisosDe,Unitaria (Vitest),EJECUTADO-PASS,frontend/src/auth/rbac.test.ts
+RF-FE-RBAC-02,Frontend - RBAC,puede: RECAUDADOR opera tickets pero no gestiona usuarios; CLIENTE/INVITADO sin acceso admin,VITEST::rbac.test.ts::puede,Unitaria (Vitest),EJECUTADO-PASS,frontend/src/auth/rbac.test.ts
+RF-FE-RBAC-03,Frontend - RBAC,esStaff: distingue roles de panel admin (ROOT/ADMIN/RECAUDADOR) de roles de portal,VITEST::rbac.test.ts::esStaff,Unitaria (Vitest),EJECUTADO-PASS,frontend/src/auth/rbac.test.ts
+RF-FE-RBAC-04,Frontend - RBAC,rutaInicial: aterrizaje post-login correcto por rol (dashboard / tickets / portal),VITEST::rbac.test.ts::rutaInicial,Unitaria (Vitest),EJECUTADO-PASS,frontend/src/auth/rbac.test.ts
+RF-FE-FMT-01,Frontend - Formato,fmtFecha / fmtDinero: manejo de valores nulos/inválidos sin excepción,"VITEST::format.test.ts::fmtFecha,fmtDinero",Unitaria (Vitest),EJECUTADO-PASS,frontend/src/lib/format.test.ts
+RF-FE-FMT-02,Frontend - Formato,esCedulaEc: validación cliente de cédula ecuatoriana (espejo de la regla del backend),VITEST::format.test.ts::esCedulaEc,Unitaria (Vitest),EJECUTADO-PASS,frontend/src/lib/format.test.ts
+RF-FE-FMT-03,Frontend - Formato,"rgx: formatos de placa (auto/moto), password, email",VITEST::format.test.ts::rgx,Unitaria (Vitest),EJECUTADO-PASS,frontend/src/lib/format.test.ts
+RF-FE-GRD-01,Frontend - Guards,RequireAuth: sin sesión redirige a /login; con sesión renderiza la ruta,VITEST::guards.test.tsx::RequireAuth,Unitaria/Componente (Vitest + RTL),EJECUTADO-PASS,frontend/src/auth/guards.test.tsx
+RF-FE-GRD-02,Frontend - Guards,RequirePermiso: usuario sin permiso va a /403 (no revela existencia de la ruta); con permiso accede,VITEST::guards.test.tsx::RequirePermiso,Unitaria/Componente (Vitest + RTL),EJECUTADO-PASS,frontend/src/auth/guards.test.tsx
+RF-FE-GRD-03,Frontend - Guards,HomeRedirect: aterrizaje raíz correcto por rol,VITEST::guards.test.tsx::HomeRedirect,Unitaria/Componente (Vitest + RTL),EJECUTADO-PASS,frontend/src/auth/guards.test.tsx
+RF-FE-E2E-01,Frontend - C1 Login,"Login exitoso y fallido, sesión persistida, logout",MANUAL::Tests/manual/E2E-01-login.md,Funcional manual guionizado,EJECUTADO-PASS,"Tests/manual/E2E-01-login.md ; Tests/defects.md#DEF-01,DEF-02"
+RF-FE-E2E-02,Frontend - RBAC navegación,"Navegación admin/portal respeta permisos por rol (ADMIN, RECAUDADOR, CLIENTE)",MANUAL::Tests/manual/E2E-02-rbac-navegacion.md,Funcional manual guionizado,EJECUTADO-PASS,Tests/manual/E2E-02-rbac-navegacion.md ; Tests/defects.md#DEF-03
+RF-FE-E2E-03,Frontend - A10 Operación de Tickets,Flujo completo de emisión y cobro de ticket desde la UI (RECAUDADOR),MANUAL::Tests/manual/E2E-03-emision-ticket.md,Funcional manual guionizado,EJECUTADO-FAIL,Tests/manual/E2E-03-emision-ticket.md ; Tests/defects.md#DEF-04
+RF-ROL-GAP,Roles (backend),CRUD de roles (crear/listar/actualizar/activar/desactivar) - existe en Gestion_Parqueaderos pero no en la colección QA,-,-,NO_CUBIERTO,-
+RF-FE-A2A9-GAP,Frontend - Panel admin (A2-A9),"Pantallas de gestión CRUD (Personas, Usuarios, Roles, Asignación de roles, Zonas, Espacios, Vehículos, Asignaciones) sin caso diseñado todavía",-,-,NO_CUBIERTO,docs/frontend-pantallas.md#4
+RF-FE-A11-GAP,Frontend - A11 Auditoría (log),Pantalla de visualización del log de auditoría,-,-,NO_CUBIERTO,docs/frontend-pantallas.md#4
+RF-FE-C2C6-GAP,Frontend - Portal cliente (C2-C6),"Registro, Mi perfil, Mis vehículos, Detalle de vehículo, Disponibilidad (informativo)",-,-,NO_CUBIERTO,docs/frontend-pantallas.md#3
