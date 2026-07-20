@@ -16,6 +16,8 @@ import ec.edu.espe.usuarios.dtos.auth.LoginRequest;
 import ec.edu.espe.usuarios.dtos.auth.PerfilResponse;
 import ec.edu.espe.usuarios.dtos.auth.RefreshRequest;
 import ec.edu.espe.usuarios.dtos.auth.RegisterRequest;
+import ec.edu.espe.usuarios.dtos.auth.RegistroClienteRequest;
+import ec.edu.espe.usuarios.dtos.auth.RegistroCompletoRequest;
 import ec.edu.espe.usuarios.services.AuthServicio;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,20 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return new ResponseEntity<>(authServicio.register(request), HttpStatus.CREATED);
+    }
+
+    // Auto-registro PUBLICO de cliente verificando identidad (dni + email) SIN exponer
+    // el listado de personas. El idPersona nunca se envia ni se devuelve al cliente.
+    @PostMapping("/registro-cliente")
+    public ResponseEntity<AuthResponse> registrarCliente(@Valid @RequestBody RegistroClienteRequest request) {
+        return new ResponseEntity<>(authServicio.registrarCliente(request), HttpStatus.CREATED);
+    }
+
+    // Auto-registro PUBLICO completo: crea la persona (identidad) + usuario (acceso)
+    // con rol CLIENTE en una sola transaccion a partir de los datos personales.
+    @PostMapping("/registro-completo")
+    public ResponseEntity<AuthResponse> registrarCompleto(@Valid @RequestBody RegistroCompletoRequest request) {
+        return new ResponseEntity<>(authServicio.registrarCompleto(request), HttpStatus.CREATED);
     }
 
     // Renueva el access token usando un refresh token vigente (publico: el access

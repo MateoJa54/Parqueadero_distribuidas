@@ -2,17 +2,17 @@ spring:
   application:
     name: zonas
   datasource:
-    url: jdbc:postgresql://localhost:${DB_PORT:5433}/zonas
-    username: zonas
-    password: zonas123
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:zonas}
+    username: ${DB_USER:zonas}
+    password: ${DB_PASSWORD:zonas123}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${DDL_AUTO:update}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:false}
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}

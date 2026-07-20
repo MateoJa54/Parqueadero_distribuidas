@@ -1,9 +1,10 @@
 package ec.edu.espe.tickets.repositories;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -30,7 +31,7 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
     /** Un espacio no puede estar ocupado por dos tickets ACTIVOS a la vez. */
     Optional<Ticket> findByIdEspacioAndEstadoTicket(UUID idEspacio, EstadoTicket estadoTicket);
 
-    List<Ticket> findByEstadoTicketOrderByFechaHoraIngresoDesc(EstadoTicket estadoTicket);
+    Page<Ticket> findByEstadoTicketOrderByFechaHoraIngresoDesc(EstadoTicket estadoTicket, Pageable pageable);
 
-    List<Ticket> findAllByOrderByFechaHoraIngresoDesc();
+    Page<Ticket> findAllByOrderByFechaHoraIngresoDesc(Pageable pageable);
 }

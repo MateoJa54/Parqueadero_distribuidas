@@ -1,7 +1,9 @@
 package ec.edu.espe.tickets.services;
 
-import java.util.List;
 import java.util.UUID;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import ec.edu.espe.tickets.dtos.AnularTicketRequest;
 import ec.edu.espe.tickets.dtos.RegistrarIngresoRequest;
@@ -24,8 +26,8 @@ public interface TicketService {
 
     TicketResponse obtenerPorCodigo(String codigo);
 
-    /** Lista los tickets; si {@code estado} es null devuelve todos. */
-    List<TicketResponse> listar(EstadoTicket estado);
+    /** Lista paginada de tickets; si {@code estado} es null devuelve todos. */
+    Page<TicketResponse> listar(EstadoTicket estado, Pageable pageable);
 
     /** Devuelve el ticket activo que ocupa un espacio. */
     TicketResponse obtenerActivoPorEspacio(UUID idEspacio);

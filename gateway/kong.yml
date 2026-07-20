@@ -139,11 +139,19 @@ services:
 
 # ---------------- Plugins GLOBALES (a todo el trafico) ----
 plugins:
-  # CORS: permite que un frontend en otro origen consuma el gateway.
+  # CORS: SOLO origenes conocidos (lista blanca). Evita exponer la API a
+  # cualquier sitio web. Agrega aqui el/los dominios reales del frontend en
+  # produccion (ej. https://parqueadero.espe.edu.ec). Postman/kiosco no usan
+  # CORS, asi que restringir esto no afecta las pruebas ni el dashboard SSE.
   - name: cors
     config:
       origins:
-        - "*"
+        - http://localhost:5500
+        - http://127.0.0.1:5500
+        - http://localhost:3000
+        - http://localhost:4200
+        - http://localhost:5173
+        - http://127.0.0.1:5173
       methods:
         - GET
         - POST
@@ -155,9 +163,29 @@ plugins:
         - Accept
         - Content-Type
         - Authorization
+        - X-Device-Mac
       credentials: false
       max_age: 3600
 
+  # Cabeceras de seguridad en TODAS las respuestas (defensa en profundidad) y
+  # ocultamiento de cabeceras que filtran la version del stack.
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Content-Type-Options:nosniff"
+          - "X-Frame-Options:DENY"
+          - "Referrer-Policy:strict-origin-when-cross-origin"
+          - "Strict-Transport-Security:max-age=31536000; includeSubDomains"
+      remove:
+        headers:
+          - "Server"
+
+  # Corta payloads gigantes antes de tocar los microservicios (mitiga DoS por
+  # cuerpos enormes). 8 MB es holgado para JSON de este dominio.
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 8
 
   - name: correlation-id
     config:
@@ -180,12 +208,12 @@ consumers:
         algorithm: RS256
         rsa_public_key: |
           -----BEGIN PUBLIC KEY-----
-          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxJA+rKx/HXfbmO1LQKN4
-          yOutD4WOthVlrykPNq6FfE9CC4ReH5eTJIbsnEQFw36FwmYDQ0MsoTIq8JdADWR/
-          72eKyTBiJw3JSUOdx2jg5SJN1zUcRJsYPBVs6FSMyiskZ+xUwWjURU+3lAmmYhMn
-          25J2YfUML26IFo+eCY7PY+F39dpKUofJjW6XX+/b0fCXwAGWIVjRe4Rf5K5F0Jwp
-          2xHwBNlts51wz+DE1s8bs9UVzPYviI0e/+AOfOyJ9UTG74WK//cMsvIJgQIvuQFl
-          U9LhcBgB7AeJ9PmsiP7eBkWn1ltU2ZRfpZfqutlOPydDwohV10MV1r3IyAMEAOx6
-          /QIDAQAB
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7FvwwKf6bc6VnjO45J0X
+          7yOrE4TLdSu001gTsvIAqk6GzVD1pY2DDJVyfh6dKFwYU7lAl+hFkSEqE3nGKSWJ
+          LlvrnuPK1i04XJkExpuCHSnIEx6Ev+znREBTBYfjAQC4yejo3qRzuXH8smXmHydr
+          /ybRpvnch4xsbSW18dfdYq0bBAblJYcmzjIyQrLxGdqncoOsPdBo4BoIiPgnmq2K
+          I6Q5nGNoL3Y7QBg/hn/vqHgYfJw3lJGTv3sBmCbfk4Che75I/8x8ijGrH1equbBS
+          cdVTet2+sA9UxfQ1gYRXqUsGyj6/pdNOnv6Qcl1ZDZRmIM0HdKacpSJkGJ8/lpNz
+          lwIDAQAB
           -----END PUBLIC KEY-----
 

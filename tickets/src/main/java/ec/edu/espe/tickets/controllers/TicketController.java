@@ -1,8 +1,11 @@
 package ec.edu.espe.tickets.controllers;
 
-import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -74,9 +77,10 @@ public class TicketController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TicketResponse>> listar(
-            @RequestParam(required = false) EstadoTicket estado) {
-        return ResponseEntity.ok(ticketService.listar(estado));
+    public ResponseEntity<Page<TicketResponse>> listar(
+            @RequestParam(required = false) EstadoTicket estado,
+            @PageableDefault(size = 20, sort = "fechaHoraIngreso", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ticketService.listar(estado, pageable));
     }
 
     @GetMapping("/activo/espacio/{idEspacio}")

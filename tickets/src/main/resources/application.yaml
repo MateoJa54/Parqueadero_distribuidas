@@ -2,23 +2,29 @@ spring:
   application:
     name: tickets
   datasource:
-    url: jdbc:postgresql://localhost:${DB_PORT:5433}/tickets
-    username: tickets
-    password: tickets123
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:tickets}
+    username: ${DB_USER:tickets}
+    password: ${DB_PASSWORD:tickets123}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${DDL_AUTO:update}
     # Ejecuta schema.sql DESPUES de que Hibernate cree las tablas, para poder
     # crear indices unicos parciales y la secuencia de codigos sobre 'tickets'.
     defer-datasource-initialization: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:false}
   sql:
     init:
       mode: always
+  # Topes de paginacion: evita que un cliente pida paginas gigantes (DoS de memoria).
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 100
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}

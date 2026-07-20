@@ -1,9 +1,23 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Cabeceras de seguridad (sin dependencias externas tipo helmet).
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains',
+    );
+    res.removeHeader('X-Powered-By');
+    next();
+  });
 
   // Prefijo global para todos los endpoints: /api/vehiculos
   app.setGlobalPrefix('api');
@@ -21,8 +35,16 @@ async function bootstrap() {
     }),
   );
 
-  // CORS habilitado para poder consumir desde Postman / frontend
-  app.enableCors();
+  // CORS restringido: por defecto lista blanca de orígenes de desarrollo,
+  // configurable en producción vía CORS_ORIGINS (separado por comas).
+  const corsOrigins = (
+    process.env.CORS_ORIGINS ??
+    'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000,http://localhost:4200'
+  )
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: corsOrigins, credentials: true });
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

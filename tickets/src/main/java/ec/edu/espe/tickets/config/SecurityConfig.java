@@ -12,6 +12,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -43,6 +45,18 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Cabeceras de seguridad para endurecer respuestas (defensa en
+                // profundidad; Kong tambien las anade a nivel de gateway).
+                .headers(headers -> headers
+                        .contentTypeOptions(cto -> {})
+                        .frameOptions(fo -> fo.deny())
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000))
+                        .referrerPolicy(rp -> rp
+                                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .xssProtection(xss -> xss
+                                .headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK)))
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

@@ -1,0 +1,1085 @@
+{
+  "info": {
+    "_postman_id": "b7e9c1a2-4f3d-4c6a-9e21-qa-parqueaderos-01",
+    "name": "QA Parqueaderos - E2E (v2.1.0)",
+    "description": "Colección de auditoría QA generada tras leer el código real de los 6 microservicios (usuarios, zonas, asignaciones-vehiculos, tickets, vehiculos, ms-audit). Cubre happy-path, errores técnicos (400/401/403/404) y reglas de negocio (409). Los pre-request generan datos válidos aleatorios (cédula EC, username, placa, nombre de zona) para permitir re-ejecuciones. Ejecutar en orden (Runner).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "urlUsuarios", "value": "http://localhost:8081" },
+    { "key": "urlZonas", "value": "http://localhost:8080" },
+    { "key": "urlAsignaciones", "value": "http://localhost:8082" },
+    { "key": "urlTickets", "value": "http://localhost:8083" },
+    { "key": "urlVehiculos", "value": "http://localhost:3000/api" },
+    { "key": "urlAudit", "value": "http://localhost:3002/api/v1" },
+    { "key": "rootUser", "value": "root" },
+    { "key": "rootPass", "value": "Root2025" },
+    { "key": "token", "value": "" },
+    { "key": "clienteToken", "value": "" },
+    { "key": "idPersona", "value": "" },
+    { "key": "idUsuarioCliente", "value": "" },
+    { "key": "clienteUser", "value": "" },
+    { "key": "clientePass", "value": "" },
+    { "key": "dni", "value": "" },
+    { "key": "email", "value": "" },
+    { "key": "phone", "value": "" },
+    { "key": "zonaNombre", "value": "" },
+    { "key": "idZona", "value": "" },
+    { "key": "idEspacioA", "value": "" },
+    { "key": "idEspacioB", "value": "" },
+    { "key": "idVehiculo1", "value": "" },
+    { "key": "placa1", "value": "" },
+    { "key": "idVehiculo2", "value": "" },
+    { "key": "placa2", "value": "" },
+    { "key": "idTicket", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login root (happy) 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura AuthResponse', () => {",
+                  "  pm.expect(j).to.have.all.keys('token','refreshToken','tokenType','expiresIn','refreshExpiresIn','idUsuario','username','roles');",
+                  "  pm.expect(j.token).to.be.a('string').and.to.have.length.above(20);",
+                  "  pm.expect(j.roles).to.be.an('array');",
+                  "});",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.collectionVariables.set('token', j.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{rootUser}}\",\n  \"password\": \"{{rootPass}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlUsuarios}}/api/v1/auth/login", "host": ["{{urlUsuarios}}"], "path": ["api","v1","auth","login"] }
+          }
+        },
+        {
+          "name": "Login credenciales invalidas 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json();",
+                  "pm.test('cuerpo de error Spring', () => pm.expect(j).to.include.keys('status','error'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{rootUser}}\",\n  \"password\": \"claveMala123\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlUsuarios}}/api/v1/auth/login", "host": ["{{urlUsuarios}}"], "path": ["api","v1","auth","login"] }
+          }
+        },
+        {
+          "name": "Login sin password 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('trae errores de validacion', () => pm.expect(j).to.have.property('errores'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{rootUser}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlUsuarios}}/api/v1/auth/login", "host": ["{{urlUsuarios}}"], "path": ["api","v1","auth","login"] }
+          }
+        },
+        {
+          "name": "GET /me con token 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura PerfilResponse', () => {",
+                  "  pm.expect(j).to.include.keys('idUsuario','username','roles');",
+                  "  pm.expect(j.roles).to.be.an('array');",
+                  "});",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{urlUsuarios}}/api/v1/auth/me", "host": ["{{urlUsuarios}}"], "path": ["api","v1","auth","me"] }
+          }
+        },
+        {
+          "name": "GET /me sin token 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{urlUsuarios}}/api/v1/auth/me", "host": ["{{urlUsuarios}}"], "path": ["api","v1","auth","me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Personas",
+      "item": [
+        {
+          "name": "Crear persona (happy) 201",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function cedulaEc(){var p=String(1+Math.floor(Math.random()*24)).padStart(2,'0');var t=Math.floor(Math.random()*6);var d=p+t;for(var i=0;i<6;i++)d+=Math.floor(Math.random()*10);var s=0;for(var i=0;i<9;i++){var m=(+d[i])*(i%2===0?2:1);if(m>9)m-=9;s+=m;}return d+((10-(s%10))%10);}",
+                  "pm.collectionVariables.set('dni', cedulaEc());",
+                  "pm.collectionVariables.set('email','j'+Date.now()+Math.floor(Math.random()*1000)+'@mail.com');",
+                  "pm.collectionVariables.set('phone', String(Math.floor(1000000+Math.random()*8999999)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura PersonaResponse', () => {",
+                  "  pm.expect(j).to.include.keys('id','firstName','lastName','dni','email','phone','nationality','active');",
+                  "  pm.expect(j.active).to.eql(true);",
+                  "});",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.collectionVariables.set('idPersona', j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Perez\",\n  \"dni\": \"{{dni}}\",\n  \"email\": \"{{email}}\",\n  \"phone\": \"{{phone}}\",\n  \"nationality\": \"Ecuatoriana\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlUsuarios}}/api/v1/personas", "host": ["{{urlUsuarios}}"], "path": ["api","v1","personas"] }
+          }
+        },
+        {
+          "name": "Crear persona dni invalido 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('trae errores', () => pm.expect(j).to.have.property('errores'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Perez\",\n  \"dni\": \"9999999999\",\n  \"email\": \"malo@mail.com\",\n  \"phone\": \"0999999\",\n  \"nationality\": \"Ecuatoriana\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlUsuarios}}/api/v1/personas", "host": ["{{urlUsuarios}}"], "path": ["api","v1","personas"] }
+          }
+        },
+        {
+          "name": "Crear persona sin token 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Perez\",\n  \"dni\": \"1710034065\",\n  \"email\": \"x@mail.com\",\n  \"phone\": \"0999999\",\n  \"nationality\": \"Ecuatoriana\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlUsuarios}}/api/v1/personas", "host": ["{{urlUsuarios}}"], "path": ["api","v1","personas"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Usuarios",
+      "item": [
+        {
+          "name": "Register CLIENTE (happy) 201",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('clienteUser','cli'+Math.floor(10000+Math.random()*89999));",
+                  "pm.collectionVariables.set('clientePass','Passw0rd1');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura AuthResponse', () => pm.expect(j).to.include.keys('token','idUsuario','username','roles'));",
+                  "pm.test('rol auto-asignado CLIENTE', () => pm.expect(j.roles).to.include('CLIENTE'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.collectionVariables.set('idUsuarioCliente', j.idUsuario);",
+                  "pm.collectionVariables.set('clienteToken', j.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"idPersona\": \"{{idPersona}}\",\n  \"username\": \"{{clienteUser}}\",\n  \"password\": \"{{clientePass}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlUsuarios}}/api/v1/auth/register", "host": ["{{urlUsuarios}}"], "path": ["api","v1","auth","register"] }
+          }
+        },
+        {
+          "name": "Register username corto 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('trae errores', () => pm.expect(j).to.have.property('errores'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"idPersona\": \"{{idPersona}}\",\n  \"username\": \"ab\",\n  \"password\": \"Passw0rd1\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlUsuarios}}/api/v1/auth/register", "host": ["{{urlUsuarios}}"], "path": ["api","v1","auth","register"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Zonas",
+      "item": [
+        {
+          "name": "Crear zona REGULAR (happy) 201",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('zonaNombre','Zona'+Math.floor(1000+Math.random()*89999));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura ZonaResponse', () => {",
+                  "  pm.expect(j).to.include.keys('idZona','nombre','codigo','tipoZona','capacidad','activo','espacios');",
+                  "  pm.expect(j.tipoZona).to.eql('REGULAR');",
+                  "});",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.collectionVariables.set('idZona', j.idZona);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"{{zonaNombre}}\",\n  \"descripcion\": \"Zona QA\",\n  \"tipo\": \"REGULAR\",\n  \"capacidad\": 5\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlZonas}}/api/v1/zonas", "host": ["{{urlZonas}}"], "path": ["api","v1","zonas"] }
+          }
+        },
+        {
+          "name": "Crear zona capacidad 0 -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "pm.test('trae errores', () => pm.expect(pm.response.json()).to.have.property('errores'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"ZonaMala{{$timestamp}}\",\n  \"tipo\": \"REGULAR\",\n  \"capacidad\": 0\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlZonas}}/api/v1/zonas", "host": ["{{urlZonas}}"], "path": ["api","v1","zonas"] }
+          }
+        },
+        {
+          "name": "Crear zona con rol CLIENTE -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{clienteToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"ZonaCliente{{$timestamp}}\",\n  \"tipo\": \"REGULAR\",\n  \"capacidad\": 3\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlZonas}}/api/v1/zonas", "host": ["{{urlZonas}}"], "path": ["api","v1","zonas"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Espacios",
+      "item": [
+        {
+          "name": "Crear espacio A (AUTO) 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura EspacioResponse', () => {",
+                  "  pm.expect(j).to.include.keys('id','codigo','tipo','estado','idZona','activo');",
+                  "  pm.expect(j.tipo).to.eql('AUTO');",
+                  "  pm.expect(j.estado).to.eql('DISPONIBLE');",
+                  "});",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.collectionVariables.set('idEspacioA', j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"idZona\": \"{{idZona}}\",\n  \"descripcion\": \"Espacio A\",\n  \"tipo\": \"AUTO\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlZonas}}/api/v1/espacios", "host": ["{{urlZonas}}"], "path": ["api","v1","espacios"] }
+          }
+        },
+        {
+          "name": "Crear espacio B (AUTO) 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura EspacioResponse', () => pm.expect(j).to.include.keys('id','codigo','tipo','estado'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.collectionVariables.set('idEspacioB', j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"idZona\": \"{{idZona}}\",\n  \"descripcion\": \"Espacio B\",\n  \"tipo\": \"AUTO\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlZonas}}/api/v1/espacios", "host": ["{{urlZonas}}"], "path": ["api","v1","espacios"] }
+          }
+        },
+        {
+          "name": "Crear espacio sin idZona 400 (validacion DTO)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "pm.test('trae errores de validacion', () => pm.expect(pm.response.json()).to.have.property('errores'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tipo\": \"AUTO\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlZonas}}/api/v1/espacios", "host": ["{{urlZonas}}"], "path": ["api","v1","espacios"] }
+          }
+        },
+        {
+          "name": "Crear espacio tipo invalido 400 (enum no permitido)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Un valor de enum inexistente en 'tipo' debe rechazarse con 400 (Bad Request).",
+                  "// El GlobalExceptionHandler de zonas maneja HttpMessageNotReadableException/InvalidFormatException.",
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "pm.test('mensaje indica valores permitidos', () => pm.expect(pm.response.json().mensaje).to.match(/permitidos|invalido/i));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"idZona\": \"{{idZona}}\",\n  \"tipo\": \"HELICOPTERO\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlZonas}}/api/v1/espacios", "host": ["{{urlZonas}}"], "path": ["api","v1","espacios"] }
+          }
+        },
+        {
+          "name": "GET espacios disponibles 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('respuesta es lista', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{urlZonas}}/api/v1/espacios/disponibles?idZona={{idZona}}&tipo=AUTO", "host": ["{{urlZonas}}"], "path": ["api","v1","espacios","disponibles"], "query": [{ "key": "idZona", "value": "{{idZona}}" }, { "key": "tipo", "value": "AUTO" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Vehiculos",
+      "item": [
+        {
+          "name": "Crear vehiculo V1 (Auto) 201",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function L(n){var s='';for(var i=0;i<n;i++)s+=String.fromCharCode(65+Math.floor(Math.random()*26));return s;}",
+                  "pm.collectionVariables.set('placa1', L(3)+'-'+Math.floor(1000+Math.random()*9000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura Vehiculo Auto', () => {",
+                  "  pm.expect(j).to.include.keys('id','placa','marca','modelo','tipo','activo','numeroPuertas','capacidadMaletero');",
+                  "  pm.expect(j.tipo.toLowerCase()).to.eql('auto');",
+                  "});",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.collectionVariables.set('idVehiculo1', j.id);",
+                  "pm.collectionVariables.set('placa1', j.placa);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tipo\": \"Auto\",\n  \"datos\": {\n    \"placa\": \"{{placa1}}\",\n    \"marca\": \"Toyota\",\n    \"modelo\": \"Corolla\",\n    \"color\": \"Blanco\",\n    \"anio\": 2022,\n    \"clasificacion\": \"Gasolina\",\n    \"numeroPuertas\": 4,\n    \"capacidadMaletero\": 450\n  }\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlVehiculos}}/vehiculos", "host": ["{{urlVehiculos}}"], "path": ["vehiculos"] }
+          }
+        },
+        {
+          "name": "Crear vehiculo V2 (Auto) 201",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function L(n){var s='';for(var i=0;i<n;i++)s+=String.fromCharCode(65+Math.floor(Math.random()*26));return s;}",
+                  "pm.collectionVariables.set('placa2', L(3)+'-'+Math.floor(1000+Math.random()*9000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura Vehiculo', () => pm.expect(j).to.include.keys('id','placa','tipo','activo'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.collectionVariables.set('idVehiculo2', j.id);",
+                  "pm.collectionVariables.set('placa2', j.placa);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tipo\": \"Auto\",\n  \"datos\": {\n    \"placa\": \"{{placa2}}\",\n    \"marca\": \"Mazda\",\n    \"modelo\": \"Mazda3\",\n    \"color\": \"Gris\",\n    \"anio\": 2023,\n    \"clasificacion\": \"Gasolina\",\n    \"numeroPuertas\": 4,\n    \"capacidadMaletero\": 400\n  }\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlVehiculos}}/vehiculos", "host": ["{{urlVehiculos}}"], "path": ["vehiculos"] }
+          }
+        },
+        {
+          "name": "Crear vehiculo placa invalida 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('Nest message es array', () => pm.expect(j.message).to.be.an('array'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tipo\": \"Auto\",\n  \"datos\": {\n    \"placa\": \"abc123\",\n    \"marca\": \"Toyota\",\n    \"modelo\": \"Corolla\",\n    \"color\": \"Blanco\",\n    \"anio\": 2022,\n    \"clasificacion\": \"Gasolina\",\n    \"numeroPuertas\": 4,\n    \"capacidadMaletero\": 450\n  }\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlVehiculos}}/vehiculos", "host": ["{{urlVehiculos}}"], "path": ["vehiculos"] }
+          }
+        },
+        {
+          "name": "Crear vehiculo placa duplicada 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tipo\": \"Auto\",\n  \"datos\": {\n    \"placa\": \"{{placa1}}\",\n    \"marca\": \"Kia\",\n    \"modelo\": \"Rio\",\n    \"color\": \"Azul\",\n    \"anio\": 2021,\n    \"clasificacion\": \"Gasolina\",\n    \"numeroPuertas\": 4,\n    \"capacidadMaletero\": 300\n  }\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlVehiculos}}/vehiculos", "host": ["{{urlVehiculos}}"], "path": ["vehiculos"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Asignaciones-vehiculos",
+      "item": [
+        {
+          "name": "Asignar V1 -> Cliente 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura AssignmentResponse', () => {",
+                  "  pm.expect(j).to.include.keys('userId','vehicleId','active','status','entryAuthorized','authorizationRoleName');",
+                  "  pm.expect(j.status).to.eql('ACTIVA');",
+                  "  pm.expect(j.entryAuthorized).to.eql(true);",
+                  "});",
+                  "pm.test('rol de autorizacion CLIENTE (cobro > 0)', () => pm.expect(j.authorizationRoleName).to.eql('CLIENTE'));",
+                  "pm.test('tiempo < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{idUsuarioCliente}}\",\n  \"vehicleId\": \"{{idVehiculo1}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos", "host": ["{{urlAsignaciones}}"], "path": ["api","v1","asignaciones-vehiculos"] }
+          }
+        },
+        {
+          "name": "Asignar V2 -> Cliente 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura AssignmentResponse', () => pm.expect(j).to.include.keys('userId','vehicleId','status'));",
+                  "pm.test('tiempo < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{idUsuarioCliente}}\",\n  \"vehicleId\": \"{{idVehiculo2}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos", "host": ["{{urlAsignaciones}}"], "path": ["api","v1","asignaciones-vehiculos"] }
+          }
+        },
+        {
+          "name": "Asignar V1 duplicada 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "pm.test('tiempo < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{idUsuarioCliente}}\",\n  \"vehicleId\": \"{{idVehiculo1}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos", "host": ["{{urlAsignaciones}}"], "path": ["api","v1","asignaciones-vehiculos"] }
+          }
+        },
+        {
+          "name": "GET asignacion por vehiculo V1 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('vehicleId coincide', () => pm.expect(j.vehicleId).to.eql(pm.collectionVariables.get('idVehiculo1')));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{urlAsignaciones}}/api/v1/asignaciones-vehiculos/vehiculo/{{idVehiculo1}}", "host": ["{{urlAsignaciones}}"], "path": ["api","v1","asignaciones-vehiculos","vehiculo","{{idVehiculo1}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Tickets (flujo + reglas de negocio)",
+      "item": [
+        {
+          "name": "Ingreso placa1 -> Espacio A 201 (ACTIVO)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura TicketResponse', () => {",
+                  "  pm.expect(j).to.include.keys('id','codigo','idEspacio','placa','estadoTicket','categoriaTarifa','fechaHoraIngreso');",
+                  "  pm.expect(j.estadoTicket).to.eql('ACTIVO');",
+                  "});",
+                  "pm.test('categoria tarifa CLIENTE', () => pm.expect(j.categoriaTarifa).to.eql('CLIENTE'));",
+                  "pm.test('tiempo < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.collectionVariables.set('idTicket', j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"placa\": \"{{placa1}}\",\n  \"idEspacio\": \"{{idEspacioA}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets"] }
+          }
+        },
+        {
+          "name": "[Regla] Vehiculo ya tiene ticket activo 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "pm.test('cuerpo de error', () => pm.expect(pm.response.json()).to.include.keys('status','mensaje'));",
+                  "pm.test('tiempo < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"placa\": \"{{placa1}}\",\n  \"idEspacio\": \"{{idEspacioB}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets"] }
+          }
+        },
+        {
+          "name": "[Regla] Espacio A ocupado (2 autos mismo espacio) 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "pm.test('cuerpo de error', () => pm.expect(pm.response.json()).to.include.keys('status','mensaje'));",
+                  "pm.test('tiempo < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"placa\": \"{{placa2}}\",\n  \"idEspacio\": \"{{idEspacioA}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets"] }
+          }
+        },
+        {
+          "name": "Ingreso placa inexistente 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "pm.test('tiempo < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"placa\": \"ZZZ-0000\",\n  \"idEspacio\": \"{{idEspacioB}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets"] }
+          }
+        },
+        {
+          "name": "Ingreso sin token 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"placa\": \"{{placa1}}\",\n  \"idEspacio\": \"{{idEspacioB}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets"] }
+          }
+        },
+        {
+          "name": "Ingreso sin placa 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "pm.test('trae errores', () => pm.expect(pm.response.json()).to.have.property('errores'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"idEspacio\": \"{{idEspacioB}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets"] }
+          }
+        },
+        {
+          "name": "GET ticket por id 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('id coincide', () => pm.expect(j.id).to.eql(pm.collectionVariables.get('idTicket')));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets/{{idTicket}}", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets","{{idTicket}}"] }
+          }
+        },
+        {
+          "name": "Listar tickets ?estado=ACTIVO 200 (Page)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('respuesta paginada (Page)', () => {",
+                  "  pm.expect(j).to.include.keys('content','totalElements','number','size');",
+                  "  pm.expect(j.content).to.be.an('array');",
+                  "});",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets?estado=ACTIVO", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets"], "query": [{ "key": "estado", "value": "ACTIVO" }] }
+          }
+        },
+        {
+          "name": "Pagar ticket 200 (PAGADO, cobro 0.90)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('estado PAGADO', () => pm.expect(j.estadoTicket).to.eql('PAGADO'));",
+                  "pm.test('tiene fecha de salida', () => pm.expect(j.fechaHoraSalida).to.not.be.null);",
+                  "pm.test('valorRecaudado numerico y > 0 (CLIENTE)', () => {",
+                  "  const v = Number(j.valorRecaudado);",
+                  "  pm.expect(Number.isFinite(v)).to.be.true;",
+                  "  pm.expect(v).to.be.above(0);",
+                  "});",
+                  "pm.test('tiempo < 5000ms', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets/{{idTicket}}/pagar", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets","{{idTicket}}","pagar"] }
+          }
+        },
+        {
+          "name": "[Regla] Pagar ticket ya pagado 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "pm.test('cuerpo de error', () => pm.expect(pm.response.json()).to.include.keys('status','mensaje'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets/{{idTicket}}/pagar", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets","{{idTicket}}","pagar"] }
+          }
+        },
+        {
+          "name": "[Regla] Anular ticket ya pagado 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "pm.test('cuerpo de error', () => pm.expect(pm.response.json()).to.include.keys('status','mensaje'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"motivo\": \"Prueba QA anular pagado\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlTickets}}/api/v1/tickets/{{idTicket}}/anular", "host": ["{{urlTickets}}"], "path": ["api","v1","tickets","{{idTicket}}","anular"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Auditoria (ms-audit)",
+      "item": [
+        {
+          "name": "Crear evento auditoria 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('estructura AuditEvent', () => pm.expect(j).to.include.keys('id','servicio','accion','entidad','ip','mac','timestamp'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"servicio\": \"ms-vehiculos\",\n  \"accion\": \"CREATE\",\n  \"entidad\": \"VEHICULO\",\n  \"datos\": { \"placa\": \"{{placa1}}\" },\n  \"usuario\": \"root\",\n  \"rol\": \"ADMIN\",\n  \"ip\": \"192.168.1.100\",\n  \"mac\": \"AA:BB:CC:DD:EE:FF\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{urlAudit}}/audit", "host": ["{{urlAudit}}"], "path": ["audit"] }
+          }
+        },
+        {
+          "name": "Listar auditoria 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('respuesta es lista', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{urlAudit}}/audit", "host": ["{{urlAudit}}"], "path": ["audit"] }
+          }
+        },
+        {
+          "name": "Auditoria sin token 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('tiempo < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{urlAudit}}/audit", "host": ["{{urlAudit}}"], "path": ["audit"] }
+          }
+        }
+      ]
+    }
+  ]
+}

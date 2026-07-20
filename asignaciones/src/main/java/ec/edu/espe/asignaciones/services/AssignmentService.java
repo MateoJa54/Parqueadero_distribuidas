@@ -223,6 +223,22 @@ public class AssignmentService {
         return toResponse(assignment);
     }
 
+    /**
+     * Lista TODAS las asignaciones (para el panel de administracion). Si
+     * {@code soloActivas} es {@code true} filtra por asignaciones activas.
+     * Ordenadas por fecha de asignacion descendente (mas recientes primero).
+     */
+    @Transactional(readOnly = true)
+    public List<AssignmentResponse> listarAsignaciones(boolean soloActivas) {
+        return assignmentRepository.findAll().stream()
+                .filter(a -> !soloActivas || a.isActive())
+                .sorted(java.util.Comparator.comparing(
+                        VehicleAssignment::getAssignedAt,
+                        java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+                .map(this::toResponse)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<AuditEventResponse> consultarTrazabilidad(UUID userId, UUID vehicleId) {
         return auditRepository.findByUserIdAndVehicleIdOrderByTimestampDesc(userId, vehicleId).stream()

@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ec.edu.espe.usuarios.audit.AuditPublisher;
 import ec.edu.espe.usuarios.dtos.AsignarRolRequestDto;
+import ec.edu.espe.usuarios.dtos.PersonaRequestDto;
+import ec.edu.espe.usuarios.dtos.PersonaResponseDto;
 import ec.edu.espe.usuarios.dtos.UsuarioRequestDto;
 import ec.edu.espe.usuarios.dtos.UsuarioResponseDto;
 import ec.edu.espe.usuarios.dtos.auth.AuthResponse;
@@ -16,6 +18,8 @@ import ec.edu.espe.usuarios.dtos.auth.LoginRequest;
 import ec.edu.espe.usuarios.dtos.auth.PerfilResponse;
 import ec.edu.espe.usuarios.dtos.auth.RefreshRequest;
 import ec.edu.espe.usuarios.dtos.auth.RegisterRequest;
+import ec.edu.espe.usuarios.dtos.auth.RegistroClienteRequest;
+import ec.edu.espe.usuarios.dtos.auth.RegistroCompletoRequest;
 import ec.edu.espe.usuarios.entidades.Persona;
 import ec.edu.espe.usuarios.entidades.Rol;
 import ec.edu.espe.usuarios.entidades.Usuario;
@@ -51,7 +55,9 @@ public class AuthServicioImpl implements AuthServicio {
     private final UsuarioRepositorio usuarioRepositorio;
     private final UsuarioRolRepositorio usuarioRolRepositorio;
     private final RolRepositorio rolRepositorio;
+    private final ec.edu.espe.usuarios.repositorios.PersonaRepositorio personaRepositorio;
     private final UsuarioServicio usuarioServicio;
+    private final ec.edu.espe.usuarios.services.PersonaServicio personaServicio;
     private final AsignacionServicio asignacionServicio;
     private final JwtService jwtService;
     private final AuditPublisher auditPublisher;
@@ -109,6 +115,60 @@ public class AuthServicioImpl implements AuthServicio {
                         "Usuario no encontrado tras el registro: " + creado.getId()));
 
         return construirRespuesta(usuario, List.of(RolesBase.CLIENTE));
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse registrarCliente(RegistroClienteRequest request) {
+        // Mensaje UNICO y generico para TODOS los casos de fallo (persona inexistente,
+        // email que no coincide, persona inactiva o cuenta ya creada). Asi el endpoint
+        // no permite enumerar cedulas/correos ni saber si una cedula existe en el sistema.
+        final String generico = "No pudimos verificar tu identidad con esos datos, "
+                + "o ya existe una cuenta asociada. Verifica tu cedula y correo, o contacta al administrador.";
+
+        Persona persona = personaRepositorio.findByDni(request.getDni().trim())
+                .orElseThrow(() -> new ReglaNegocioException(generico));
+
+        // Segundo factor de identidad: el correo debe coincidir exactamente (sin distinguir mayusculas).
+        if (persona.getEmail() == null || !persona.getEmail().equalsIgnoreCase(request.getEmail().trim())) {
+            throw new ReglaNegocioException(generico);
+        }
+        // La persona debe estar activa y no tener aun un usuario (PK compartida persona<->usuario).
+        if (!persona.isActive() || usuarioRepositorio.existsById(persona.getId())) {
+            throw new ReglaNegocioException(generico);
+        }
+
+        // Identidad verificada: reutiliza el alta de usuario + rol CLIENTE con el idPersona resuelto.
+        RegisterRequest interno = new RegisterRequest();
+        interno.setIdPersona(persona.getId());
+        interno.setUsername(request.getUsername());
+        interno.setPassword(request.getPassword());
+        return register(interno);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse registrarCompleto(RegistroCompletoRequest request) {
+        // 1) Crea la persona (identidad) reutilizando PersonaServicio, que valida
+        //    cedula ecuatoriana + unicidad de dni/email/telefono y la deja activa.
+        PersonaResponseDto persona = personaServicio.crearPersona(PersonaRequestDto.builder()
+                .firstName(request.getFirstName())
+                .middleName(request.getMiddleName())
+                .lastName(request.getLastName())
+                .dni(request.getDni())
+                .email(request.getEmail())
+                .phone(request.getPhone())
+                .address(request.getAddress())
+                .nationality(request.getNationality())
+                .build());
+
+        // 2) Crea el usuario (acceso) sobre esa persona + rol CLIENTE. Al compartir la
+        //    transaccion, si falla el alta del usuario tambien se revierte la persona.
+        RegisterRequest interno = new RegisterRequest();
+        interno.setIdPersona(persona.getId());
+        interno.setUsername(request.getUsername());
+        interno.setPassword(request.getPassword());
+        return register(interno);
     }
 
     @Override
