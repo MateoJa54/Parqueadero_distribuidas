@@ -76,7 +76,7 @@ services:
             - exp
 
   # ---------------- Microservicio ASIGNACIONES ------------
-  # Relacion vehiculo<->dueño -> JWT a nivel de servicio.
+  # Relacion vehiculo<->dueÃ±o -> JWT a nivel de servicio.
   - name: asignaciones
     url: http://host.docker.internal:8082
     routes:
@@ -208,12 +208,12 @@ consumers:
         algorithm: RS256
         rsa_public_key: |
           -----BEGIN PUBLIC KEY-----
-          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7FvwwKf6bc6VnjO45J0X
-          7yOrE4TLdSu001gTsvIAqk6GzVD1pY2DDJVyfh6dKFwYU7lAl+hFkSEqE3nGKSWJ
-          LlvrnuPK1i04XJkExpuCHSnIEx6Ev+znREBTBYfjAQC4yejo3qRzuXH8smXmHydr
-          /ybRpvnch4xsbSW18dfdYq0bBAblJYcmzjIyQrLxGdqncoOsPdBo4BoIiPgnmq2K
-          I6Q5nGNoL3Y7QBg/hn/vqHgYfJw3lJGTv3sBmCbfk4Che75I/8x8ijGrH1equbBS
-          cdVTet2+sA9UxfQ1gYRXqUsGyj6/pdNOnv6Qcl1ZDZRmIM0HdKacpSJkGJ8/lpNz
-          lwIDAQAB
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxJA+rKx/HXfbmO1LQKN4
+          yOutD4WOthVlrykPNq6FfE9CC4ReH5eTJIbsnEQFw36FwmYDQ0MsoTIq8JdADWR/
+          72eKyTBiJw3JSUOdx2jg5SJN1zUcRJsYPBVs6FSMyiskZ+xUwWjURU+3lAmmYhMn
+          25J2YfUML26IFo+eCY7PY+F39dpKUofJjW6XX+/b0fCXwAGWIVjRe4Rf5K5F0Jwp
+          2xHwBNlts51wz+DE1s8bs9UVzPYviI0e/+AOfOyJ9UTG74WK//cMsvIJgQIvuQFl
+          U9LhcBgB7AeJ9PmsiP7eBkWn1ltU2ZRfpZfqutlOPydDwohV10MV1r3IyAMEAOx6
+          /QIDAQAB
           -----END PUBLIC KEY-----
 

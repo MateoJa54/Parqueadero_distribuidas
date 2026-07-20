@@ -1,8 +1,10 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { AuditService } from './audit.service';
 import { CreateAuditEventDto } from './dto/create-audit.dto';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('audit')
+@Roles('ADMIN', 'ROOT')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 

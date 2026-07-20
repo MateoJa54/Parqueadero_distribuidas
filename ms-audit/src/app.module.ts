@@ -6,6 +6,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AuditModule } from './audit/audit.module';
 import { EventoAuditoria } from './audit/entities/evento-auditoria.entity';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './auth/roles.guard';
 
 @Module({
   imports: [
@@ -46,6 +47,9 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
     // Toda ruta de ms-audit exige JWT valido: contiene datos sensibles
     // (ip, mac, usuario) y debe protegerse aunque se acceda sin pasar por Kong.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // Solo ADMIN/ROOT pueden consultar o insertar por HTTP. El consumidor de
+    // RabbitMQ no pasa por controladores y continua registrando eventos internos.
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}
