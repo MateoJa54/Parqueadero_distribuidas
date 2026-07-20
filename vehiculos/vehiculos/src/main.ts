@@ -51,3 +51,4 @@ async function bootstrap() {
   console.log(`Aplicación corriendo en: http://localhost:${port}/api`);
 }
 bootstrap();
+// Trigger SonarCloud analysis
