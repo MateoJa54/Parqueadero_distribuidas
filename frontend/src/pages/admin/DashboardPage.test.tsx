@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { DashboardPage } from './DashboardPage';
 import { AuthContext, type AuthContextValue } from '@/auth/context';
 
@@ -49,7 +49,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Tickets activos')).toBeInTheDocument();
     expect(screen.getByText('Zonas')).toBeInTheDocument();
     expect(screen.getByText('Vehículos')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText('4')).toBeInTheDocument());
+    expect(await screen.findByText('4')).toBeInTheDocument();
   });
 
   it('muestra estado vacío sin espacios y oculta catálogo sin permiso', async () => {
@@ -59,9 +59,7 @@ describe('DashboardPage', () => {
     mock(vehiculosApi.list).mockResolvedValue([]);
 
     renderPage(['CLIENTE']);
-    await waitFor(() =>
-      expect(screen.getByText('No hay espacios registrados.')).toBeInTheDocument(),
-    );
+    expect(await screen.findByText('No hay espacios registrados.')).toBeInTheDocument();
     expect(screen.queryByText('Zonas')).not.toBeInTheDocument();
     expect(screen.queryByText('Vehículos')).not.toBeInTheDocument();
   });

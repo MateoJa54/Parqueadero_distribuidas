@@ -5,7 +5,6 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,8 +65,7 @@ public class AuthServicioImpl implements AuthServicio {
     private final AuditPublisher auditPublisher;
 
     @Lazy
-    @Autowired
-    private AuthServicioImpl self;
+    private final AuthServicioImpl self;
 
     @Override
     @Transactional

@@ -57,7 +57,7 @@ class UsuarioServicioImplTest {
                 .build();
     }
 
-    private Usuario usuario(UUID id, Persona persona, boolean active) {
+    private Usuario usuario(Persona persona, boolean active) {
         return Usuario.builder()
                 .persona(persona)
                 .username("juanp")
@@ -81,7 +81,7 @@ class UsuarioServicioImplTest {
     void listarUsuariosOk() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, true);
-        Usuario u = usuario(id, p, true);
+        Usuario u = usuario(p, true);
         when(usuarioRepositorio.findAll()).thenReturn(List.of(u));
         when(mapper.toUsuarioResponse(u)).thenReturn(responseDto(id));
 
@@ -97,7 +97,7 @@ class UsuarioServicioImplTest {
     void obtenerUsuarioExiste() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, true);
-        Usuario u = usuario(id, p, true);
+        Usuario u = usuario(p, true);
         when(usuarioRepositorio.findById(id)).thenReturn(Optional.of(u));
         when(mapper.toUsuarioResponse(u)).thenReturn(responseDto(id));
 
@@ -121,7 +121,7 @@ class UsuarioServicioImplTest {
     void crearUsuarioOk() {
         UUID personaId = UUID.randomUUID();
         Persona p = persona(personaId, true);
-        Usuario u = usuario(personaId, p, true);
+        Usuario u = usuario(p, true);
 
         UsuarioRequestDto request = new UsuarioRequestDto();
         request.setIdPersona(personaId);
@@ -202,7 +202,7 @@ class UsuarioServicioImplTest {
     void actualizarUsuarioOk() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, true);
-        Usuario u = usuario(id, p, true);
+        Usuario u = usuario(p, true);
 
         UsuarioUpdateDto request = new UsuarioUpdateDto();
         request.setIdPersona(id);
@@ -225,7 +225,7 @@ class UsuarioServicioImplTest {
     void actualizarUsuarioConPassword() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, true);
-        Usuario u = usuario(id, p, true);
+        Usuario u = usuario(p, true);
         String oldHash = u.getPasswordHash();
 
         UsuarioUpdateDto request = new UsuarioUpdateDto();
@@ -249,8 +249,9 @@ class UsuarioServicioImplTest {
         UUID id = UUID.randomUUID();
         when(usuarioRepositorio.findById(id)).thenReturn(Optional.empty());
 
+        var req = new UsuarioUpdateDto();
         assertThrows(RecursoNoEncontradoException.class,
-                () -> servicio.actualizarUsuario(id, new UsuarioUpdateDto()));
+                () -> servicio.actualizarUsuario(id, req));
     }
 
     @Test
@@ -258,7 +259,7 @@ class UsuarioServicioImplTest {
     void actualizarUsuarioCambiaPersona() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, true);
-        Usuario u = usuario(id, p, true);
+        Usuario u = usuario(p, true);
 
         UsuarioUpdateDto request = new UsuarioUpdateDto();
         request.setIdPersona(UUID.randomUUID()); // otro id
@@ -274,7 +275,7 @@ class UsuarioServicioImplTest {
     void actualizarUsuarioUsernameRepetido() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, true);
-        Usuario u = usuario(id, p, true);
+        Usuario u = usuario(p, true);
 
         UsuarioUpdateDto request = new UsuarioUpdateDto();
         request.setIdPersona(id);
@@ -293,7 +294,7 @@ class UsuarioServicioImplTest {
     void activarUsuarioOk() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, true);
-        Usuario u = usuario(id, p, false);
+        Usuario u = usuario(p, false);
 
         when(usuarioRepositorio.findById(id)).thenReturn(Optional.of(u));
         when(usuarioRepositorio.save(any())).thenReturn(u);
@@ -310,7 +311,7 @@ class UsuarioServicioImplTest {
     void activarUsuarioPersonaInactiva() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, false);
-        Usuario u = usuario(id, p, false);
+        Usuario u = usuario(p, false);
 
         when(usuarioRepositorio.findById(id)).thenReturn(Optional.of(u));
 
@@ -333,7 +334,7 @@ class UsuarioServicioImplTest {
     void desactivarUsuarioOk() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, true);
-        Usuario u = usuario(id, p, true);
+        Usuario u = usuario(p, true);
         UsuarioRol rol = UsuarioRol.builder().active(true).build();
 
         when(usuarioRepositorio.findById(id)).thenReturn(Optional.of(u));
@@ -354,7 +355,7 @@ class UsuarioServicioImplTest {
     void desactivarUsuarioNoRevocaRolesInactivos() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, true);
-        Usuario u = usuario(id, p, true);
+        Usuario u = usuario(p, true);
         UsuarioRol rol = UsuarioRol.builder().active(false).build();
 
         when(usuarioRepositorio.findById(id)).thenReturn(Optional.of(u));
@@ -383,7 +384,7 @@ class UsuarioServicioImplTest {
     void buscarUsuariosOk() {
         UUID id = UUID.randomUUID();
         Persona p = persona(id, true);
-        Usuario u = usuario(id, p, true);
+        Usuario u = usuario(p, true);
         when(usuarioRepositorio.findByUsernameContainingIgnoreCase("juan")).thenReturn(List.of(u));
         when(mapper.toUsuarioResponse(u)).thenReturn(responseDto(id));
 

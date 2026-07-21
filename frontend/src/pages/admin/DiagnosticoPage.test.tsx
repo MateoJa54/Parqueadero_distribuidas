@@ -61,7 +61,7 @@ describe('DiagnosticoPage', () => {
     setAllOk();
     mock(rolesApi.list).mockRejectedValue(new ApiError(403, 'No autorizado'));
     renderPage();
-    await waitFor(() => expect(screen.getByText('Fallo 403')).toBeInTheDocument());
+    expect(await screen.findByText('Fallo 403')).toBeInTheDocument();
     expect(screen.getByText(/Falta permiso/)).toBeInTheDocument();
   });
 
@@ -69,7 +69,7 @@ describe('DiagnosticoPage', () => {
     setAllOk();
     mock(zonasApi.list).mockRejectedValue(new TypeError('Failed to fetch'));
     renderPage();
-    await waitFor(() => expect(screen.getByText('Sin conexión')).toBeInTheDocument());
+    expect(await screen.findByText('Sin conexión')).toBeInTheDocument();
     expect(screen.getByText(/Servicio caído/)).toBeInTheDocument();
   });
 
@@ -77,7 +77,7 @@ describe('DiagnosticoPage', () => {
     setAllOk();
     mock(auditApi.list).mockRejectedValue(new ApiError(500, 'boom'));
     renderPage();
-    await waitFor(() => expect(screen.getByText('Fallo 500')).toBeInTheDocument());
+    expect(await screen.findByText('Fallo 500')).toBeInTheDocument();
     const correctas = screen.getByText('Correctas').nextElementSibling!;
     const conFallos = screen.getByText('Con fallos').nextElementSibling!;
     expect(correctas).toHaveTextContent('7');

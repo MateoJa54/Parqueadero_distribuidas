@@ -35,6 +35,8 @@ import lombok.ToString;
 @Builder
 public class Usuario {
 
+    private static final String ZONA_HORARIA = "America/Guayaquil";
+
     // PK compartida con Persona (relacion 1 a 1). El id NO se autogenera:
     // @MapsId copia el id de la persona asociada como clave primaria de users.
     @Id
@@ -71,12 +73,12 @@ public class Usuario {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
-        this.updatedAt = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
+        this.createdAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
+        this.updatedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
+        this.updatedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
     }
 }

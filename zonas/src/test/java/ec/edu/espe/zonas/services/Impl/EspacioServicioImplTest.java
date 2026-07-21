@@ -130,7 +130,8 @@ class EspacioServicioImplTest {
         UUID idZona = UUID.randomUUID();
         when(zonaRepositorio.findById(idZona)).thenReturn(Optional.empty());
 
-        assertThrows(RecursoNoEncontradoException.class, () -> servicio.crearEspacio(request(idZona)));
+        EspacioRequestDto dto = request(idZona);
+        assertThrows(RecursoNoEncontradoException.class, () -> servicio.crearEspacio(dto));
     }
 
     @Test
@@ -139,7 +140,8 @@ class EspacioServicioImplTest {
         UUID idZona = UUID.randomUUID();
         when(zonaRepositorio.findById(idZona)).thenReturn(Optional.of(zona(idZona, false, 10)));
 
-        assertThrows(ReglaNegocioException.class, () -> servicio.crearEspacio(request(idZona)));
+        EspacioRequestDto dto = request(idZona);
+        assertThrows(ReglaNegocioException.class, () -> servicio.crearEspacio(dto));
     }
 
     @Test
@@ -150,7 +152,8 @@ class EspacioServicioImplTest {
         when(zonaRepositorio.findById(idZona)).thenReturn(Optional.of(z));
         when(espacioRepositorio.countByZona(z)).thenReturn(5L);
 
-        assertThrows(ReglaNegocioException.class, () -> servicio.crearEspacio(request(idZona)));
+        EspacioRequestDto dto = request(idZona);
+        assertThrows(ReglaNegocioException.class, () -> servicio.crearEspacio(dto));
     }
 
     @Test
@@ -174,7 +177,7 @@ class EspacioServicioImplTest {
 
         assertEquals(guardado.getId(), res.getId());
         assertEquals("ESP-AUT-01", entidad.getCodigo());
-        verify(auditPublisher).publicar(eq("CREATE"), eq("ESPACIO"), eq(guardado));
+        verify(auditPublisher).publicar("CREATE", "ESPACIO", guardado);
         verify(sseService).emitir(eq("espacio-creado"), any());
     }
 
@@ -209,8 +212,9 @@ class EspacioServicioImplTest {
         UUID id = UUID.randomUUID();
         when(espacioRepositorio.findById(id)).thenReturn(Optional.empty());
 
+        EspacioRequestDto dto = request(UUID.randomUUID());
         assertThrows(RecursoNoEncontradoException.class,
-                () -> servicio.actualizarEspacio(id, request(UUID.randomUUID())));
+                () -> servicio.actualizarEspacio(id, dto));
     }
 
     @Test
@@ -230,7 +234,7 @@ class EspacioServicioImplTest {
 
         assertEquals("cambio", e.getDescripcion());
         assertEquals(TipoEspacio.MOTO, e.getTipoEspacio());
-        verify(auditPublisher).publicar(eq("UPDATE"), eq("ESPACIO"), eq(e));
+        verify(auditPublisher).publicar("UPDATE", "ESPACIO", e);
         verify(sseService).emitir(eq("espacio-actualizado"), any());
     }
 
@@ -292,7 +296,7 @@ class EspacioServicioImplTest {
         servicio.cambiarEstado(id, EstadoEspacio.OCUPADO);
 
         assertEquals(EstadoEspacio.OCUPADO, e.getEstado());
-        verify(auditPublisher).publicar(eq("UPDATE"), eq("ESPACIO"), eq(e));
+        verify(auditPublisher).publicar("UPDATE", "ESPACIO", e);
         verify(sseService).emitir(eq("espacio-actualizado"), any());
     }
 
@@ -497,7 +501,7 @@ class EspacioServicioImplTest {
         assertTrue(e.isActivo());
         assertEquals(EstadoEspacio.DISPONIBLE, e.getEstado());
         verify(espacioRepositorio).save(e);
-        verify(auditPublisher).publicar(eq("UPDATE"), eq("ESPACIO"), eq(e));
+        verify(auditPublisher).publicar("UPDATE", "ESPACIO", e);
         verify(sseService).emitir(eq("espacio-actualizado"), any());
     }
 
@@ -546,7 +550,7 @@ class EspacioServicioImplTest {
         assertFalse(e.isActivo());
         assertEquals(EstadoEspacio.MANTENIMIENTO, e.getEstado());
         verify(espacioRepositorio).save(e);
-        verify(auditPublisher).publicar(eq("UPDATE"), eq("ESPACIO"), eq(e));
+        verify(auditPublisher).publicar("UPDATE", "ESPACIO", e);
         verify(sseService).emitir(eq("espacio-actualizado"), any());
     }
 }

@@ -42,7 +42,7 @@ describe('PerfilPage', () => {
   it('muestra error si falla la carga', async () => {
     (authApi.me as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('x'));
     renderPage();
-    await waitFor(() => expect(screen.getByText('Ocurrió un error')).toBeInTheDocument());
+    expect(await screen.findByText('Ocurrió un error')).toBeInTheDocument();
   });
 
   it('valida username inválido y no llama update', async () => {

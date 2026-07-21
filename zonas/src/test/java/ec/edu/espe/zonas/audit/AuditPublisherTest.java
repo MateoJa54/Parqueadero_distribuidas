@@ -1,6 +1,8 @@
 package ec.edu.espe.zonas.audit;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -108,16 +110,22 @@ class AuditPublisherTest {
     }
 
     // -----------------------------------------------------------------------
-    // 5. IP: remoteAddr regular IPv4
+    // 5,7,8,9. IP desde remoteAddr con normalizacion (parametrizado)
     // -----------------------------------------------------------------------
 
-    @Test
-    void publicar_conRequestConIPv4_extraeIP() {
+    @ParameterizedTest
+    @CsvSource({
+            "10.0.0.5,          10.0.0.5",
+            "::1,               127.0.0.1",
+            "0:0:0:0:0:0:0:1,   127.0.0.1",
+            "::ffff:192.168.1.5, 192.168.1.5"
+    })
+    void publicar_remoteAddr_normalizaIP(String remoteAddr, String esperada) {
         RabbitTemplate rabbit = mock(RabbitTemplate.class);
         AuditPublisher publisher = buildPublisherWithRabbit(rabbit);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("10.0.0.5");
+        request.setRemoteAddr(remoteAddr);
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
         SecurityContextHolder.clearContext();
 
@@ -125,7 +133,7 @@ class AuditPublisherTest {
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), argThat((Object obj) -> {
             AuditEvent ev = (AuditEvent) obj;
-            return "10.0.0.5".equals(ev.getIp());
+            return esperada.equals(ev.getIp());
         }));
 
         RequestContextHolder.resetRequestAttributes();
@@ -150,78 +158,6 @@ class AuditPublisherTest {
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), argThat((Object obj) -> {
             AuditEvent ev = (AuditEvent) obj;
             return "203.0.113.1".equals(ev.getIp());
-        }));
-
-        RequestContextHolder.resetRequestAttributes();
-    }
-
-    // -----------------------------------------------------------------------
-    // 7. IP normalization: ::1 → 127.0.0.1
-    // -----------------------------------------------------------------------
-
-    @Test
-    void publicar_conIPv6Loopback_normalizaA127() {
-        RabbitTemplate rabbit = mock(RabbitTemplate.class);
-        AuditPublisher publisher = buildPublisherWithRabbit(rabbit);
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("::1");
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
-        SecurityContextHolder.clearContext();
-
-        publisher.publicar("CREATE", "ZONA", "datos");
-
-        verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), argThat((Object obj) -> {
-            AuditEvent ev = (AuditEvent) obj;
-            return "127.0.0.1".equals(ev.getIp());
-        }));
-
-        RequestContextHolder.resetRequestAttributes();
-    }
-
-    // -----------------------------------------------------------------------
-    // 8. IP normalization: 0:0:0:0:0:0:0:1 → 127.0.0.1
-    // -----------------------------------------------------------------------
-
-    @Test
-    void publicar_conIPv6MappedLoopback_normalizaA127() {
-        RabbitTemplate rabbit = mock(RabbitTemplate.class);
-        AuditPublisher publisher = buildPublisherWithRabbit(rabbit);
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("0:0:0:0:0:0:0:1");
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
-        SecurityContextHolder.clearContext();
-
-        publisher.publicar("CREATE", "ZONA", "datos");
-
-        verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), argThat((Object obj) -> {
-            AuditEvent ev = (AuditEvent) obj;
-            return "127.0.0.1".equals(ev.getIp());
-        }));
-
-        RequestContextHolder.resetRequestAttributes();
-    }
-
-    // -----------------------------------------------------------------------
-    // 9. IP normalization: ::ffff:192.168.1.x → quita prefijo
-    // -----------------------------------------------------------------------
-
-    @Test
-    void publicar_conIPv4MapeadaEnIPv6_quitaPrefijo() {
-        RabbitTemplate rabbit = mock(RabbitTemplate.class);
-        AuditPublisher publisher = buildPublisherWithRabbit(rabbit);
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("::ffff:192.168.1.5");
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
-        SecurityContextHolder.clearContext();
-
-        publisher.publicar("CREATE", "ZONA", "datos");
-
-        verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), argThat((Object obj) -> {
-            AuditEvent ev = (AuditEvent) obj;
-            return "192.168.1.5".equals(ev.getIp());
         }));
 
         RequestContextHolder.resetRequestAttributes();

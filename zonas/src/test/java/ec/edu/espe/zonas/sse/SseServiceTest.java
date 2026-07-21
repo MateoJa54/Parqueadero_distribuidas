@@ -48,14 +48,9 @@ class SseServiceTest {
     }
 
     @Test
-    void emitirConClienteActivoEnviaEvento() throws Exception {
-        SseEmitter emitter = mock(SseEmitter.class);
-        // Use real service with a mock emitter injected by registering it via reflection
+    void emitirConClienteActivoEnviaEvento() {
         SseService service = new SseService();
-
-        // We can only test through nuevaConexion() since the list is private;
-        // the real emitter won't throw, just verify no exception
-        SseEmitter realEmitter = service.nuevaConexion();
+        service.nuevaConexion();
         assertDoesNotThrow(() -> service.emitir("test-event", "payload"));
     }
 

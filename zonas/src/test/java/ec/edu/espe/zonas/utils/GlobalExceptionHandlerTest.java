@@ -85,7 +85,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleValidationRetorna400ConErrores() throws Exception {
+    void handleValidationRetorna400ConErrores() {
         // Construct MethodArgumentNotValidException using binding result
         BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "target");
         bindingResult.addError(new FieldError("target", "nombre", "El nombre es obligatorio"));
@@ -140,7 +140,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleNotReadableEnumInvalidoListaValoresPermitidos() throws Exception {
+    void handleNotReadableEnumInvalidoListaValoresPermitidos() {
         com.fasterxml.jackson.databind.exc.InvalidFormatException ife =
                 com.fasterxml.jackson.databind.exc.InvalidFormatException.from(
                         null, "valor no valido", "MORADO",

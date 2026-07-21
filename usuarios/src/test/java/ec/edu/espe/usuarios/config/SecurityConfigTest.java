@@ -5,7 +5,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -38,18 +38,18 @@ class SecurityConfigTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @MockBean
+    @MockitoBean
     private AsignacionServicio asignacionServicio;
-    @MockBean
+    @MockitoBean
     private AuthServicio authServicio;
-    @MockBean
+    @MockitoBean
     private PersonaServicio personaServicio;
-    @MockBean
+    @MockitoBean
     private RolServicio rolServicio;
-    @MockBean
+    @MockitoBean
     private UsuarioServicio usuarioServicio;
 
     @Test

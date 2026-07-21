@@ -161,7 +161,7 @@ export function VehiculosPage() {
                 checked={incluirInactivos}
                 onChange={(e) => setIncluirInactivos(e.target.checked)}
               />
-              Incluir inactivos
+              {/* */}Incluir inactivos
             </label>
             <input
               className="input"

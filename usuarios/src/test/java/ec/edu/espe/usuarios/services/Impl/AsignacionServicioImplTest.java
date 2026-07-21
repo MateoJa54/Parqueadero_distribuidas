@@ -118,7 +118,8 @@ class AsignacionServicioImplTest {
     void asignarRolUsuarioInexistente() {
         when(usuarioRepositorio.findById(idUsuario)).thenReturn(Optional.empty());
 
-        assertThrows(RecursoNoEncontradoException.class, () -> servicio.asignarRol(request()));
+        var req = request();
+        assertThrows(RecursoNoEncontradoException.class, () -> servicio.asignarRol(req));
         verify(usuarioRolRepositorio, never()).save(any());
         verify(auditPublisher, never()).publicar(any(), any(), any());
     }
@@ -129,7 +130,8 @@ class AsignacionServicioImplTest {
         when(usuarioRepositorio.findById(idUsuario)).thenReturn(Optional.of(usuario));
         when(rolRepositorio.findById(idRol)).thenReturn(Optional.empty());
 
-        assertThrows(RecursoNoEncontradoException.class, () -> servicio.asignarRol(request()));
+        var req = request();
+        assertThrows(RecursoNoEncontradoException.class, () -> servicio.asignarRol(req));
         verify(usuarioRolRepositorio, never()).save(any());
     }
 
@@ -140,7 +142,8 @@ class AsignacionServicioImplTest {
         when(usuarioRepositorio.findById(idUsuario)).thenReturn(Optional.of(usuario));
         when(rolRepositorio.findById(idRol)).thenReturn(Optional.of(rol));
 
-        assertThrows(ReglaNegocioException.class, () -> servicio.asignarRol(request()));
+        var req = request();
+        assertThrows(ReglaNegocioException.class, () -> servicio.asignarRol(req));
         verify(usuarioRolRepositorio, never()).save(any());
     }
 
@@ -151,7 +154,8 @@ class AsignacionServicioImplTest {
         when(usuarioRepositorio.findById(idUsuario)).thenReturn(Optional.of(usuario));
         when(rolRepositorio.findById(idRol)).thenReturn(Optional.of(rol));
 
-        assertThrows(ReglaNegocioException.class, () -> servicio.asignarRol(request()));
+        var req = request();
+        assertThrows(ReglaNegocioException.class, () -> servicio.asignarRol(req));
         verify(usuarioRolRepositorio, never()).save(any());
     }
 
@@ -162,7 +166,8 @@ class AsignacionServicioImplTest {
         when(rolRepositorio.findById(idRol)).thenReturn(Optional.of(rol));
         when(usuarioRolRepositorio.existsByUsuarioAndRol(usuario, rol)).thenReturn(true);
 
-        assertThrows(ReglaNegocioException.class, () -> servicio.asignarRol(request()));
+        var req = request();
+        assertThrows(ReglaNegocioException.class, () -> servicio.asignarRol(req));
         verify(usuarioRolRepositorio, never()).save(any());
     }
 

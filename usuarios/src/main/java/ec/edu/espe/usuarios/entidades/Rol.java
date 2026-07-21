@@ -25,6 +25,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Rol {
 
+    private static final String ZONA_HORARIA = "America/Guayaquil";
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -46,12 +48,12 @@ public class Rol {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
-        this.updatedAt = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
+        this.createdAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
+        this.updatedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
+        this.updatedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
     }
 }

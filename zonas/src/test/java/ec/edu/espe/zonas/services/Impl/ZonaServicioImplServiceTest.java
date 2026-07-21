@@ -175,7 +175,8 @@ class ZonaServicioImplServiceTest {
         UUID id = UUID.randomUUID();
         when(repositorioZona.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(RecursoNoEncontradoException.class, () -> servicio.actualizarZona(id, request("x")));
+        ZonaRequestDto req = request("x");
+        assertThrows(RecursoNoEncontradoException.class, () -> servicio.actualizarZona(id, req));
     }
 
     @Test

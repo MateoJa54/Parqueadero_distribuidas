@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { RegistroPage } from './RegistroPage';
@@ -100,7 +100,7 @@ describe('RegistroPage', () => {
     set(/^Contraseña/, 'Abc123');
     set(/Confirmar contraseña/, 'Abc123');
     await userEvent.click(screen.getByRole('button', { name: 'Crear mi cuenta' }));
-    await waitFor(() => expect(screen.getByText('PORTAL')).toBeInTheDocument());
+    expect(await screen.findByText('PORTAL')).toBeInTheDocument();
     expect(registrarCompleto).toHaveBeenCalledWith(
       expect.objectContaining({
         firstName: 'Juan', middleName: 'Carlos', lastName: 'Perez Lopez',

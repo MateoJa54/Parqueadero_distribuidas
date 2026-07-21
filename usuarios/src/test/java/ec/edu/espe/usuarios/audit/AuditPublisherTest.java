@@ -103,13 +103,18 @@ class AuditPublisherTest {
         RequestContextHolder.resetRequestAttributes();
     }
 
-    @Test
-    void publicar_conIPv6Loopback_normalizaA127() {
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+            "::1, 127.0.0.1",
+            "0:0:0:0:0:0:0:1, 127.0.0.1",
+            "::ffff:192.168.1.5, 192.168.1.5"
+    })
+    void publicar_normalizaIpRemota(String remoteAddr, String ipEsperada) {
         RabbitTemplate rabbit = mock(RabbitTemplate.class);
         AuditPublisher publisher = buildPublisherWithRabbit(rabbit);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("::1");
+        request.setRemoteAddr(remoteAddr);
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
         SecurityContextHolder.clearContext();
 
@@ -117,47 +122,7 @@ class AuditPublisherTest {
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), argThat((Object obj) -> {
             AuditEvent ev = (AuditEvent) obj;
-            return "127.0.0.1".equals(ev.getIp());
-        }));
-
-        RequestContextHolder.resetRequestAttributes();
-    }
-
-    @Test
-    void publicar_conIPv6MappedLoopback_normalizaA127() {
-        RabbitTemplate rabbit = mock(RabbitTemplate.class);
-        AuditPublisher publisher = buildPublisherWithRabbit(rabbit);
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("0:0:0:0:0:0:0:1");
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
-        SecurityContextHolder.clearContext();
-
-        publisher.publicar("CREATE", "USUARIO", "datos");
-
-        verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), argThat((Object obj) -> {
-            AuditEvent ev = (AuditEvent) obj;
-            return "127.0.0.1".equals(ev.getIp());
-        }));
-
-        RequestContextHolder.resetRequestAttributes();
-    }
-
-    @Test
-    void publicar_conIPv4MapeadaEnIPv6_quitaPrefijo() {
-        RabbitTemplate rabbit = mock(RabbitTemplate.class);
-        AuditPublisher publisher = buildPublisherWithRabbit(rabbit);
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("::ffff:192.168.1.5");
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
-        SecurityContextHolder.clearContext();
-
-        publisher.publicar("CREATE", "USUARIO", "datos");
-
-        verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), argThat((Object obj) -> {
-            AuditEvent ev = (AuditEvent) obj;
-            return "192.168.1.5".equals(ev.getIp());
+            return ipEsperada.equals(ev.getIp());
         }));
 
         RequestContextHolder.resetRequestAttributes();

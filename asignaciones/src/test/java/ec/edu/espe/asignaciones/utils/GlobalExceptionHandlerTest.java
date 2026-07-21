@@ -118,7 +118,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("handleValidation devuelve 400 con mapa de errores de campo")
-    void handleValidation() throws Exception {
+    void handleValidation() {
         // Create a real MethodArgumentNotValidException with a field error
         Object target = new Object();
         BindingResult bindingResult = new BeanPropertyBindingResult(target, "req");

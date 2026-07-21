@@ -107,7 +107,8 @@ class RolServicioImplTest {
     void crearRolNombreDuplicado() {
         when(rolRepositorio.existsByName("ADMIN")).thenReturn(true);
 
-        assertThrows(ReglaNegocioException.class, () -> servicio.crearRol(request("admin")));
+        var req = request("admin");
+        assertThrows(ReglaNegocioException.class, () -> servicio.crearRol(req));
         verify(rolRepositorio, never()).save(any());
     }
 
@@ -131,8 +132,9 @@ class RolServicioImplTest {
     void actualizarRolNoExistente() {
         when(rolRepositorio.findById(any())).thenReturn(Optional.empty());
 
+        var req = request("nuevo");
         assertThrows(RecursoNoEncontradoException.class,
-                () -> servicio.actualizarRol(idRol, request("nuevo")));
+                () -> servicio.actualizarRol(idRol, req));
     }
 
     @Test
@@ -141,8 +143,9 @@ class RolServicioImplTest {
         when(rolRepositorio.findById(idRol)).thenReturn(Optional.of(rol));
         when(rolRepositorio.existsByNameAndIdNot("OTRO", idRol)).thenReturn(true);
 
+        var req = request("otro");
         assertThrows(ReglaNegocioException.class,
-                () -> servicio.actualizarRol(idRol, request("otro")));
+                () -> servicio.actualizarRol(idRol, req));
         verify(rolRepositorio, never()).save(any());
     }
 

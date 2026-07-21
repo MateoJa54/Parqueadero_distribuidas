@@ -52,6 +52,6 @@ describe('DisponibilidadPage', () => {
   it('muestra error al fallar', async () => {
     (espaciosApi.disponibles as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('x'));
     render(<DisponibilidadPage />);
-    await waitFor(() => expect(screen.getByText('Ocurrió un error')).toBeInTheDocument());
+    expect(await screen.findByText('Ocurrió un error')).toBeInTheDocument();
   });
 });

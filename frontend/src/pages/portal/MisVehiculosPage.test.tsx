@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MisVehiculosPage } from './MisVehiculosPage';
 import { AuthContext, type AuthContextValue } from '@/auth/context';
 
@@ -35,12 +35,12 @@ describe('MisVehiculosPage', () => {
   it('muestra estado vacío sin vehículos', async () => {
     (propietariosApi.vehiculos as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     renderPage();
-    await waitFor(() => expect(screen.getByText('Aún no tienes vehículos')).toBeInTheDocument());
+    expect(await screen.findByText('Aún no tienes vehículos')).toBeInTheDocument();
   });
 
   it('muestra error al fallar la carga', async () => {
     (propietariosApi.vehiculos as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('x'));
     renderPage();
-    await waitFor(() => expect(screen.getByText('Ocurrió un error')).toBeInTheDocument());
+    expect(await screen.findByText('Ocurrió un error')).toBeInTheDocument();
   });
 });

@@ -101,8 +101,9 @@ class ExternalCatalogServiceTest {
 
         when(responseSpecMock.body(UsuarioClientResponse.class)).thenReturn(usuario);
 
+        UUID id = usuario.getId();
         assertThrows(ReglaNegocioException.class,
-                () -> service.validarUsuarioActivo(usuario.getId(), "Bearer tok"));
+                () -> service.validarUsuarioActivo(id, "Bearer tok"));
     }
 
     @Test
@@ -172,8 +173,9 @@ class ExternalCatalogServiceTest {
 
         when(responseSpecMock.body(VehiculoClientResponse.class)).thenReturn(vehiculo);
 
+        UUID id = vehiculo.getId();
         assertThrows(ReglaNegocioException.class,
-                () -> service.validarVehiculoActivo(vehiculo.getId(), "Bearer tok"));
+                () -> service.validarVehiculoActivo(id, "Bearer tok"));
     }
 
     // ========== validarRolAutorizadoParaAsignacion ==========
@@ -224,8 +226,9 @@ class ExternalCatalogServiceTest {
         when(responseSpecMock.body(UserRoleAssignmentResponse[].class))
                 .thenReturn(new UserRoleAssignmentResponse[]{rol});
 
+        UUID id = rol.getIdUser();
         assertThrows(ReglaNegocioException.class,
-                () -> service.validarRolAutorizadoParaAsignacion(rol.getIdUser(), "Bearer tok"));
+                () -> service.validarRolAutorizadoParaAsignacion(id, "Bearer tok"));
     }
 
     @Test

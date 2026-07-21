@@ -99,7 +99,8 @@ class TicketServiceImplBranchesTest {
         when(generadorCodigo.generar()).thenReturn("TKT-000001");
         when(ticketRepository.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("unique constraint"));
 
-        assertThrows(ReglaNegocioException.class, () -> service.registrarIngreso(req, UUID.randomUUID()));
+        UUID idEmpleado = UUID.randomUUID();
+        assertThrows(ReglaNegocioException.class, () -> service.registrarIngreso(req, idEmpleado));
     }
 
     // ---- rolAutorizacion nulo => usa assignmentType ----

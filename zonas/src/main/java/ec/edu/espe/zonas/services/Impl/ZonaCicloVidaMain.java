@@ -45,12 +45,12 @@ public class ZonaCicloVidaMain {
             log.info("Zona creada: {} capacidad={}", zona.getCodigo(), zona.getCapacidad());
 
             // 2) Creamos 2 espacios (OK, dentro de la capacidad)
-            crearEspacio(espacioServicio, idZona, "ESP-A-" + (sufijo % 1000));
-            crearEspacio(espacioServicio, idZona, "ESP-B-" + (sufijo % 1000));
+            crearEspacio(espacioServicio, idZona);
+            crearEspacio(espacioServicio, idZona);
 
             // 3) Tercer espacio -> debe FALLAR por capacidad
             log.info("\n--- Intentando 3er espacio (debe fallar) ---");
-            crearEspacio(espacioServicio, idZona, "ESP-C-" + (sufijo % 1000));
+            crearEspacio(espacioServicio, idZona);
 
             imprimirEspacios(zonaRepositorio, espacioRepositorio, idZona, "Estado tras crear espacios");
 
@@ -87,7 +87,7 @@ public class ZonaCicloVidaMain {
         }
     }
 
-    private static void crearEspacio(EspacioServicioImpl servicio, UUID idZona, String codigo) {
+    private static void crearEspacio(EspacioServicioImpl servicio, UUID idZona) {
         try {
             EspacioRespondeDto creado = servicio.crearEspacio(EspacioRequestDto.builder()
                     .idZona(idZona)

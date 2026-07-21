@@ -136,7 +136,8 @@ class PersonaServicioImplTest {
     void crearPersonaDniDuplicado() {
         when(personaRepositorio.existsByDni(anyString())).thenReturn(true);
 
-        assertThrows(ReglaNegocioException.class, () -> servicio.crearPersona(requestValido()));
+        var req = requestValido();
+        assertThrows(ReglaNegocioException.class, () -> servicio.crearPersona(req));
         verify(personaRepositorio, never()).save(any());
     }
 
@@ -146,7 +147,8 @@ class PersonaServicioImplTest {
         when(personaRepositorio.existsByDni(anyString())).thenReturn(false);
         when(personaRepositorio.existsByEmailIgnoreCase(anyString())).thenReturn(true);
 
-        assertThrows(ReglaNegocioException.class, () -> servicio.crearPersona(requestValido()));
+        var req = requestValido();
+        assertThrows(ReglaNegocioException.class, () -> servicio.crearPersona(req));
         verify(personaRepositorio, never()).save(any());
     }
 
@@ -157,7 +159,8 @@ class PersonaServicioImplTest {
         when(personaRepositorio.existsByEmailIgnoreCase(anyString())).thenReturn(false);
         when(personaRepositorio.existsByPhone(anyString())).thenReturn(true);
 
-        assertThrows(ReglaNegocioException.class, () -> servicio.crearPersona(requestValido()));
+        var req = requestValido();
+        assertThrows(ReglaNegocioException.class, () -> servicio.crearPersona(req));
         verify(personaRepositorio, never()).save(any());
     }
 
@@ -183,8 +186,9 @@ class PersonaServicioImplTest {
     void actualizarPersonaNoExistente() {
         when(personaRepositorio.findById(any())).thenReturn(Optional.empty());
 
+        var req = requestValido();
         assertThrows(RecursoNoEncontradoException.class,
-                () -> servicio.actualizarPersona(idPersona, requestValido()));
+                () -> servicio.actualizarPersona(idPersona, req));
     }
 
     @Test
@@ -193,8 +197,9 @@ class PersonaServicioImplTest {
         when(personaRepositorio.findById(idPersona)).thenReturn(Optional.of(persona));
         when(personaRepositorio.existsByDniAndIdNot(anyString(), eq(idPersona))).thenReturn(true);
 
+        var req = requestValido();
         assertThrows(ReglaNegocioException.class,
-                () -> servicio.actualizarPersona(idPersona, requestValido()));
+                () -> servicio.actualizarPersona(idPersona, req));
         verify(personaRepositorio, never()).save(any());
     }
 
@@ -205,8 +210,9 @@ class PersonaServicioImplTest {
         when(personaRepositorio.existsByDniAndIdNot(anyString(), eq(idPersona))).thenReturn(false);
         when(personaRepositorio.existsByEmailIgnoreCaseAndIdNot(anyString(), eq(idPersona))).thenReturn(true);
 
+        var req = requestValido();
         assertThrows(ReglaNegocioException.class,
-                () -> servicio.actualizarPersona(idPersona, requestValido()));
+                () -> servicio.actualizarPersona(idPersona, req));
         verify(personaRepositorio, never()).save(any());
     }
 
@@ -218,8 +224,9 @@ class PersonaServicioImplTest {
         when(personaRepositorio.existsByEmailIgnoreCaseAndIdNot(anyString(), eq(idPersona))).thenReturn(false);
         when(personaRepositorio.existsByPhoneAndIdNot(anyString(), eq(idPersona))).thenReturn(true);
 
+        var req = requestValido();
         assertThrows(ReglaNegocioException.class,
-                () -> servicio.actualizarPersona(idPersona, requestValido()));
+                () -> servicio.actualizarPersona(idPersona, req));
         verify(personaRepositorio, never()).save(any());
     }
 

@@ -49,7 +49,7 @@ class EntidadesTest {
         vacia.setActivo(false);
         assertEquals("N", vacia.getNombre());
         assertNotNull(vacia.toString());
-        assertTrue(vacia.equals(vacia));
+        assertEquals(vacia, vacia);
         vacia.hashCode();
     }
 
@@ -87,7 +87,7 @@ class EntidadesTest {
         assertEquals("X", vacio.getCodigo());
         assertEquals(EstadoEspacio.OCUPADO, vacio.getEstado());
         assertNotNull(vacio.toString());
-        assertTrue(vacio.equals(vacio));
+        assertEquals(vacio, vacio);
         vacio.hashCode();
     }
 
@@ -118,7 +118,7 @@ class EntidadesTest {
         assertEquals(TipoEspacio.AUTO, TipoEspacio.valueOf("AUTO"));
         assertEquals(EstadoEspacio.DISPONIBLE, EstadoEspacio.valueOf("DISPONIBLE"));
         assertTrue(TipoZona.values().length >= 4);
-        assertTrue(TipoEspacio.values().length == 3);
-        assertTrue(EstadoEspacio.values().length == 4);
+        assertEquals(3, TipoEspacio.values().length);
+        assertEquals(4, EstadoEspacio.values().length);
     }
 }

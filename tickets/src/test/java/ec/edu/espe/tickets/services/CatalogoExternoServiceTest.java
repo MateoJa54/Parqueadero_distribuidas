@@ -165,8 +165,9 @@ class CatalogoExternoServiceTest {
     void obtenerEspacio_bodyNull_lanzaRecursoNoEncontrado() {
         stubGetChain(null);
 
+        UUID idEspacio = UUID.randomUUID();
         assertThrows(RecursoNoEncontradoException.class,
-                () -> service.obtenerEspacio(UUID.randomUUID()));
+                () -> service.obtenerEspacio(idEspacio));
     }
 
     @Test

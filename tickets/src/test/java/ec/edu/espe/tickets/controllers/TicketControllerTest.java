@@ -25,7 +25,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
@@ -72,10 +71,6 @@ class TicketControllerTest {
 
     private UsernamePasswordAuthenticationToken empleadoAuth() {
         return new UsernamePasswordAuthenticationToken(EMPLEADO_ID, null, List.of());
-    }
-
-    private void withEmpleadoAuth(MockHttpServletRequestBuilder builder) throws Exception {
-        SecurityContextHolder.getContext().setAuthentication(empleadoAuth());
     }
 
     private TicketResponse sampleResponse(UUID id, EstadoTicket estado) {

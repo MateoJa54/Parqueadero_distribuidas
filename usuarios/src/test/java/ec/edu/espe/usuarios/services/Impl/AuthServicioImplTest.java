@@ -79,12 +79,7 @@ class AuthServicioImplTest {
         servicio = new AuthServicioImpl(
                 usuarioRepositorio, usuarioRolRepositorio, rolRepositorio,
                 personaRepositorio, usuarioServicio, personaServicio,
-                asignacionServicio, jwtService, auditPublisher);
-
-        // inject self via reflection
-        java.lang.reflect.Field selfField = AuthServicioImpl.class.getDeclaredField("self");
-        selfField.setAccessible(true);
-        selfField.set(servicio, self);
+                asignacionServicio, jwtService, auditPublisher, self);
 
         idUsuario = UUID.randomUUID();
         persona = Persona.builder()

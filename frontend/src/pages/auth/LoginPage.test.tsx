@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { LoginPage } from './LoginPage';
@@ -36,7 +36,7 @@ describe('LoginPage', () => {
     await userEvent.type(screen.getByLabelText(/Usuario/), 'admin');
     await userEvent.type(screen.getByLabelText(/Contraseña/), 'secret');
     await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
-    await waitFor(() => expect(screen.getByText('APP')).toBeInTheDocument());
+    expect(await screen.findByText('APP')).toBeInTheDocument();
     expect(login).toHaveBeenCalledWith('admin', 'secret');
   });
 
@@ -46,7 +46,7 @@ describe('LoginPage', () => {
     await userEvent.type(screen.getByLabelText(/Usuario/), 'cli');
     await userEvent.type(screen.getByLabelText(/Contraseña/), 'secret');
     await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
-    await waitFor(() => expect(screen.getByText('PORTAL')).toBeInTheDocument());
+    expect(await screen.findByText('PORTAL')).toBeInTheDocument();
   });
 
   it('muestra mensaje de ApiError al fallar', async () => {
