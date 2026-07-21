@@ -10,6 +10,7 @@ Pasa TODO por Kong (localhost:8000) respetando las reglas de negocio:
 No borra nada; solo agrega. Idempotencia parcial: si algo ya existe (409), continua.
 """
 import json
+import os
 import urllib.request
 import urllib.error
 
@@ -88,7 +89,7 @@ def placa_moto(i):
 def login_root():
     global TOKEN
     st, body = post(f"{USUARIOS}/api/v1/auth/login",
-                    {"username": "root", "password": "Root2025"}, auth=False)
+                    {"username": "root", "password": os.environ.get("ROOT_PASSWORD", "Root2025")}, auth=False)
     if st == 200:
         TOKEN = body.get("token") or body.get("accessToken")
         print(f"[OK] Login root -> token obtenido")
@@ -133,7 +134,7 @@ def crear_persona_usuario(i, role_id):
     pid = p.get("id")
     username = f"{nom[0].lower()}{ape.lower()}{i}"[:15]
     st, u = post(f"{USUARIOS}/api/v1/usuarios",
-                 {"idPersona": pid, "username": username, "password": "Espe2025"})
+                 {"idPersona": pid, "username": username, "password": os.environ.get("USER_PASSWORD", "Espe2025")})
     if st not in (200, 201):
         print(f"  [skip usuario {username}] {st}: {u}")
         return None

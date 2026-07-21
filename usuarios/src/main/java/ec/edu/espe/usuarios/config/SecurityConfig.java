@@ -2,6 +2,7 @@ package ec.edu.espe.usuarios.config;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +37,8 @@ import lombok.RequiredArgsConstructor;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    private static final ZoneId ZONA_HORARIA = ZoneId.of("America/Guayaquil");
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectMapper objectMapper;
@@ -79,7 +82,7 @@ public class SecurityConfig {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
         var body = new java.util.LinkedHashMap<String, Object>();
-        body.put("timestamp", OffsetDateTime.now().toString());
+        body.put("timestamp", OffsetDateTime.now(ZONA_HORARIA).toString());
         body.put("status", status.value());
         body.put("error", status.getReasonPhrase());
         body.put("mensaje", mensaje);

@@ -27,4 +27,15 @@ class CedulaEcuatorianaValidatorTest {
     void debeRechazarCedulaConDigitoVerificadorIncorrecto() {
         assertFalse(validator.isValid("1710034066", null));
     }
+
+    @Test
+    void isValid_null_returnsFalse() {
+        assertFalse(validator.isValid(null, null));
+    }
+
+    @Test
+    void isValid_blank_returnsFalse() {
+        assertFalse(validator.isValid("", null));
+        assertFalse(validator.isValid("   ", null));
+    }
 }

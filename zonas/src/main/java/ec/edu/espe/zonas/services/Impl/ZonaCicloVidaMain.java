@@ -6,6 +6,8 @@ import java.util.UUID;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import lombok.extern.slf4j.Slf4j;
+
 import ec.edu.espe.zonas.ZonasApplication;
 import ec.edu.espe.zonas.dtos.EspacioRequestDto;
 import ec.edu.espe.zonas.dtos.EspacioRespondeDto;
@@ -19,6 +21,7 @@ import ec.edu.espe.zonas.entidades.Zona;
 import ec.edu.espe.zonas.repositorios.EspacioRepositorio;
 import ec.edu.espe.zonas.repositorios.ZonaRepositorio;
 
+@Slf4j
 public class ZonaCicloVidaMain {
 
     public static void main(String[] args) {
@@ -39,15 +42,15 @@ public class ZonaCicloVidaMain {
                     .capacidad(2)
                     .build());
             UUID idZona = zona.getIdZona();
-            System.out.println("Zona creada: " + zona.getCodigo() + " capacidad=" + zona.getCapacidad());
+            log.info("Zona creada: {} capacidad={}", zona.getCodigo(), zona.getCapacidad());
 
             // 2) Creamos 2 espacios (OK, dentro de la capacidad)
-            crearEspacio(espacioServicio, idZona, "ESP-A-" + (sufijo % 1000));
-            crearEspacio(espacioServicio, idZona, "ESP-B-" + (sufijo % 1000));
+            crearEspacio(espacioServicio, idZona);
+            crearEspacio(espacioServicio, idZona);
 
             // 3) Tercer espacio -> debe FALLAR por capacidad
-            System.out.println("\n--- Intentando 3er espacio (debe fallar) ---");
-            crearEspacio(espacioServicio, idZona, "ESP-C-" + (sufijo % 1000));
+            log.info("\n--- Intentando 3er espacio (debe fallar) ---");
+            crearEspacio(espacioServicio, idZona);
 
             imprimirEspacios(zonaRepositorio, espacioRepositorio, idZona, "Estado tras crear espacios");
 
@@ -55,27 +58,27 @@ public class ZonaCicloVidaMain {
             List<Espacio> espacios = espaciosDeZona(zonaRepositorio, espacioRepositorio, idZona);
             UUID idPrimero = espacios.get(0).getId();
             espacioServicio.cambiarEstado(idPrimero, EstadoEspacio.OCUPADO);
-            System.out.println("\nEspacio " + espacios.get(0).getCodigo() + " -> OCUPADO");
+            log.info("\nEspacio {} -> OCUPADO", espacios.get(0).getCodigo());
 
-            System.out.println("\n--- Desactivar zona con espacio OCUPADO (debe fallar) ---");
+            log.info("\n--- Desactivar zona con espacio OCUPADO (debe fallar) ---");
             try {
                 zonaServicio.desactivarZona(idZona);
-                System.out.println("OK -> desactivada (no esperado)");
+                log.info("OK -> desactivada (no esperado)");
             } catch (RuntimeException e) {
-                System.out.println("FALLA-> " + e.getMessage());
+                log.warn("FALLA-> {}", e.getMessage());
             }
 
             // 5) Liberamos el espacio y desactivamos la zona -> OK (cascada)
             espacioServicio.cambiarEstado(idPrimero, EstadoEspacio.DISPONIBLE);
-            System.out.println("\nEspacio liberado -> DISPONIBLE");
+            log.info("\nEspacio liberado -> DISPONIBLE");
             zonaServicio.desactivarZona(idZona);
-            System.out.println("Zona DESACTIVADA");
+            log.info("Zona DESACTIVADA");
             imprimirEspacios(zonaRepositorio, espacioRepositorio, idZona,
                     "Tras desactivar (espacios -> MANTENIMIENTO / inactivo)");
 
             // 6) Activamos la zona -> espacios vuelven a DISPONIBLE / activo
             zonaServicio.activarZona(idZona);
-            System.out.println("\nZona ACTIVADA");
+            log.info("\nZona ACTIVADA");
             imprimirEspacios(zonaRepositorio, espacioRepositorio, idZona,
                     "Tras activar (espacios -> DISPONIBLE / activo)");
 
@@ -84,16 +87,16 @@ public class ZonaCicloVidaMain {
         }
     }
 
-    private static void crearEspacio(EspacioServicioImpl servicio, UUID idZona, String codigo) {
+    private static void crearEspacio(EspacioServicioImpl servicio, UUID idZona) {
         try {
             EspacioRespondeDto creado = servicio.crearEspacio(EspacioRequestDto.builder()
                     .idZona(idZona)
                     .descripcion("demo")
                     .tipo(TipoEspacio.AUTO)
                     .build());
-            System.out.println("OK -> espacio creado: " + creado.getCodigo());
+            log.info("OK -> espacio creado: {}", creado.getCodigo());
         } catch (RuntimeException e) {
-            System.out.println("FALLA-> " + e.getMessage());
+            log.warn("FALLA-> {}", e.getMessage());
         }
     }
 
@@ -106,11 +109,9 @@ public class ZonaCicloVidaMain {
     private static void imprimirEspacios(ZonaRepositorio zonaRepositorio,
             EspacioRepositorio espacioRepositorio, UUID idZona, String titulo) {
         Zona zona = zonaRepositorio.findById(idZona).orElseThrow();
-        System.out.println("\n===== " + titulo + " (zona.activo=" + zona.isActivo() + ") =====");
+        log.info("\n===== {} (zona.activo={}) =====", titulo, zona.isActivo());
         for (Espacio e : espacioRepositorio.findByZona(zona)) {
-            System.out.println("  " + e.getCodigo()
-                    + " | estado=" + e.getEstado()
-                    + " | activo=" + e.isActivo());
+            log.info("  {} | estado={} | activo={}", e.getCodigo(), e.getEstado(), e.isActivo());
         }
     }
 }

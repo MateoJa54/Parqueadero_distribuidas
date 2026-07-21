@@ -8,7 +8,7 @@ import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { ActivoBadge } from '@/ui/Badge';
-import { EmptyState, ErrorState, TableSkeleton } from '@/ui/States';
+import { EmptyState, AsyncView, TableSkeleton } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 import { esCedulaEc, rgx } from '@/lib/format';
 
@@ -139,19 +139,24 @@ export function PersonasPage() {
         }
       />
 
-      {loading ? (
-        <div className="card card-pad">
-          <TableSkeleton cols={5} />
-        </div>
-      ) : error ? (
-        <ErrorState message={error} onRetry={reload} />
-      ) : lista.length === 0 ? (
-        <EmptyState
-          title="Sin personas"
-          message={q ? 'No hay coincidencias con tu búsqueda.' : 'Crea la primera persona.'}
-          action={!q && <Button onClick={abrirNuevo}>Nueva persona</Button>}
-        />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={error}
+        isEmpty={lista.length === 0}
+        onRetry={reload}
+        loadingNode={
+          <div className="card card-pad">
+            <TableSkeleton cols={5} />
+          </div>
+        }
+        emptyNode={
+          <EmptyState
+            title="Sin personas"
+            message={q ? 'No hay coincidencias con tu búsqueda.' : 'Crea la primera persona.'}
+            action={!q && <Button onClick={abrirNuevo}>Nueva persona</Button>}
+          />
+        }
+      >
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -196,7 +201,7 @@ export function PersonasPage() {
             </tbody>
           </table>
         </div>
-      )}
+      </AsyncView>
 
       <Modal
         open={modal.open}

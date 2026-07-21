@@ -33,7 +33,8 @@ export const espaciosApi = {
     if (params?.idZona) q.set('idZona', params.idZona);
     if (params?.tipo) q.set('tipo', params.tipo);
     const qs = q.toString();
-    return http.get<Espacio[]>(`${Z}/espacios/disponibles${qs ? `?${qs}` : ''}`);
+    const suffix = qs ? `?${qs}` : '';
+    return http.get<Espacio[]>(`${Z}/espacios/disponibles${suffix}`);
   },
   disponibilidad: (id: string) =>
     http.get<Disponibilidad>(`${Z}/espacios/${id}/disponibilidad`),

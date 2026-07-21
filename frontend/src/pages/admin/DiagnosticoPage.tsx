@@ -221,19 +221,20 @@ export function DiagnosticoPage() {
                   </td>
                   <td>{c.nombre}</td>
                   <td>
-                    {r.estado === 'running' ? (
-                      <span className="row" style={{ gap: 6 }}>
-                        <span className="spinner" style={{ width: 14, height: 14 }} /> Probando…
-                      </span>
-                    ) : r.estado === 'ok' ? (
-                      <Badge tone="success">OK</Badge>
-                    ) : r.estado === 'fail' ? (
-                      <Badge tone="danger">
-                        {r.httpStatus ? `Fallo ${r.httpStatus}` : 'Sin conexión'}
-                      </Badge>
-                    ) : (
-                      <Badge tone="neutral">Pendiente</Badge>
-                    )}
+                    {(() => {
+                      if (r.estado === 'running') return (
+                        <span className="row" style={{ gap: 6 }}>
+                          <span className="spinner" style={{ width: 14, height: 14 }} /> Probando…
+                        </span>
+                      );
+                      if (r.estado === 'ok') return <Badge tone="success">OK</Badge>;
+                      if (r.estado === 'fail') return (
+                        <Badge tone="danger">
+                          {r.httpStatus ? `Fallo ${r.httpStatus}` : 'Sin conexión'}
+                        </Badge>
+                      );
+                      return <Badge tone="neutral">Pendiente</Badge>;
+                    })()}
                   </td>
                   <td className="num tnum">{r.ms !== undefined ? `${r.ms} ms` : '—'}</td>
                   <td>

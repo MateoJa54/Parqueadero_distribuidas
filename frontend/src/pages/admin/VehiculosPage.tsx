@@ -8,7 +8,7 @@ import { Button } from '@/ui/Button';
 import { Input, Select } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { ActivoBadge, Badge } from '@/ui/Badge';
-import { EmptyState, ErrorState, TableSkeleton } from '@/ui/States';
+import { EmptyState, AsyncView, TableSkeleton } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 import { rgx } from '@/lib/format';
 
@@ -122,7 +122,6 @@ export function VehiculosPage() {
       if (modal.edit) {
         // En edición no se cambia la placa/tipo; se envían los datos actualizables.
         const { placa: _placa, ...editable } = payload;
-        void _placa;
         await vehiculosApi.update(modal.edit.id, editable);
         toast.success('Vehículo actualizado');
       } else {
@@ -162,7 +161,7 @@ export function VehiculosPage() {
                 checked={incluirInactivos}
                 onChange={(e) => setIncluirInactivos(e.target.checked)}
               />
-              Incluir inactivos
+              {/* */}Incluir inactivos
             </label>
             <input
               className="input"
@@ -179,15 +178,18 @@ export function VehiculosPage() {
         }
       />
 
-      {loading ? (
-        <div className="card card-pad">
-          <TableSkeleton cols={5} />
-        </div>
-      ) : error ? (
-        <ErrorState message={error} onRetry={reload} />
-      ) : lista.length === 0 ? (
-        <EmptyState title="Sin vehículos" message="Registra el primer vehículo." />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={error}
+        isEmpty={lista.length === 0}
+        onRetry={reload}
+        loadingNode={
+          <div className="card card-pad">
+            <TableSkeleton cols={5} />
+          </div>
+        }
+        emptyNode={<EmptyState title="Sin vehículos" message="Registra el primer vehículo." />}
+      >
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -238,7 +240,7 @@ export function VehiculosPage() {
             </tbody>
           </table>
         </div>
-      )}
+      </AsyncView>
 
       <Modal
         open={modal.open}
@@ -265,15 +267,20 @@ export function VehiculosPage() {
             />
           )}
           <div className="grid grid-2">
+            {(() => {
+              const placaHint = tipo === 'Motocicleta' ? 'AB-123C' : 'ABC-1234';
+              return (
             <Input
               label="Placa"
               value={String(datos.placa ?? '')}
               onChange={(e) => set('placa', e.target.value.toUpperCase())}
               error={errs.placa}
               disabled={!!modal.edit}
-              hint={!modal.edit ? (tipo === 'Motocicleta' ? 'AB-123C' : 'ABC-1234') : undefined}
+              hint={!modal.edit ? placaHint : undefined}
               required
             />
+              );
+            })()}
             <Input
               label="Color"
               value={String(datos.color ?? '')}

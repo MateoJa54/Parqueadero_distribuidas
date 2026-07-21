@@ -1,6 +1,7 @@
 package ec.edu.espe.usuarios.entidades;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -33,6 +34,8 @@ import lombok.ToString;
 @NoArgsConstructor
 @Builder
 public class Usuario {
+
+    private static final String ZONA_HORARIA = "America/Guayaquil";
 
     // PK compartida con Persona (relacion 1 a 1). El id NO se autogenera:
     // @MapsId copia el id de la persona asociada como clave primaria de users.
@@ -70,12 +73,12 @@ public class Usuario {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
+        this.updatedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
     }
 }

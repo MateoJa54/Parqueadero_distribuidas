@@ -32,8 +32,10 @@ export const tokenStore = {
 export function decodeJwt(token: string): JwtClaims | null {
   try {
     const [, payload] = token.split('.');
-    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decodeURIComponent(escape(json))) as JwtClaims;
+    const binary = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const bytes = Uint8Array.from(binary, (c) => c.codePointAt(0) ?? 0);
+    const json = new TextDecoder().decode(bytes);
+    return JSON.parse(json) as JwtClaims;
   } catch {
     return null;
   }
@@ -77,25 +79,21 @@ async function tryRefresh(): Promise<string | null> {
   const refresh = tokenStore.getRefresh();
   if (!refresh) return null;
   // Evita múltiples refresh en paralelo.
-  if (!refreshing) {
-    refreshing = (async () => {
-      try {
-        const res = await fetch(`${API.usuarios}/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: refresh }),
-        });
-        if (!res.ok) return null;
-        const data = (await res.json()) as { token: string; refreshToken: string };
-        tokenStore.set(data.token, data.refreshToken);
-        return data.token;
-      } catch {
-        return null;
-      } finally {
-        // liberado abajo
-      }
-    })();
-  }
+  refreshing ??= (async () => {
+    try {
+      const res = await fetch(`${API.usuarios}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: refresh }),
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as { token: string; refreshToken: string };
+      tokenStore.set(data.token, data.refreshToken);
+      return data.token;
+    } catch {
+      return null;
+    }
+  })();
   const result = await refreshing;
   refreshing = null;
   return result;

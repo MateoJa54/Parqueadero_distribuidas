@@ -126,7 +126,7 @@ asignaciones = folder("Asignaciones", [
 ])
 usuarios = folder("Usuarios", [
     req("Crear usuario", "POST", U, ["api", "v1", "usuarios"],
-        body={"idPersona": "{{idPersona}}", "username": "mjacome", "password": "Espe2025"},
+        body={"idPersona": "{{idPersona}}", "username": "mjacome", "password": os.environ.get("USER_PASSWORD", "Espe2025")},
         desc="PK compartida con persona (1 a 1). Guarda {{idUsuario}}.",
         save=("idUsuario", "id")),
     req("Listar usuarios", "GET", U, ["api", "v1", "usuarios"]),

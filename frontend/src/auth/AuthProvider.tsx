@@ -20,7 +20,7 @@ function userFromToken(token: string | null): AuthUser | null {
   };
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { readonly children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() =>
     userFromToken(tokenStore.get()),
   );

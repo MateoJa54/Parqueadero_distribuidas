@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:usuarios}
     username: ${DB_USER:usuarios}
-    password: ${DB_PASSWORD:usuarios123}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -20,6 +20,14 @@ spring:
     password: ${RABBITMQ_PASSWORD:guest}
 server:
   port: 8081
+
+# Credencial ROOT de bootstrap. La contrasena NO se versiona: en produccion se
+# inyecta via la variable de entorno ADMIN_ROOT_PASSWORD. El default solo aplica
+# en desarrollo local.
+admin:
+  root:
+    username: ${ADMIN_ROOT_USERNAME:root}
+    password: ${ADMIN_ROOT_PASSWORD}
 
 jwt:
   # RS256 asimetrico: usuarios FIRMA con la clave PRIVADA; el resto de servicios

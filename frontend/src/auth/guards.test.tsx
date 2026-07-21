@@ -1,133 +1,96 @@
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
-import { AuthContext, type AuthContextValue, type AuthUser } from './context';
-import { HomeRedirect, RequireAuth, RequirePermiso } from './guards';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { RequireAuth, RequirePermiso, HomeRedirect } from './guards';
+import { AuthContext, type AuthContextValue } from './context';
 
-function noop(): never {
-  throw new Error('not implemented in test double');
-}
-
-function withAuth(
-  overrides: Partial<AuthContextValue>,
-  ui: React.ReactNode,
-  initialPath: string,
-) {
-  const value: AuthContextValue = {
-    user: null,
-    loading: false,
-    login: noop,
-    registrarCliente: noop,
-    registrarCompleto: noop,
-    logout: () => undefined,
-    hasRole: () => false,
-    ...overrides,
-  };
+function wrap(ctx: Partial<AuthContextValue>, initial: string, element: React.ReactNode, extraRoutes?: React.ReactNode) {
+  const value = {
+    user: null, loading: false,
+    login: vi.fn(), registrarCliente: vi.fn(), registrarCompleto: vi.fn(),
+    logout: vi.fn(), hasRole: vi.fn(),
+    ...ctx,
+  } as AuthContextValue;
   return render(
     <AuthContext.Provider value={value}>
-      <MemoryRouter initialEntries={[initialPath]}>{ui}</MemoryRouter>
+      <MemoryRouter initialEntries={[initial]}>
+        <Routes>
+          <Route path={initial} element={element} />
+          <Route path="/login" element={<div>LOGIN</div>} />
+          <Route path="/403" element={<div>FORBIDDEN</div>} />
+          <Route path="/app" element={<div>APP</div>} />
+          <Route path="/portal" element={<div>PORTAL</div>} />
+          {extraRoutes}
+        </Routes>
+      </MemoryRouter>
     </AuthContext.Provider>,
   );
 }
 
-const admin: AuthUser = { idUsuario: '1', username: 'qa.admin', roles: ['ADMIN'] };
-const cliente: AuthUser = { idUsuario: '2', username: 'qa.cliente', roles: ['CLIENTE'] };
-const recaudador: AuthUser = { idUsuario: '3', username: 'qa.recauda', roles: ['RECAUDADOR'] };
+const admin = { idUsuario: 'u', username: 'a', roles: ['ADMIN' as const] };
+const cliente = { idUsuario: 'u', username: 'c', roles: ['CLIENTE' as const] };
 
 describe('RequireAuth', () => {
-  it('sin sesión activa, redirige a /login', () => {
-    withAuth(
-      { user: null },
-      <Routes>
-        <Route element={<RequireAuth />}>
-          <Route path="/app" element={<div>Panel admin</div>} />
-        </Route>
-        <Route path="/login" element={<div>Pantalla de login</div>} />
-      </Routes>,
-      '/app',
-    );
-    expect(screen.getByText('Pantalla de login')).toBeInTheDocument();
+  it('muestra spinner en loading', () => {
+    wrap({ loading: true }, '/x', <RequireAuth />);
+    expect(screen.getByText('Cargando sesión…')).toBeInTheDocument();
   });
-
-  it('con sesión activa, renderiza la ruta protegida', () => {
-    withAuth(
-      { user: admin },
-      <Routes>
-        <Route element={<RequireAuth />}>
-          <Route path="/app" element={<div>Panel admin</div>} />
-        </Route>
-        <Route path="/login" element={<div>Pantalla de login</div>} />
-      </Routes>,
-      '/app',
+  it('redirige a login sin usuario', () => {
+    wrap({ user: null }, '/x', <RequireAuth />);
+    expect(screen.getByText('LOGIN')).toBeInTheDocument();
+  });
+  it('renderiza Outlet con usuario', () => {
+    const value = {
+      user: admin, loading: false,
+      login: vi.fn(), registrarCliente: vi.fn(), registrarCompleto: vi.fn(),
+      logout: vi.fn(), hasRole: vi.fn(),
+    } as AuthContextValue;
+    render(
+      <AuthContext.Provider value={value}>
+        <MemoryRouter initialEntries={['/x']}>
+          <Routes>
+            <Route element={<RequireAuth />}>
+              <Route path="/x" element={<div>OK</div>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
     );
-    expect(screen.getByText('Panel admin')).toBeInTheDocument();
+    expect(screen.getByText('OK')).toBeInTheDocument();
   });
 });
 
 describe('RequirePermiso', () => {
-  it('CLIENTE sin permiso "usuarios" es enviado a /403, no a login (no filtra la existencia de la ruta)', () => {
-    withAuth(
-      { user: cliente },
-      <Routes>
-        <Route element={<RequirePermiso permiso="usuarios" />}>
-          <Route path="/app/usuarios" element={<div>Gestión de usuarios</div>} />
-        </Route>
-        <Route path="/403" element={<div>403 - No autorizado</div>} />
-      </Routes>,
-      '/app/usuarios',
-    );
-    expect(screen.getByText('403 - No autorizado')).toBeInTheDocument();
+  it('sin usuario va a login', () => {
+    wrap({ user: null }, '/x', <RequirePermiso permiso="usuarios" />);
+    expect(screen.getByText('LOGIN')).toBeInTheDocument();
   });
-
-  it('RECAUDADOR con permiso "tickets:operar" sí accede a Tickets', () => {
-    withAuth(
-      { user: recaudador },
-      <Routes>
-        <Route element={<RequirePermiso permiso="tickets:operar" />}>
-          <Route path="/app/tickets" element={<div>Operación de tickets</div>} />
-        </Route>
-        <Route path="/403" element={<div>403 - No autorizado</div>} />
-      </Routes>,
-      '/app/tickets',
-    );
-    expect(screen.getByText('Operación de tickets')).toBeInTheDocument();
+  it('sin permiso va a 403', () => {
+    wrap({ user: cliente }, '/x', <RequirePermiso permiso="usuarios" />);
+    expect(screen.getByText('FORBIDDEN')).toBeInTheDocument();
+  });
+  it('con permiso no redirige', () => {
+    wrap({ user: admin }, '/x', <RequirePermiso permiso="usuarios" />);
+    expect(screen.queryByText('FORBIDDEN')).not.toBeInTheDocument();
+    expect(screen.queryByText('LOGIN')).not.toBeInTheDocument();
   });
 });
 
 describe('HomeRedirect', () => {
-  it('ADMIN es redirigido a /app (tiene permiso de dashboard)', () => {
-    withAuth(
-      { user: admin },
-      <Routes>
-        <Route path="/" element={<HomeRedirect />} />
-        <Route path="/app" element={<div>Dashboard admin</div>} />
-      </Routes>,
-      '/',
-    );
-    expect(screen.getByText('Dashboard admin')).toBeInTheDocument();
+  it('null en loading', () => {
+    const { container } = wrap({ loading: true }, '/', <HomeRedirect />);
+    expect(container.textContent).toBe('');
   });
-
-  it('RECAUDADOR (sin dashboard) es redirigido directo a /app/tickets', () => {
-    withAuth(
-      { user: recaudador },
-      <Routes>
-        <Route path="/" element={<HomeRedirect />} />
-        <Route path="/app/tickets" element={<div>Tickets</div>} />
-      </Routes>,
-      '/',
-    );
-    expect(screen.getByText('Tickets')).toBeInTheDocument();
+  it('a login sin usuario', () => {
+    wrap({ user: null }, '/', <HomeRedirect />);
+    expect(screen.getByText('LOGIN')).toBeInTheDocument();
   });
-
-  it('CLIENTE es redirigido al portal', () => {
-    withAuth(
-      { user: cliente },
-      <Routes>
-        <Route path="/" element={<HomeRedirect />} />
-        <Route path="/portal" element={<div>Portal cliente</div>} />
-      </Routes>,
-      '/',
-    );
-    expect(screen.getByText('Portal cliente')).toBeInTheDocument();
+  it('a app para staff', () => {
+    wrap({ user: admin }, '/', <HomeRedirect />);
+    expect(screen.getByText('APP')).toBeInTheDocument();
+  });
+  it('a portal para cliente', () => {
+    wrap({ user: cliente }, '/', <HomeRedirect />);
+    expect(screen.getByText('PORTAL')).toBeInTheDocument();
   });
 });

@@ -5,9 +5,9 @@ export function PageHead({
   subtitle,
   actions,
 }: {
-  title: string;
-  subtitle?: string;
-  actions?: ReactNode;
+  readonly title: string;
+  readonly subtitle?: string;
+  readonly actions?: ReactNode;
 }) {
   return (
     <div className="page-head">

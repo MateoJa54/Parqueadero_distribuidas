@@ -8,7 +8,7 @@ import { Button } from '@/ui/Button';
 import { Input, Select } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { ActivoBadge } from '@/ui/Badge';
-import { EmptyState, ErrorState, TableSkeleton } from '@/ui/States';
+import { EmptyState, AsyncView, TableSkeleton } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 import { fmtFecha, rgx } from '@/lib/format';
 
@@ -70,8 +70,7 @@ export function UsuariosPage() {
     if (modal.edit) {
       if (password && (password.length < 6 || !rgx.password.test(password)))
         e.password = '6–30 con mayúscula, minúscula y número (o vacío para conservar).';
-    } else {
-      if (password.length < 6 || !rgx.password.test(password))
+    } else if (password.length < 6 || !rgx.password.test(password)) {
         e.password = '6–30 con mayúscula, minúscula y número.';
     }
     setErrs(e);
@@ -137,15 +136,20 @@ export function UsuariosPage() {
         }
       />
 
-      {loading ? (
-        <div className="card card-pad">
-          <TableSkeleton cols={4} />
-        </div>
-      ) : usuarios.error ? (
-        <ErrorState message={usuarios.error} onRetry={usuarios.reload} />
-      ) : lista.length === 0 ? (
-        <EmptyState title="Sin usuarios" message="Crea el primer usuario a partir de una persona activa." />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={usuarios.error}
+        isEmpty={lista.length === 0}
+        onRetry={usuarios.reload}
+        loadingNode={
+          <div className="card card-pad">
+            <TableSkeleton cols={4} />
+          </div>
+        }
+        emptyNode={
+          <EmptyState title="Sin usuarios" message="Crea el primer usuario a partir de una persona activa." />
+        }
+      >
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -192,7 +196,7 @@ export function UsuariosPage() {
             </tbody>
           </table>
         </div>
-      )}
+      </AsyncView>
 
       <Modal
         open={modal.open}
@@ -210,27 +214,29 @@ export function UsuariosPage() {
         }
       >
         <div className="stack">
-          {modal.edit ? (
-            <Input label="Persona" value={modal.edit.nombreCompleto} disabled />
-          ) : personasDisponibles.length === 0 ? (
-            <div className="alert alert-warning">
-              <span aria-hidden>⚠</span>
-              No hay personas activas sin usuario. Crea una persona primero.
-            </div>
-          ) : (
-            <Select
-              label="Persona"
-              placeholder="Selecciona una persona…"
-              value={idPersona}
-              onChange={(e) => setIdPersona(e.target.value)}
-              error={errs.idPersona}
-              required
-              options={personasDisponibles.map((p) => ({
-                value: p.id,
-                label: `${p.firstName} ${p.lastName} · ${p.dni}`,
-              }))}
-            />
-          )}
+          {(() => {
+            if (modal.edit) return <Input label="Persona" value={modal.edit.nombreCompleto} disabled />;
+            if (personasDisponibles.length === 0) return (
+              <div className="alert alert-warning">
+                <span aria-hidden>⚠</span>
+                {' '}No hay personas activas sin usuario. Crea una persona primero.
+              </div>
+            );
+            return (
+              <Select
+                label="Persona"
+                placeholder="Selecciona una persona…"
+                value={idPersona}
+                onChange={(e) => setIdPersona(e.target.value)}
+                error={errs.idPersona}
+                required
+                options={personasDisponibles.map((p) => ({
+                  value: p.id,
+                  label: `${p.firstName} ${p.lastName} · ${p.dni}`,
+                }))}
+              />
+            );
+          })()}
           <Input
             label="Usuario"
             value={username}

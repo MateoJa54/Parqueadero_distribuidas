@@ -81,7 +81,13 @@ export function AppLayout() {
 
   return (
     <div className="app-shell">
-      <div className={`scrim ${open ? 'show' : ''}`} onClick={() => setOpen(false)} />
+      <button
+        type="button"
+        className={`scrim ${open ? 'show' : ''}`}
+        aria-label="Cerrar menú"
+        tabIndex={open ? 0 : -1}
+        onClick={() => setOpen(false)}
+      />
       <aside className={`sidebar ${open ? 'open' : ''}`}>
         <div className="sidebar-brand">
           <span className="logo" aria-hidden>
@@ -115,7 +121,7 @@ export function AppLayout() {
             <span className="nav-ico" aria-hidden>
               🏠
             </span>
-            Portal cliente
+            {' '}Portal cliente
           </NavLink>
         </div>
       </aside>
@@ -124,6 +130,7 @@ export function AppLayout() {
         <header className="topbar">
           <div className="row">
             <button
+              type="button"
               className="icon-btn sidebar-toggle"
               onClick={() => setOpen((o) => !o)}
               aria-label="Menú"
@@ -136,6 +143,7 @@ export function AppLayout() {
           </div>
           <div className="row">
             <button
+              type="button"
               className="icon-btn"
               onClick={toggle}
               aria-label={`Cambiar a tema ${theme === 'light' ? 'oscuro' : 'claro'}`}
@@ -153,6 +161,7 @@ export function AppLayout() {
               </div>
             </div>
             <button
+              type="button"
               className="btn btn-ghost btn-sm"
               onClick={() => {
                 logout();
