@@ -50,9 +50,36 @@ Cubre lógica crítica de RBAC (`src/auth/rbac.ts`, `src/auth/guards.tsx`) y uti
 ### 4. Guiones manuales E2E del frontend
 Con el frontend corriendo (`npm run dev` en `frontend/`, puerto 5173), seguir paso a paso los archivos en `manual/`. Documentar el resultado real (pasa/falla, capturas) directamente en cada archivo y, si algo falla, dar de alta el defecto en `defects.md`.
 
-## Estado actual (última corrida: 2026-07-20)
+### 5. Cobertura de código (JaCoCo + Vitest)
+
+JaCoCo está declarado directamente en el `<build><plugins>` de los 4 `pom.xml` Spring Boot (`usuarios`, `zonas`, `asignaciones`, `tickets`), con el goal `report` amarrado a la fase **`verify`** (no `test`) — hay que correr `mvn verify`, no `mvn test`, o el reporte no se genera.
+
+```bash
+# Backend — un servicio a la vez, desde su carpeta:
+cd usuarios && ./mvnw.cmd -q verify -DskipITs        # genera target/site/jacoco/index.html
+cd zonas && ./mvnw.cmd -q verify -DskipITs -Dtest='!ZonasApplicationTests' -DfailIfNoTests=false
+cd asignaciones && ./mvnw.cmd -q verify -DskipITs
+cd tickets && ./mvnw.cmd -q verify -DskipITs
+
+# Frontend (requiere @vitest/coverage-v8, ya en devDependencies; correr npm install tras cada pull):
+cd frontend && npm install && npm run test:cov          # vitest run --coverage
+```
+
+`ZonasApplicationTests.contextLoads` se excluye porque es el smoke test genérico de Spring Initializr y requiere una conexión Postgres real en `localhost:5433`; no es una prueba de reglas de negocio y ningún otro servicio tiene un test equivalente. Si el ambiente Docker (paso 1) está arriba, puede correrse sin la exclusión.
+
+## Estado actual (última corrida: 2026-07-21)
 
 - **API (Newman):** 40/40 requests, 117/117 assertions — 0 fallos.
-- **Unitarias frontend (Vitest):** 36/36 — 0 fallos.
-- **E2E manual frontend:** 3 guiones diseñados, pendientes de ejecución.
-- **Huecos de cobertura conocidos:** ver filas `NO_CUBIERTO` en `traceability-matrix.csv` (CRUD de Roles vía QA collection, pantallas admin A2–A9/A11 y portal C2–C6 del frontend).
+- **Unitarias frontend (Vitest, suite QA de P4):** 36/36 — 0 fallos.
+- **E2E manual frontend:** 3 guiones ejecutados (26 pasos) — 23 PASS / 3 FAIL, con 4 defectos registrados (DEF-01 a DEF-04, ver `defects.md` y `test-summary.md`). **DEF-04 sigue abierto** — verificado de nuevo el 2026-07-21, el bug de foco en `Modal.tsx`/`TicketsPage.tsx` sigue presente en el código actual.
+- **Cobertura de línea/rama (JaCoCo 0.8.15 / Vitest v8), corrida 2026-07-21 tras el port de tests de P3 (`port/sonar-fixes-from-fork`, ~211 tests nuevos por servicio backend + 353 en frontend):**
+  | Servicio | Líneas (total) | Ramas (total) |
+  |---|---|---|
+  | usuarios | 98.3% (742/755) | 91.5% (205/224) |
+  | zonas | 91.9% (531/578) | 87.9% (123/140) |
+  | asignaciones | 97.7% (473/484) | 90.2% (120/133) |
+  | tickets | 97.6% (453/464) | 88.7% (110/124) |
+  | frontend (toda la app, 44 archivos de test) | 97.64% statements | 88.07% branches |
+
+  Los 4 servicios y el frontend superan el umbral X-05 del SQAP (≥70% líneas / ≥60% ramas). Antes de este port (medido el 2026-07-21 en la mañana), la cobertura real de la capa de negocio (`services`/`services.Impl`) era 0%/1.9%/17.7%/0% — ver Apéndice C.8 del SQAP para el detalle de ese hallazgo y su cierre.
+- **Huecos de cobertura funcional conocidos** (distintos de la cobertura unitaria de arriba): ver filas `NO_CUBIERTO` en `traceability-matrix.csv` (CRUD de Roles vía QA collection, pantallas admin A2–A9/A11 y portal C2–C6 sin guion E2E de P4 — aunque ahora sí tienen tests unitarios propios del port de P3).
