@@ -323,6 +323,17 @@ class TicketServiceImplTest {
         assertThrows(ReglaNegocioException.class, () -> service.anular(ticketId, request, null));
     }
 
+    @Test
+    @DisplayName("anular lanza RecursoNoEncontrado si ticket no existe")
+    void anularTicketNoExiste() {
+        UUID ticketId = UUID.randomUUID();
+        when(ticketRepository.findById(ticketId)).thenReturn(Optional.empty());
+        AnularTicketRequest request = new AnularTicketRequest();
+        request.setMotivo("motivo");
+
+        assertThrows(RecursoNoEncontradoException.class, () -> service.anular(ticketId, request, null));
+    }
+
     // --- obtenerPorId ---
 
     @Test

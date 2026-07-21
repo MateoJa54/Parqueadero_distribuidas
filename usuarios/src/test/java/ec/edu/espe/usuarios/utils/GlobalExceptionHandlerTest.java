@@ -1,6 +1,7 @@
 package ec.edu.espe.usuarios.utils;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 class GlobalExceptionHandlerTest {
 
@@ -104,5 +108,24 @@ class GlobalExceptionHandlerTest {
         assertTrue(body.containsKey("status"));
         assertTrue(body.containsKey("error"));
         assertTrue(body.containsKey("mensaje"));
+    }
+
+    @Test
+    @DisplayName("handleValidation retorna 400 con campo errores")
+    void handleValidation() {
+        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
+        BindingResult bindingResult = mock(BindingResult.class);
+        FieldError fieldError = new FieldError("obj", "cedula", "cedula invalida");
+
+        when(ex.getBindingResult()).thenReturn(bindingResult);
+        when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError));
+
+        ResponseEntity<Map<String, Object>> resp = handler.handleValidation(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+        assertTrue(resp.getBody().containsKey("errores"));
+        @SuppressWarnings("unchecked")
+        Map<String, String> errores = (Map<String, String>) resp.getBody().get("errores");
+        assertEquals("cedula invalida", errores.get("cedula"));
     }
 }

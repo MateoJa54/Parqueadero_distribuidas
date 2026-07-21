@@ -55,6 +55,13 @@ class PasswordUtilTest {
     }
 
     @Test
+    @DisplayName("matches con contrasena incorrecta retorna false")
+    void matches_wrongPassword_returnsFalse() {
+        String hash = PasswordUtil.hash("correctPassword");
+        assertFalse(PasswordUtil.matches("wrongpass", hash));
+    }
+
+    @Test
     @DisplayName("Debería manejar contraseñas largas")
     void testHashWithLongPassword() {
         // BCrypt admite hasta 72 bytes; la app limita la contrasena a 30 caracteres,

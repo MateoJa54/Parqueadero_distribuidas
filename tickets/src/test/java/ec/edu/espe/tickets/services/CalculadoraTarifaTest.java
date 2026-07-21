@@ -60,4 +60,31 @@ class CalculadoraTarifaTest {
         assertThrows(ReglaNegocioException.class,
                 () -> calculadora.calcular("Auto", "AUTO", ingreso, salida));
     }
+
+    @Test
+    void factorRol_nulo_retornaDefault() {
+        assertEquals(BigDecimal.ONE, calculadora.factorRol(null));
+    }
+
+    @Test
+    void factorRol_blanco_retornaDefault() {
+        assertEquals(BigDecimal.ONE, calculadora.factorRol(""));
+    }
+
+    @Test
+    void horasCobrables_exactamente60min_retornaUnaHora() {
+        assertEquals(1, calculadora.horasCobrables(ingreso, ingreso.plusMinutes(60)));
+    }
+
+    @Test
+    void horasCobrables_exactamente120min_retornasDosHoras() {
+        assertEquals(2, calculadora.horasCobrables(ingreso, ingreso.plusMinutes(120)));
+    }
+
+    @Test
+    void calcular_salidaIgualIngreso_aplicaMinimoDe1Hora() {
+        // 0 minutos => ceil(0/60)=0, max(0,1)=1 => minimo 1 hora
+        assertEquals(new BigDecimal("1.50"),
+                calculadora.calcular("Auto", "AUTO", ingreso, ingreso));
+    }
 }

@@ -9,6 +9,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
@@ -109,6 +110,17 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<Map<String, Object>> response = handler.handleRemote(ex);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void handleRemote_conStatusNoEstandar_retornaBAD_GATEWAY() {
+        // HttpStatus.resolve devuelve null para codigos no estandar => fallback BAD_GATEWAY
+        HttpClientErrorException ex = mock(HttpClientErrorException.class);
+        when(ex.getStatusCode()).thenReturn(HttpStatusCode.valueOf(499));
+        ResponseEntity<Map<String, Object>> response = handler.handleRemote(ex);
+
+        assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
+        assertEquals(502, response.getBody().get("status"));
     }
 
     @Test

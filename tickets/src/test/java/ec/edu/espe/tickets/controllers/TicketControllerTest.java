@@ -251,4 +251,98 @@ class TicketControllerTest {
                         .with(req -> { SecurityContextHolder.getContext().setAuthentication(empleadoAuth()); return req; }))
                 .andExpect(status().isNotFound());
     }
+
+    // ---- Rutas de error adicionales ----
+
+    @Test
+    void anular_servicioLanzaReglaNegocio_retorna409() throws Exception {
+        UUID ticketId = UUID.randomUUID();
+        AnularTicketRequest request = new AnularTicketRequest();
+        request.setMotivo("Error de registro");
+
+        when(ticketService.anular(eq(ticketId), any(), any()))
+                .thenThrow(new ReglaNegocioException("ticket ya anulado"));
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}/anular", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request))
+                        .with(req -> { SecurityContextHolder.getContext().setAuthentication(empleadoAuth()); return req; }))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void anular_servicioLanzaRecursoNoEncontrado_retorna404() throws Exception {
+        UUID ticketId = UUID.randomUUID();
+        AnularTicketRequest request = new AnularTicketRequest();
+        request.setMotivo("Error de registro");
+
+        when(ticketService.anular(eq(ticketId), any(), any()))
+                .thenThrow(new RecursoNoEncontradoException("ticket no existe"));
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}/anular", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request))
+                        .with(req -> { SecurityContextHolder.getContext().setAuthentication(empleadoAuth()); return req; }))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void obtenerPorCodigo_noExiste_retorna404() throws Exception {
+        when(ticketService.obtenerPorCodigo("TKT-NOPE"))
+                .thenThrow(new RecursoNoEncontradoException("no existe"));
+
+        mockMvc.perform(get("/api/v1/tickets/codigo/{codigo}", "TKT-NOPE")
+                        .with(req -> { SecurityContextHolder.getContext().setAuthentication(empleadoAuth()); return req; }))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void pagar_servicioLanzaReglaNegocio_retorna409() throws Exception {
+        UUID ticketId = UUID.randomUUID();
+        when(ticketService.pagar(eq(ticketId), any()))
+                .thenThrow(new ReglaNegocioException("ticket ya pagado"));
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}/pagar", ticketId)
+                        .with(req -> { SecurityContextHolder.getContext().setAuthentication(empleadoAuth()); return req; }))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void registrarIngreso_sinPlaca_retorna400() throws Exception {
+        RegistrarIngresoRequest request = new RegistrarIngresoRequest();
+        // placa null => @NotBlank falla
+        request.setIdEspacio(UUID.randomUUID());
+
+        mockMvc.perform(post("/api/v1/tickets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request))
+                        .with(req -> { SecurityContextHolder.getContext().setAuthentication(empleadoAuth()); return req; }))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void registrarIngreso_sinIdEspacio_retorna400() throws Exception {
+        RegistrarIngresoRequest request = new RegistrarIngresoRequest();
+        request.setPlaca("ABC-1234");
+        // idEspacio null => @NotNull falla
+
+        mockMvc.perform(post("/api/v1/tickets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request))
+                        .with(req -> { SecurityContextHolder.getContext().setAuthentication(empleadoAuth()); return req; }))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void anular_sinMotivo_retorna400() throws Exception {
+        UUID ticketId = UUID.randomUUID();
+        AnularTicketRequest request = new AnularTicketRequest();
+        // motivo null => @NotBlank falla
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}/anular", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request))
+                        .with(req -> { SecurityContextHolder.getContext().setAuthentication(empleadoAuth()); return req; }))
+                .andExpect(status().isBadRequest());
+    }
 }

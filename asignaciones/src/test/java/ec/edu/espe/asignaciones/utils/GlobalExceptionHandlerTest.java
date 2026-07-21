@@ -12,6 +12,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
 import java.util.Map;
 
@@ -68,6 +69,20 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<Map<String, Object>> response = handler.handleRemote(ex);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Error consultando un microservicio externo", response.getBody().get("mensaje"));
+    }
+
+    @Test
+    @DisplayName("handleRemote con status code no reconocido devuelve 502 BAD_GATEWAY")
+    void handleRemoteUnrecognizedStatusCode() {
+        // 999 is not a standard HTTP status — HttpStatus.resolve(999) returns null → fallback BAD_GATEWAY
+        HttpServerErrorException ex = mock(HttpServerErrorException.class);
+        when(ex.getStatusCode()).thenReturn(org.springframework.http.HttpStatusCode.valueOf(999));
+
+        ResponseEntity<Map<String, Object>> response = handler.handleRemote(ex);
+
+        assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
+        assertEquals(502, response.getBody().get("status"));
         assertEquals("Error consultando un microservicio externo", response.getBody().get("mensaje"));
     }
 
