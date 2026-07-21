@@ -7,6 +7,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -285,5 +287,27 @@ class AuditPublisherTest {
         buildPublisherWithRabbit(rabbit).publicar("DELETE", "ASIGNACION", "datos");
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), any(AuditEvent.class));
+    }
+
+    // ----- con transaccion activa: difiere el envio hasta afterCommit -----
+
+    @Test
+    void publicar_conTransaccionActiva_enviaTrasCommit() {
+        RabbitTemplate rabbit = mock(RabbitTemplate.class);
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            buildPublisherWithRabbit(rabbit).publicar("CREATE", "ASIGNACION", "datos");
+
+            // Aun no se envia: esta diferido hasta el commit.
+            verify(rabbit, never()).convertAndSend(anyString(), anyString(), any(AuditEvent.class));
+
+            // Simula el commit: dispara afterCommit() de la sincronizacion registrada.
+            for (TransactionSynchronization sync : TransactionSynchronizationManager.getSynchronizations()) {
+                sync.afterCommit();
+            }
+            verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), any(AuditEvent.class));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 }

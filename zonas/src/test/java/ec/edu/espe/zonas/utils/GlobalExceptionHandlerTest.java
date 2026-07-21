@@ -110,4 +110,51 @@ class GlobalExceptionHandlerTest {
         assertTrue(body.containsKey("error"));
         assertTrue(body.containsKey("mensaje"));
     }
+
+    @Test
+    void handleTypeMismatchRetorna400ConValorYParametro() {
+        org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex =
+                new org.springframework.web.method.annotation.MethodArgumentTypeMismatchException(
+                        "abc", Integer.class, "idZona", null, new RuntimeException("nope"));
+
+        ResponseEntity<Map<String, Object>> response = handler.handleTypeMismatch(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        String mensaje = (String) response.getBody().get("mensaje");
+        assertTrue(mensaje.contains("abc"));
+        assertTrue(mensaje.contains("idZona"));
+    }
+
+    @Test
+    void handleNotReadableCuerpoGenericoRetorna400() {
+        org.springframework.http.converter.HttpMessageNotReadableException ex =
+                new org.springframework.http.converter.HttpMessageNotReadableException(
+                        "roto", new RuntimeException("x"),
+                        new org.springframework.mock.http.MockHttpInputMessage(new byte[0]));
+
+        ResponseEntity<Map<String, Object>> response = handler.handleNotReadable(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("El cuerpo de la peticion es invalido o esta mal formado",
+                response.getBody().get("mensaje"));
+    }
+
+    @Test
+    void handleNotReadableEnumInvalidoListaValoresPermitidos() throws Exception {
+        com.fasterxml.jackson.databind.exc.InvalidFormatException ife =
+                com.fasterxml.jackson.databind.exc.InvalidFormatException.from(
+                        null, "valor no valido", "MORADO",
+                        ec.edu.espe.zonas.entidades.TipoZona.class);
+        org.springframework.http.converter.HttpMessageNotReadableException ex =
+                new org.springframework.http.converter.HttpMessageNotReadableException(
+                        "roto", ife,
+                        new org.springframework.mock.http.MockHttpInputMessage(new byte[0]));
+
+        ResponseEntity<Map<String, Object>> response = handler.handleNotReadable(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        String mensaje = (String) response.getBody().get("mensaje");
+        assertTrue(mensaje.contains("MORADO"));
+        assertTrue(mensaje.contains("REGULAR"));
+    }
 }

@@ -222,7 +222,7 @@ function ListadoTab({ toast }: { readonly toast: ReturnType<typeof useToast> }) 
                 </tr>
               </thead>
               <tbody>
-                {data!.content.map((t) => (
+                {(data?.content ?? []).map((t) => (
                   <tr key={t.id}>
                     <td>
                       <strong>{t.codigo}</strong>
@@ -264,13 +264,13 @@ function ListadoTab({ toast }: { readonly toast: ReturnType<typeof useToast> }) 
           </div>
           <div className="row spread" style={{ marginTop: 16 }}>
             <span className="muted">
-              Página {data!.number + 1} de {Math.max(1, data!.totalPages)} · {data!.totalElements} tickets
+              Página {(data?.number ?? 0) + 1} de {Math.max(1, data?.totalPages ?? 1)} · {data?.totalElements ?? 0} tickets
             </span>
             <div className="row" style={{ gap: 8 }}>
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={data!.first || page === 0}
+                disabled={(data?.first ?? true) || page === 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
               >
                 Anterior
@@ -278,7 +278,7 @@ function ListadoTab({ toast }: { readonly toast: ReturnType<typeof useToast> }) 
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={data!.last}
+                disabled={data?.last ?? true}
                 onClick={() => setPage((p) => p + 1)}
               >
                 Siguiente

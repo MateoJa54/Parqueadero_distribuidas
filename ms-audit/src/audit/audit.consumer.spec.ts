@@ -102,4 +102,65 @@ describe('AuditConsumer', () => {
     await handler(buildMessage(validPayload));
     expect(channel.nack).toHaveBeenCalled();
   });
+
+  it('hace nack cuando el contenido no es JSON valido', async () => {
+    const handler = await getMessageHandler();
+    await handler({ content: Buffer.from('no-json{') });
+    expect(auditService.create).not.toHaveBeenCalled();
+    expect(channel.nack).toHaveBeenCalled();
+  });
+
+  it('registra los handlers close y error de la conexion', async () => {
+    jest.useFakeTimers();
+    await consumer.onModuleInit();
+
+    const closeHandler = connection.on.mock.calls.find(
+      ([evt]) => evt === 'close',
+    )?.[1];
+    const errorHandler = connection.on.mock.calls.find(
+      ([evt]) => evt === 'error',
+    )?.[1];
+
+    expect(closeHandler).toBeDefined();
+    expect(errorHandler).toBeDefined();
+
+    closeHandler();
+    expect(jest.getTimerCount()).toBeGreaterThan(0);
+
+    expect(() => errorHandler({ message: 'boom' })).not.toThrow();
+
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
+  it('reintenta cuando falla la conexion inicial', async () => {
+    jest.useFakeTimers();
+    mockedConnect.mockRejectedValueOnce(new Error('sin broker'));
+    await consumer.onModuleInit();
+    expect(jest.getTimerCount()).toBeGreaterThan(0);
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
+  it('reintenta cuando la conexion inicial falla con valor no-Error', async () => {
+    jest.useFakeTimers();
+    mockedConnect.mockRejectedValueOnce('cadena de error');
+    await consumer.onModuleInit();
+    expect(jest.getTimerCount()).toBeGreaterThan(0);
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
+  it('maneja errores al configurar el consumidor', async () => {
+    channel.assertExchange.mockRejectedValueOnce(new Error('exchange fail'));
+    await expect(consumer.onModuleInit()).resolves.toBeUndefined();
+    expect(channel.consume).not.toHaveBeenCalled();
+  });
+
+  it('usa mensaje generico cuando el error de guardado no es Error', async () => {
+    auditService.create.mockRejectedValueOnce('fallo raro');
+    const handler = await getMessageHandler();
+    await handler(buildMessage(validPayload));
+    expect(channel.nack).toHaveBeenCalled();
+  });
 });

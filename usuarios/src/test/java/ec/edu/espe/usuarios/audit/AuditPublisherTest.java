@@ -6,6 +6,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -325,5 +327,25 @@ class AuditPublisherTest {
         assertDoesNotThrow(() -> publisher.publicar("CREATE", "USUARIO", "datos"));
 
         RequestContextHolder.resetRequestAttributes();
+    }
+
+    @Test
+    void publicar_conTransaccionActiva_enviaTrasCommit() {
+        RabbitTemplate rabbit = mock(RabbitTemplate.class);
+        AuditPublisher publisher = buildPublisherWithRabbit(rabbit);
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            publisher.publicar("CREATE", "USUARIO", "datos");
+
+            verify(rabbit, never()).convertAndSend(anyString(), anyString(), any(Object.class));
+
+            for (TransactionSynchronization sync : TransactionSynchronizationManager.getSynchronizations()) {
+                sync.afterCommit();
+            }
+            verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"), any(Object.class));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 }

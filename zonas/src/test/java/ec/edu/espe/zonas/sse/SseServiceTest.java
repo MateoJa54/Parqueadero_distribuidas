@@ -69,4 +69,46 @@ class SseServiceTest {
         assertDoesNotThrow(() -> sseService.enviarEvento(emitter, "tipo", "datos"));
         verify(emitter).completeWithError(any(IOException.class));
     }
+
+    @SuppressWarnings("unchecked")
+    private java.util.List<SseEmitter> conexiones() throws Exception {
+        java.lang.reflect.Field f = SseService.class.getDeclaredField("conexiones");
+        f.setAccessible(true);
+        return (java.util.List<SseEmitter>) f.get(sseService);
+    }
+
+    @Test
+    void callbacksDeConexionRetiranEmitter() throws Exception {
+        // onCompletion, onTimeout y onError se registran en nuevaConexion.
+        SseEmitter e = sseService.nuevaConexion();
+        assertEquals(1, conexiones().size());
+        assertNotNull(e);
+    }
+
+    @Test
+    void enviarEventoConEmitterActivoEnvia() throws Exception {
+        SseEmitter emitter = mock(SseEmitter.class);
+        sseService.enviarEvento(emitter, "snapshot", "payload");
+        verify(emitter).send(any(SseEmitter.SseEventBuilder.class));
+    }
+
+    @Test
+    void emitirConClienteRegistradoQueFallaLoElimina() throws Exception {
+        SseEmitter emitter = mock(SseEmitter.class);
+        doThrow(new IllegalStateException("cerrado")).when(emitter)
+                .send(any(SseEmitter.SseEventBuilder.class));
+        conexiones().add(emitter);
+
+        assertDoesNotThrow(() -> sseService.emitir("evento", "datos"));
+        verify(emitter).completeWithError(any(IllegalStateException.class));
+        assertTrue(conexiones().isEmpty());
+    }
+
+    @Test
+    void emitirConClienteRegistradoActivoEnvia() throws Exception {
+        SseEmitter emitter = mock(SseEmitter.class);
+        conexiones().add(emitter);
+        sseService.emitir("evento", "datos");
+        verify(emitter).send(any(SseEmitter.SseEventBuilder.class));
+    }
 }
