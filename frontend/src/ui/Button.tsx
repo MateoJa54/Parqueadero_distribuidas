@@ -3,11 +3,11 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
-  size?: 'sm' | 'md';
-  block?: boolean;
-  loading?: boolean;
-  icon?: ReactNode;
+  readonly variant?: Variant;
+  readonly size?: 'sm' | 'md';
+  readonly block?: boolean;
+  readonly loading?: boolean;
+  readonly icon?: ReactNode;
 }
 
 export function Button({

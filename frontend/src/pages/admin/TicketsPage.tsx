@@ -44,7 +44,7 @@ export function TicketsPage() {
 }
 
 // ---- Registrar ingreso ----
-function IngresoTab({ toast, onDone }: { toast: ReturnType<typeof useToast>; onDone: () => void }) {
+function IngresoTab({ toast, onDone }: { readonly toast: ReturnType<typeof useToast>; readonly onDone: () => void }) {
   const disponibles = useAsync(() => espaciosApi.disponibles(), []);
   const [placa, setPlaca] = useState('');
   const [idEspacio, setIdEspacio] = useState('');
@@ -105,7 +105,7 @@ function IngresoTab({ toast, onDone }: { toast: ReturnType<typeof useToast>; onD
             error={errs.idEspacio}
             options={(disponibles.data ?? []).map((es) => ({
               value: es.id,
-              label: `${es.codigo} · ${es.tipo}${es.nombreZona ? ` · ${es.nombreZona}` : ''}`,
+            label: (() => { const zonaStr = es.nombreZona ? ` · ${es.nombreZona}` : ''; return `${es.codigo} · ${es.tipo}${zonaStr}`; })(),
             }))}
             required
           />
@@ -122,7 +122,7 @@ function IngresoTab({ toast, onDone }: { toast: ReturnType<typeof useToast>; onD
 }
 
 // ---- Listado paginado + cobro/anulación ----
-function ListadoTab({ toast }: { toast: ReturnType<typeof useToast> }) {
+function ListadoTab({ toast }: { readonly toast: ReturnType<typeof useToast> }) {
   const [estado, setEstado] = useState<EstadoTicket | ''>('');
   const [page, setPage] = useState(0);
   const [data, setData] = useState<Page<Ticket> | null>(null);

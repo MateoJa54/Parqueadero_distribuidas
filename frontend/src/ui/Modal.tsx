@@ -3,12 +3,12 @@ import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 
 interface ModalProps {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-  footer?: ReactNode;
-  size?: 'md' | 'lg';
+  readonly open: boolean;
+  readonly title: string;
+  readonly onClose: () => void;
+  readonly children: ReactNode;
+  readonly footer?: ReactNode;
+  readonly size?: 'md' | 'lg';
 }
 
 /** Modal accesible: cierra con Esc, click fuera, y atrapa el foco dentro. */
@@ -59,7 +59,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
   if (!open) return null;
 
   return createPortal(
-    <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="overlay" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         ref={ref}
         className={`modal ${size === 'lg' ? 'modal-lg' : ''}`}
@@ -69,7 +69,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
       >
         <div className="modal-header">
           <h3>{title}</h3>
-          <button className="icon-btn" onClick={onClose} aria-label="Cerrar">
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Cerrar">
             ✕
           </button>
         </div>

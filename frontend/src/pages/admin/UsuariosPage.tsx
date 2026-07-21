@@ -215,27 +215,29 @@ export function UsuariosPage() {
         }
       >
         <div className="stack">
-          {modal.edit ? (
-            <Input label="Persona" value={modal.edit.nombreCompleto} disabled />
-          ) : personasDisponibles.length === 0 ? (
-            <div className="alert alert-warning">
-              <span aria-hidden>⚠</span>
-              No hay personas activas sin usuario. Crea una persona primero.
-            </div>
-          ) : (
-            <Select
-              label="Persona"
-              placeholder="Selecciona una persona…"
-              value={idPersona}
-              onChange={(e) => setIdPersona(e.target.value)}
-              error={errs.idPersona}
-              required
-              options={personasDisponibles.map((p) => ({
-                value: p.id,
-                label: `${p.firstName} ${p.lastName} · ${p.dni}`,
-              }))}
-            />
-          )}
+          {(() => {
+            if (modal.edit) return <Input label="Persona" value={modal.edit.nombreCompleto} disabled />;
+            if (personasDisponibles.length === 0) return (
+              <div className="alert alert-warning">
+                <span aria-hidden>⚠</span>
+                No hay personas activas sin usuario. Crea una persona primero.
+              </div>
+            );
+            return (
+              <Select
+                label="Persona"
+                placeholder="Selecciona una persona…"
+                value={idPersona}
+                onChange={(e) => setIdPersona(e.target.value)}
+                error={errs.idPersona}
+                required
+                options={personasDisponibles.map((p) => ({
+                  value: p.id,
+                  label: `${p.firstName} ${p.lastName} · ${p.dni}`,
+                }))}
+              />
+            );
+          })()}
           <Input
             label="Usuario"
             value={username}

@@ -3,7 +3,7 @@ import { Button } from './Button';
 
 // Estados de vista: loading (skeleton), empty, error. Siempre presentes en las listas.
 
-export function Loading({ label = 'Cargando…' }: { label?: string }) {
+export function Loading({ label = 'Cargando…' }: { readonly label?: string }) {
   return (
     <div className="state">
       <div className="spinner" />
@@ -12,14 +12,14 @@ export function Loading({ label = 'Cargando…' }: { label?: string }) {
   );
 }
 
-export function TableSkeleton({ cols = 4, rows = 5 }: { cols?: number; rows?: number }) {
+export function TableSkeleton({ cols = 4, rows = 5 }: { readonly cols?: number; readonly rows?: number }) {
   return (
     <div className="stack" style={{ gap: 8 }}>
       {Array.from({ length: rows }).map((_, r) => (
-        <div key={r} className="row" style={{ gap: 12 }}>
+        <div key={`row-${r}`} className="row" style={{ gap: 12 }}>
           {Array.from({ length: cols }).map((_, c) => (
             <div
-              key={c}
+              key={`col-${r}-${c}`}
               className="skeleton"
               style={{ height: 18, flex: c === 0 ? 2 : 1 }}
             />
@@ -36,10 +36,10 @@ export function EmptyState({
   message,
   action,
 }: {
-  icon?: string;
-  title: string;
-  message?: string;
-  action?: ReactNode;
+  readonly icon?: string;
+  readonly title: string;
+  readonly message?: string;
+  readonly action?: ReactNode;
 }) {
   return (
     <div className="state">
@@ -57,8 +57,8 @@ export function ErrorState({
   message,
   onRetry,
 }: {
-  message: string;
-  onRetry?: () => void;
+  readonly message: string;
+  readonly onRetry?: () => void;
 }) {
   return (
     <div className="state">
@@ -77,13 +77,13 @@ export function ErrorState({
 }
 
 interface AsyncViewProps {
-  loading: boolean;
-  error?: string | null;
-  isEmpty?: boolean;
-  onRetry?: () => void;
-  loadingNode?: ReactNode;
-  emptyNode?: ReactNode;
-  children: ReactNode;
+  readonly loading: boolean;
+  readonly error?: string | null;
+  readonly isEmpty?: boolean;
+  readonly onRetry?: () => void;
+  readonly loadingNode?: ReactNode;
+  readonly emptyNode?: ReactNode;
+  readonly children: ReactNode;
 }
 
 /**

@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 
 type ToastType = 'success' | 'danger' | 'info' | 'warning';
 interface Toast {
-  id: number;
+  id: string;
   type: ToastType;
   title: string;
   msg?: string;
@@ -22,16 +22,16 @@ const ICON: Record<ToastType, string> = {
   warning: '⚠',
 };
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({ children }: { readonly children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const remove = useCallback((id: number) => {
+  const remove = useCallback((id: string) => {
     setToasts((ts) => ts.filter((t) => t.id !== id));
   }, []);
 
   const push = useCallback(
     (t: Omit<Toast, 'id'>) => {
-      const id = Date.now() + Math.random();
+      const id = crypto.randomUUID();
       setToasts((ts) => [...ts, { ...t, id }]);
       window.setTimeout(() => remove(id), 4200);
     },
@@ -60,6 +60,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               {t.msg && <div className="toast-msg">{t.msg}</div>}
             </div>
             <button
+              type="button"
               className="btn-ghost btn-sm"
               onClick={() => remove(t.id)}
               aria-label="Cerrar notificación"

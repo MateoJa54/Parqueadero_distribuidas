@@ -122,7 +122,6 @@ export function VehiculosPage() {
       if (modal.edit) {
         // En edición no se cambia la placa/tipo; se envían los datos actualizables.
         const { placa: _placa, ...editable } = payload;
-        void _placa;
         await vehiculosApi.update(modal.edit.id, editable);
         toast.success('Vehículo actualizado');
       } else {

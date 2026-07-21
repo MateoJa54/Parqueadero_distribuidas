@@ -8,10 +8,10 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 interface FieldWrap {
   /** Etiqueta visible. Si se omite, provee `aria-label` en el control para accesibilidad. */
-  label?: string;
-  required?: boolean;
-  hint?: string;
-  error?: string;
+  readonly label?: string;
+  readonly required?: boolean;
+  readonly hint?: string;
+  readonly error?: string;
 }
 
 export function Field({
@@ -21,7 +21,7 @@ export function Field({
   error,
   children,
   htmlFor,
-}: FieldWrap & { children: ReactNode; htmlFor?: string }) {
+}: FieldWrap & { readonly children: ReactNode; readonly htmlFor?: string }) {
   return (
     <div className="field">
       {label && (
@@ -31,14 +31,11 @@ export function Field({
         </label>
       )}
       {children}
-      {error ? (
-        <span className="error" role="alert">
-          <span aria-hidden>⚠</span>
-          {error}
-        </span>
-      ) : hint ? (
-        <span className="hint">{hint}</span>
-      ) : null}
+      {(() => {
+        if (error) return <span className="error" role="alert"><span aria-hidden>⚠</span>{error}</span>;
+        if (hint) return <span className="hint">{hint}</span>;
+        return null;
+      })()}
     </div>
   );
 }
@@ -145,18 +142,18 @@ export function Textarea({ label, required, hint, error, id, ...rest }: Textarea
 }
 
 export interface ComboboxOption {
-  value: string;
-  label: string;
+  readonly value: string;
+  readonly label: string;
 }
 
 type ComboboxProps = FieldWrap & {
-  options: ComboboxOption[];
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  emptyText?: string;
-  disabled?: boolean;
-  id?: string;
+  readonly options: ComboboxOption[];
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly placeholder?: string;
+  readonly emptyText?: string;
+  readonly disabled?: boolean;
+  readonly id?: string;
 };
 
 /**

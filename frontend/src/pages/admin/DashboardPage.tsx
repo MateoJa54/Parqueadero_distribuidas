@@ -14,10 +14,10 @@ function StatCard({
   icon,
   tone,
 }: {
-  label: string;
-  value: string | number;
-  icon: string;
-  tone: string;
+  readonly label: string;
+  readonly value: string | number;
+  readonly icon: string;
+  readonly tone: string;
 }) {
   return (
     <div className="card stat">
@@ -114,29 +114,23 @@ export function DashboardPage() {
           emptyNode={<p className="muted">No hay espacios registrados.</p>}
         >
           <div className="row-wrap" style={{ gap: 8 }}>
-            {espaciosList.slice(0, 60).map((e) => (
+            {espaciosList.slice(0, 60).map((e) => {
+              const bg = e.estado === 'DISPONIBLE' ? 'var(--success-soft)' : e.estado === 'OCUPADO' ? 'var(--danger-soft)' : 'var(--warning-soft)';
+              const fg = e.estado === 'DISPONIBLE' ? 'var(--success)' : e.estado === 'OCUPADO' ? 'var(--danger)' : 'var(--warning)';
+              return (
               <span
                 key={e.id}
                 className="badge"
                 title={`${e.codigo} · ${e.estado}`}
                 style={{
-                  background:
-                    e.estado === 'DISPONIBLE'
-                      ? 'var(--success-soft)'
-                      : e.estado === 'OCUPADO'
-                        ? 'var(--danger-soft)'
-                        : 'var(--warning-soft)',
-                  color:
-                    e.estado === 'DISPONIBLE'
-                      ? 'var(--success)'
-                      : e.estado === 'OCUPADO'
-                        ? 'var(--danger)'
-                        : 'var(--warning)',
+                  background: bg,
+                  color: fg,
                 }}
               >
                 {e.codigo}
               </span>
-            ))}
+              );
+            })}
           </div>
         </AsyncView>
       </div>
