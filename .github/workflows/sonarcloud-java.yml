@@ -36,24 +36,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # tickets no requiere Postgres para sus tests (son unitarios puros),
-          # por eso corre suite completa + cobertura real.
+          # Los 4 modulos corren sus tests unitarios puros (Mockito, sin BD) y
+          # generan cobertura JaCoCo real. Los tests de contexto Spring
+          # (@SpringBootTest) que requieren PostgreSQL/RabbitMQ estan @Disabled,
+          # asi que la suite corre sin infraestructura en CI.
           - module: tickets
             project_key: parqueadero-tickets
-            skip_tests: false
-          # usuarios, zonas y asignaciones tienen tests de contexto Spring que
-          # requieren PostgreSQL vivo (@SpringBootTest). Se saltan aqui para
-          # mantener el analisis estatico independiente de infraestructura;
-          # sus tests de integracion corren en su propio pipeline si existe.
           - module: usuarios
             project_key: parqueadero-usuarios
-            skip_tests: true
           - module: zonas
             project_key: parqueadero-zonas
-            skip_tests: true
           - module: asignaciones
             project_key: parqueadero-asignaciones
-            skip_tests: true
 
     steps:
       - name: Checkout
@@ -82,35 +76,14 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar-${{ matrix.module }}
 
       - name: Build, test and analyze (with coverage)
-        if: matrix.skip_tests == false
-        working-directory: ${{ matrix.module }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          ./mvnw -B clean \
-            org.jacoco:jacoco-maven-plugin:0.8.13:prepare-agent \
-            test \
-            org.jacoco:jacoco-maven-plugin:0.8.13:report \
-            sonar:sonar \
-            -Dmaven.compiler.release=21 \
-            -Dsonar.projectKey=${{ matrix.project_key }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-
-      - name: Build and analyze (static only, sin tests)
-        if: matrix.skip_tests == true
         working-directory: ${{ matrix.module }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           ./mvnw -B clean verify sonar:sonar \
-            -DskipTests=true \
             -Dmaven.compiler.release=21 \
             -Dsonar.projectKey=${{ matrix.project_key }} \
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-            -Dsonar.host.url=https://sonarcloud.io
-
-            
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
