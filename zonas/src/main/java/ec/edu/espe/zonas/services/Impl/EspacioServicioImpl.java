@@ -29,9 +29,9 @@ import lombok.RequiredArgsConstructor;
 public class EspacioServicioImpl implements EspacioServicio {
 
     private static final String ENTIDAD = "ESPACIO";
-    private static final String ESPACIO_NOT_FOUND = ESPACIO_NOT_FOUND;
-    private static final String ZONA_NOT_FOUND = ZONA_NOT_FOUND;
-    private static final String AUDIT_UPDATE = AUDIT_UPDATE;
+    private static final String ESPACIO_NOT_FOUND = "Espacio no encontrado con ID: ";
+    private static final String ZONA_NOT_FOUND = "Zona no encontrada con ID: ";
+    private static final String AUDIT_UPDATE = "UPDATE";
 
     // Nombres de los eventos que consume el dashboard de monitoreo (SSE).
     private static final String EVENTO_CREADO = "espacio-creado";
