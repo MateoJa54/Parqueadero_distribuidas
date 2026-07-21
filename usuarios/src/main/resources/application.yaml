@@ -21,6 +21,14 @@ spring:
 server:
   port: 8081
 
+# Credencial ROOT de bootstrap. La contrasena NO se versiona: en produccion se
+# inyecta via la variable de entorno ADMIN_ROOT_PASSWORD. El default solo aplica
+# en desarrollo local.
+admin:
+  root:
+    username: ${ADMIN_ROOT_USERNAME:root}
+    password: ${ADMIN_ROOT_PASSWORD:Root2025}
+
 jwt:
   # RS256 asimetrico: usuarios FIRMA con la clave PRIVADA; el resto de servicios
   # solo VERIFICAN con la PUBLICA. Asi nadie puede re-firmar un token (jwt.io)

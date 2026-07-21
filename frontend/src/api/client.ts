@@ -32,8 +32,10 @@ export const tokenStore = {
 export function decodeJwt(token: string): JwtClaims | null {
   try {
     const [, payload] = token.split('.');
-    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decodeURIComponent(escape(json))) as JwtClaims;
+    const binary = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    const json = new TextDecoder().decode(bytes);
+    return JSON.parse(json) as JwtClaims;
   } catch {
     return null;
   }

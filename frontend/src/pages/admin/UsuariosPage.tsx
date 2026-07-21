@@ -8,7 +8,7 @@ import { Button } from '@/ui/Button';
 import { Input, Select } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { ActivoBadge } from '@/ui/Badge';
-import { EmptyState, ErrorState, TableSkeleton } from '@/ui/States';
+import { EmptyState, AsyncView, TableSkeleton } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 import { fmtFecha, rgx } from '@/lib/format';
 
@@ -137,15 +137,20 @@ export function UsuariosPage() {
         }
       />
 
-      {loading ? (
-        <div className="card card-pad">
-          <TableSkeleton cols={4} />
-        </div>
-      ) : usuarios.error ? (
-        <ErrorState message={usuarios.error} onRetry={usuarios.reload} />
-      ) : lista.length === 0 ? (
-        <EmptyState title="Sin usuarios" message="Crea el primer usuario a partir de una persona activa." />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={usuarios.error}
+        isEmpty={lista.length === 0}
+        onRetry={usuarios.reload}
+        loadingNode={
+          <div className="card card-pad">
+            <TableSkeleton cols={4} />
+          </div>
+        }
+        emptyNode={
+          <EmptyState title="Sin usuarios" message="Crea el primer usuario a partir de una persona activa." />
+        }
+      >
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -192,7 +197,7 @@ export function UsuariosPage() {
             </tbody>
           </table>
         </div>
-      )}
+      </AsyncView>
 
       <Modal
         open={modal.open}

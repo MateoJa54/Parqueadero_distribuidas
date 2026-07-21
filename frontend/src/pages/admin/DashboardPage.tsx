@@ -5,6 +5,7 @@ import { ticketsApi } from '@/api/tickets';
 import { vehiculosApi } from '@/api/vehiculos';
 import { useAsync } from '@/hooks/useAsync';
 import { PageHead } from '@/ui/PageHead';
+import { AsyncView } from '@/ui/States';
 import { fmtDinero } from '@/lib/format';
 
 function StatCard({
@@ -106,11 +107,12 @@ export function DashboardPage() {
 
       <div className="card card-pad" style={{ marginTop: 24 }}>
         <h3 style={{ marginBottom: 12 }}>Ocupación por espacio</h3>
-        {espacios.loading ? (
-          <p className="muted">Cargando…</p>
-        ) : espaciosList.length === 0 ? (
-          <p className="muted">No hay espacios registrados.</p>
-        ) : (
+        <AsyncView
+          loading={espacios.loading}
+          isEmpty={espaciosList.length === 0}
+          loadingNode={<p className="muted">Cargando…</p>}
+          emptyNode={<p className="muted">No hay espacios registrados.</p>}
+        >
           <div className="row-wrap" style={{ gap: 8 }}>
             {espaciosList.slice(0, 60).map((e) => (
               <span
@@ -136,7 +138,7 @@ export function DashboardPage() {
               </span>
             ))}
           </div>
-        )}
+        </AsyncView>
       </div>
     </>
   );

@@ -9,7 +9,7 @@ import { Button } from '@/ui/Button';
 import { Input, Select } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { EstadoTicketBadge } from '@/ui/Badge';
-import { EmptyState, ErrorState, Loading, TableSkeleton } from '@/ui/States';
+import { EmptyState, AsyncView, Loading, TableSkeleton } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 import { fmtDinero, fmtFecha, rgx } from '@/lib/format';
 import { getPrefs } from '@/lib/prefs';
@@ -25,13 +25,13 @@ export function TicketsPage() {
     <>
       <PageHead title="Tickets" subtitle="Ingreso, cobro y anulación de tickets de parqueo." />
       <div className="tabs" role="tablist">
-        <button className={`tab ${tab === 'listado' ? 'active' : ''}`} onClick={() => setTab('listado')} role="tab">
+        <button type="button" className={`tab ${tab === 'listado' ? 'active' : ''}`} onClick={() => setTab('listado')} role="tab">
           Listado
         </button>
-        <button className={`tab ${tab === 'ingreso' ? 'active' : ''}`} onClick={() => setTab('ingreso')} role="tab">
+        <button type="button" className={`tab ${tab === 'ingreso' ? 'active' : ''}`} onClick={() => setTab('ingreso')} role="tab">
           Registrar ingreso
         </button>
-        <button className={`tab ${tab === 'buscar' ? 'active' : ''}`} onClick={() => setTab('buscar')} role="tab">
+        <button type="button" className={`tab ${tab === 'buscar' ? 'active' : ''}`} onClick={() => setTab('buscar')} role="tab">
           Buscar por código
         </button>
       </div>
@@ -194,15 +194,18 @@ function ListadoTab({ toast }: { toast: ReturnType<typeof useToast> }) {
         />
       </div>
 
-      {loading ? (
-        <div className="card card-pad">
-          <TableSkeleton cols={6} />
-        </div>
-      ) : error ? (
-        <ErrorState message={error} onRetry={cargar} />
-      ) : !data || data.content.length === 0 ? (
-        <EmptyState title="Sin tickets" message="No hay tickets con ese filtro." />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={error}
+        isEmpty={!data || data.content.length === 0}
+        onRetry={cargar}
+        loadingNode={
+          <div className="card card-pad">
+            <TableSkeleton cols={6} />
+          </div>
+        }
+        emptyNode={<EmptyState title="Sin tickets" message="No hay tickets con ese filtro." />}
+      >
         <>
           <div className="table-wrap">
             <table className="table">
@@ -218,7 +221,7 @@ function ListadoTab({ toast }: { toast: ReturnType<typeof useToast> }) {
                 </tr>
               </thead>
               <tbody>
-                {data.content.map((t) => (
+                {data!.content.map((t) => (
                   <tr key={t.id}>
                     <td>
                       <strong>{t.codigo}</strong>
@@ -260,13 +263,13 @@ function ListadoTab({ toast }: { toast: ReturnType<typeof useToast> }) {
           </div>
           <div className="row spread" style={{ marginTop: 16 }}>
             <span className="muted">
-              Página {data.number + 1} de {Math.max(1, data.totalPages)} · {data.totalElements} tickets
+              Página {data!.number + 1} de {Math.max(1, data!.totalPages)} · {data!.totalElements} tickets
             </span>
             <div className="row" style={{ gap: 8 }}>
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={data.first || page === 0}
+                disabled={data!.first || page === 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
               >
                 Anterior
@@ -274,7 +277,7 @@ function ListadoTab({ toast }: { toast: ReturnType<typeof useToast> }) {
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={data.last}
+                disabled={data!.last}
                 onClick={() => setPage((p) => p + 1)}
               >
                 Siguiente
@@ -282,7 +285,7 @@ function ListadoTab({ toast }: { toast: ReturnType<typeof useToast> }) {
             </div>
           </div>
         </>
-      )}
+      </AsyncView>
 
       <Modal
         open={anular.open}

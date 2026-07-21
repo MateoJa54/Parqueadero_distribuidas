@@ -24,6 +24,11 @@ jwt:
   public-key: ${JWT_PUBLIC_KEY:keys/jwt_public.pem}
   issuer: ${JWT_ISSUER:parqueadero}
 
+# Origenes permitidos para el canal SSE publico. En produccion se restringe al
+# dominio del dashboard via CORS_ALLOWED_ORIGINS (lista separada por comas).
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
 # Auditoria: publica eventos de CRUD hacia ms-audit via RabbitMQ.
 # El exchange se declara "durable" en AuditConfig; ms-audit crea la cola y
 # el binding "audit.#" que atrapa cualquier routing key "audit.*".

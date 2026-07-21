@@ -8,7 +8,7 @@ import { Button } from '@/ui/Button';
 import { Input, Select, Textarea } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { ActivoBadge, Badge } from '@/ui/Badge';
-import { EmptyState, ErrorState, TableSkeleton } from '@/ui/States';
+import { EmptyState, AsyncView, TableSkeleton } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 
 const TIPOS: TipoZona[] = ['VIP', 'REGULAR', 'INTERNA', 'EXTERNA', 'PREFERENCIAL'];
@@ -86,15 +86,18 @@ export function ZonasPage() {
         }
       />
 
-      {loading ? (
-        <div className="card card-pad">
-          <TableSkeleton cols={5} />
-        </div>
-      ) : error ? (
-        <ErrorState message={error} onRetry={reload} />
-      ) : (data ?? []).length === 0 ? (
-        <EmptyState title="Sin zonas" message="Crea la primera zona." />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={error}
+        isEmpty={(data ?? []).length === 0}
+        onRetry={reload}
+        loadingNode={
+          <div className="card card-pad">
+            <TableSkeleton cols={5} />
+          </div>
+        }
+        emptyNode={<EmptyState title="Sin zonas" message="Crea la primera zona." />}
+      >
         <div className="grid grid-3">
           {(data ?? []).map((z) => (
             <div className="card card-pad" key={z.idZona}>
@@ -125,7 +128,7 @@ export function ZonasPage() {
             </div>
           ))}
         </div>
-      )}
+      </AsyncView>
 
       <Modal
         open={modal.open}

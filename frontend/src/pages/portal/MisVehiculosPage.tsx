@@ -3,7 +3,7 @@ import { propietariosApi } from '@/api/asignaciones';
 import { useAsync } from '@/hooks/useAsync';
 import { PageHead } from '@/ui/PageHead';
 import { ActivoBadge, Badge } from '@/ui/Badge';
-import { EmptyState, ErrorState, Loading } from '@/ui/States';
+import { EmptyState, AsyncView, Loading } from '@/ui/States';
 
 export function MisVehiculosPage() {
   const { user } = useAuth();
@@ -16,16 +16,19 @@ export function MisVehiculosPage() {
     <>
       <PageHead title="Mis vehículos" subtitle="Vehículos asignados a tu cuenta." />
 
-      {loading ? (
-        <Loading label="Cargando tus vehículos…" />
-      ) : error ? (
-        <ErrorState message={error} onRetry={reload} />
-      ) : (data ?? []).length === 0 ? (
-        <EmptyState
-          title="Aún no tienes vehículos"
-          message="Cuando la administración te asigne un vehículo, aparecerá aquí."
-        />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={error}
+        isEmpty={(data ?? []).length === 0}
+        onRetry={reload}
+        loadingNode={<Loading label="Cargando tus vehículos…" />}
+        emptyNode={
+          <EmptyState
+            title="Aún no tienes vehículos"
+            message="Cuando la administración te asigne un vehículo, aparecerá aquí."
+          />
+        }
+      >
         <div className="grid grid-3">
           {(data ?? []).map((v) => (
             <div className="card card-pad" key={v.id}>
@@ -47,7 +50,7 @@ export function MisVehiculosPage() {
             </div>
           ))}
         </div>
-      )}
+      </AsyncView>
     </>
   );
 }

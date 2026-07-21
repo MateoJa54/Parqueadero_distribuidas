@@ -3,7 +3,7 @@
 export function fmtFecha(iso?: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return String(iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
   return d.toLocaleString('es-EC', {
     year: 'numeric',
     month: '2-digit',
@@ -44,7 +44,7 @@ export function esCedulaEc(dni: string): boolean {
 
 export const rgx = {
   username: /^[a-zA-Z0-9._-]+$/,
-  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
+  password: /^(?=[^a-z]*[a-z])(?=[^A-Z]*[A-Z])(?=\D*\d).+$/,
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   soloLetras: /^[\p{L} ]+$/u,
   telefono: /^\d{7,10}$/,

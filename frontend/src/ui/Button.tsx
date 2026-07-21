@@ -19,6 +19,7 @@ export function Button({
   children,
   disabled,
   className = '',
+  type = 'button',
   ...rest
 }: ButtonProps) {
   const cls = [
@@ -31,7 +32,13 @@ export function Button({
     .filter(Boolean)
     .join(' ');
   return (
-    <button className={cls} disabled={disabled || loading} aria-busy={loading} {...rest}>
+    <button
+      type={type}
+      className={cls}
+      disabled={disabled || loading}
+      aria-busy={loading}
+      {...rest}
+    >
       {loading ? <span className="spinner" style={{ width: 16, height: 16 }} /> : icon}
       {children}
     </button>

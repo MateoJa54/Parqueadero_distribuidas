@@ -7,7 +7,7 @@ import { Badge } from '@/ui/Badge';
 import { Select } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Button } from '@/ui/Button';
-import { EmptyState, ErrorState, TableSkeleton } from '@/ui/States';
+import { EmptyState, AsyncView, TableSkeleton } from '@/ui/States';
 import { fmtFecha } from '@/lib/format';
 
 const TONO: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
@@ -25,7 +25,10 @@ export function AuditoriaPage() {
   const [detalle, setDetalle] = useState<AuditLog | null>(null);
 
   const servicios = useMemo(
-    () => Array.from(new Set((data ?? []).map((l) => l.servicio))).sort(),
+    () =>
+      Array.from(new Set((data ?? []).map((l) => l.servicio))).sort((a, b) =>
+        a.localeCompare(b),
+      ),
     [data],
   );
 
@@ -57,15 +60,20 @@ export function AuditoriaPage() {
         }
       />
 
-      {loading ? (
-        <div className="card card-pad">
-          <TableSkeleton cols={6} />
-        </div>
-      ) : error ? (
-        <ErrorState message={error} onRetry={reload} />
-      ) : lista.length === 0 ? (
-        <EmptyState title="Sin registros" message="Aún no hay eventos de auditoría." />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={error}
+        isEmpty={lista.length === 0}
+        onRetry={reload}
+        loadingNode={
+          <div className="card card-pad">
+            <TableSkeleton cols={6} />
+          </div>
+        }
+        emptyNode={
+          <EmptyState title="Sin registros" message="Aún no hay eventos de auditoría." />
+        }
+      >
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -109,7 +117,7 @@ export function AuditoriaPage() {
             </tbody>
           </table>
         </div>
-      )}
+      </AsyncView>
 
       <Modal
         open={!!detalle}

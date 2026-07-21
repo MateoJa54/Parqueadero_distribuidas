@@ -6,7 +6,7 @@ import { PageHead } from '@/ui/PageHead';
 import { Badge } from '@/ui/Badge';
 import { Select } from '@/ui/Input';
 import { Button } from '@/ui/Button';
-import { EmptyState, ErrorState, Loading } from '@/ui/States';
+import { EmptyState, AsyncView, Loading } from '@/ui/States';
 
 const TIPOS: TipoEspacio[] = ['MOTO', 'AUTO', 'BUSETA'];
 
@@ -47,11 +47,12 @@ export function DisponibilidadPage() {
         }
       />
 
-      {loading ? (
-        <Loading label="Consultando disponibilidad…" />
-      ) : error ? (
-        <ErrorState message={error} onRetry={reload} />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={error}
+        onRetry={reload}
+        loadingNode={<Loading label="Consultando disponibilidad…" />}
+      >
         <>
           <div className="row-wrap" style={{ gap: 12, marginBottom: 20 }}>
             <div className="card card-pad" style={{ minWidth: 140 }}>
@@ -92,7 +93,7 @@ export function DisponibilidadPage() {
             </div>
           )}
         </>
-      )}
+      </AsyncView>
     </>
   );
 }

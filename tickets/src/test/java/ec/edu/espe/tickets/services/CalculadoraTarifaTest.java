@@ -56,7 +56,8 @@ class CalculadoraTarifaTest {
 
     @Test
     void rechazaUnaSalidaAnteriorAlIngreso() {
-        assertThrows(ReglaNegocioException.class, () -> calculadora.calcular(
-                "Auto", "AUTO", ingreso, ingreso.minusSeconds(1)));
+        OffsetDateTime salida = ingreso.minusSeconds(1);
+        assertThrows(ReglaNegocioException.class,
+                () -> calculadora.calcular("Auto", "AUTO", ingreso, salida));
     }
 }

@@ -75,3 +75,33 @@ export function ErrorState({
     </div>
   );
 }
+
+interface AsyncViewProps {
+  loading: boolean;
+  error?: string | null;
+  isEmpty?: boolean;
+  onRetry?: () => void;
+  loadingNode?: ReactNode;
+  emptyNode?: ReactNode;
+  children: ReactNode;
+}
+
+/**
+ * Renderiza el estado adecuado (cargando / error / vacío / contenido) evitando
+ * ternarios anidados en cada página. Equivalente al patrón
+ * `loading ? … : error ? … : empty ? … : contenido`.
+ */
+export function AsyncView({
+  loading,
+  error,
+  isEmpty,
+  onRetry,
+  loadingNode,
+  emptyNode,
+  children,
+}: AsyncViewProps) {
+  if (loading) return <>{loadingNode ?? <Loading />}</>;
+  if (error) return <ErrorState message={error} onRetry={onRetry} />;
+  if (isEmpty) return <>{emptyNode ?? <EmptyState title="Sin registros" />}</>;
+  return <>{children}</>;
+}

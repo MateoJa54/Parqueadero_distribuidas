@@ -8,7 +8,7 @@ import { Button } from '@/ui/Button';
 import { Input, Select } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { ActivoBadge, EstadoEspacioBadge } from '@/ui/Badge';
-import { EmptyState, ErrorState, TableSkeleton } from '@/ui/States';
+import { EmptyState, AsyncView, TableSkeleton } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 
 const TIPOS: TipoEspacio[] = ['MOTO', 'AUTO', 'BUSETA'];
@@ -137,15 +137,18 @@ export function EspaciosPage() {
         }
       />
 
-      {loading ? (
-        <div className="card card-pad">
-          <TableSkeleton cols={5} />
-        </div>
-      ) : espacios.error ? (
-        <ErrorState message={espacios.error} onRetry={espacios.reload} />
-      ) : lista.length === 0 ? (
-        <EmptyState title="Sin espacios" message="No hay espacios con esos filtros." />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={espacios.error}
+        isEmpty={lista.length === 0}
+        onRetry={espacios.reload}
+        loadingNode={
+          <div className="card card-pad">
+            <TableSkeleton cols={5} />
+          </div>
+        }
+        emptyNode={<EmptyState title="Sin espacios" message="No hay espacios con esos filtros." />}
+      >
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -205,7 +208,7 @@ export function EspaciosPage() {
             </tbody>
           </table>
         </div>
-      )}
+      </AsyncView>
 
       <Modal
         open={modal.open}
