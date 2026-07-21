@@ -193,7 +193,7 @@ class CatalogoExternoServiceTest {
 
         RestClient.ResponseSpec patchResponse = mock(RestClient.ResponseSpec.class);
         when(restClient.patch()).thenReturn((RestClient.RequestBodyUriSpec) bodyUriSpec);
-        when(bodyUriSpec.uri(anyString(), (Object[]) any())).thenReturn((RestClient.RequestBodySpec) bodySpec);
+        when(bodyUriSpec.uri(anyString(), any(), any())).thenReturn((RestClient.RequestBodySpec) bodySpec);
         when(bodySpec.headers(any())).thenReturn((RestClient.RequestBodySpec) bodySpec);
         when(bodySpec.retrieve()).thenReturn(patchResponse);
         when(patchResponse.toBodilessEntity()).thenReturn(null);

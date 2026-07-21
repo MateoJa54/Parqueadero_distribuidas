@@ -59,7 +59,7 @@ class AuditPublisherTest {
         buildPublisherWithRabbit(rabbit).publicar("UPDATE", "ASIGNACION", "datos", null, null);
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"),
-                argThat(obj -> "uuid-abc".equals(((AuditEvent) obj).getUsuario())));
+                argThat((Object obj) -> "uuid-abc".equals(((AuditEvent) obj).getUsuario())));
     }
 
     // ----- SecurityContext -----
@@ -81,7 +81,7 @@ class AuditPublisherTest {
         RabbitTemplate rabbit = mock(RabbitTemplate.class);
         buildPublisherWithRabbit(rabbit).publicar("CREATE", "ASIGNACION", "datos");
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"),
-                argThat(obj -> ((AuditEvent) obj).getUsuario() == null));
+                argThat((Object obj) -> ((AuditEvent) obj).getUsuario() == null));
     }
 
     // ----- IP -----
@@ -120,7 +120,7 @@ class AuditPublisherTest {
         buildPublisherWithRabbit(rabbit).publicar("CREATE", "ASIGNACION", "datos");
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"),
-                argThat(obj -> "127.0.0.1".equals(((AuditEvent) obj).getIp())));
+                argThat((Object obj) -> "127.0.0.1".equals(((AuditEvent) obj).getIp())));
     }
 
     @Test
@@ -133,7 +133,7 @@ class AuditPublisherTest {
         buildPublisherWithRabbit(rabbit).publicar("CREATE", "ASIGNACION", "datos");
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"),
-                argThat(obj -> "127.0.0.1".equals(((AuditEvent) obj).getIp())));
+                argThat((Object obj) -> "127.0.0.1".equals(((AuditEvent) obj).getIp())));
     }
 
     @Test
@@ -146,7 +146,7 @@ class AuditPublisherTest {
         buildPublisherWithRabbit(rabbit).publicar("CREATE", "ASIGNACION", "datos");
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"),
-                argThat(obj -> "192.168.1.5".equals(((AuditEvent) obj).getIp())));
+                argThat((Object obj) -> "192.168.1.5".equals(((AuditEvent) obj).getIp())));
     }
 
     // ----- MAC -----
@@ -161,7 +161,7 @@ class AuditPublisherTest {
         buildPublisherWithRabbit(rabbit).publicar("CREATE", "ASIGNACION", "datos");
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"),
-                argThat(obj -> "AA:BB:CC:DD:EE:FF".equals(((AuditEvent) obj).getMac())));
+                argThat((Object obj) -> "AA:BB:CC:DD:EE:FF".equals(((AuditEvent) obj).getMac())));
     }
 
     @Test
@@ -173,7 +173,7 @@ class AuditPublisherTest {
         buildPublisherWithRabbit(rabbit).publicar("CREATE", "ASIGNACION", "datos");
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"),
-                argThat(obj -> "00:00:00:00:00:00".equals(((AuditEvent) obj).getMac())));
+                argThat((Object obj) -> "00:00:00:00:00:00".equals(((AuditEvent) obj).getMac())));
     }
 
     // ----- JWT username claim -----
@@ -195,7 +195,7 @@ class AuditPublisherTest {
         buildPublisherWithRabbit(rabbit).publicar("CREATE", "ASIGNACION", "datos");
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"),
-                argThat(obj -> "juan.perez".equals(((AuditEvent) obj).getUsuario())));
+                argThat((Object obj) -> "juan.perez".equals(((AuditEvent) obj).getUsuario())));
     }
 
     @Test
@@ -217,7 +217,7 @@ class AuditPublisherTest {
         buildPublisherWithRabbit(rabbit).publicar("CREATE", "ASIGNACION", "datos");
 
         verify(rabbit).convertAndSend(eq("audit_exchange"), eq("audit.event"),
-                argThat(obj -> "uuid-abc".equals(((AuditEvent) obj).getUsuario())));
+                argThat((Object obj) -> "uuid-abc".equals(((AuditEvent) obj).getUsuario())));
     }
 
     @Test
