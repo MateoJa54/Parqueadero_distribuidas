@@ -64,7 +64,7 @@ class AuthServicioImplTest {
     private Rol rolCliente;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         usuarioRepositorio = mock(UsuarioRepositorio.class);
         usuarioRolRepositorio = mock(UsuarioRolRepositorio.class);
         rolRepositorio = mock(RolRepositorio.class);
