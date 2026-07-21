@@ -9,4 +9,6 @@ public class AsignacionesApplication {
     public static void main(String[] args) {
         SpringApplication.run(AsignacionesApplication.class, args);
     }
+
+    // Trigger SonarCloud analysis
 }

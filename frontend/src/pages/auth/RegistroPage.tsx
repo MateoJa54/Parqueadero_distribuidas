@@ -127,6 +127,7 @@ export function RegistroPage() {
   return (
     <div className="auth-wrap">
       <button
+        type="button"
         className="icon-btn"
         onClick={toggle}
         aria-label="Cambiar tema"

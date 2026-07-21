@@ -93,23 +93,7 @@ public class AssignmentService {
         String oldPayload = toJson(assignment);
 
         if (request.getStatus() != null) {
-            AssignmentStatus previousStatus = assignment.getStatus();
-            if (request.getStatus() == AssignmentStatus.ACTIVA && previousStatus != AssignmentStatus.ACTIVA) {
-                externalCatalogService.validarUsuarioActivo(userId, authorization);
-                UserRoleAssignmentResponse authorizationRole = externalCatalogService
-                        .validarRolAutorizadoParaAsignacion(userId, authorization);
-                assignment.setAuthorizationRoleId(authorizationRole.getIdRole());
-                assignment.setAuthorizationRoleName(authorizationRole.getRol());
-            }
-            assignment.setStatus(request.getStatus());
-            if (request.getStatus() == AssignmentStatus.FINALIZADA) {
-                assignment.setActive(false);
-            }
-            if (request.getStatus() != AssignmentStatus.ACTIVA) {
-                assignment.setEntryAuthorized(false);
-            } else if (request.getEntryAuthorized() == null) {
-                assignment.setEntryAuthorized(true);
-            }
+            aplicarCambioEstado(assignment, request, userId, authorization);
         }
         if (request.getAssignmentType() != null) {
             assignment.setAssignmentType(request.getAssignmentType());
@@ -252,6 +236,27 @@ public class AssignmentService {
                         .newPayload(event.getNewPayload())
                         .build())
                 .toList();
+    }
+
+    private void aplicarCambioEstado(VehicleAssignment assignment, UpdateAssignmentRequest request,
+            UUID userId, String authorization) {
+        AssignmentStatus previousStatus = assignment.getStatus();
+        if (request.getStatus() == AssignmentStatus.ACTIVA && previousStatus != AssignmentStatus.ACTIVA) {
+            externalCatalogService.validarUsuarioActivo(userId, authorization);
+            UserRoleAssignmentResponse authorizationRole = externalCatalogService
+                    .validarRolAutorizadoParaAsignacion(userId, authorization);
+            assignment.setAuthorizationRoleId(authorizationRole.getIdRole());
+            assignment.setAuthorizationRoleName(authorizationRole.getRol());
+        }
+        assignment.setStatus(request.getStatus());
+        if (request.getStatus() == AssignmentStatus.FINALIZADA) {
+            assignment.setActive(false);
+        }
+        if (request.getStatus() != AssignmentStatus.ACTIVA) {
+            assignment.setEntryAuthorized(false);
+        } else if (request.getEntryAuthorized() == null) {
+            assignment.setEntryAuthorized(true);
+        }
     }
 
     private VehicleAssignment obtenerAsignacionActiva(AssignmentId id) {

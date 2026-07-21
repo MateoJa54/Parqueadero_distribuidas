@@ -1,6 +1,7 @@
 package ec.edu.espe.usuarios.entidades;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
@@ -30,6 +31,8 @@ import lombok.ToString;
 @Builder
 public class UsuarioRol {
 
+    private static final String ZONA_HORARIA = "America/Guayaquil";
+
     @EmbeddedId
     private UsuarioRolId id;
 
@@ -56,12 +59,12 @@ public class UsuarioRol {
 
     @PrePersist
     protected void onCreate() {
-        this.assignedAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.assignedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
+        this.updatedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
     }
 }

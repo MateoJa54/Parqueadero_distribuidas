@@ -5,6 +5,7 @@ import { ticketsApi } from '@/api/tickets';
 import { vehiculosApi } from '@/api/vehiculos';
 import { useAsync } from '@/hooks/useAsync';
 import { PageHead } from '@/ui/PageHead';
+import { AsyncView } from '@/ui/States';
 import { fmtDinero } from '@/lib/format';
 
 function StatCard({
@@ -13,10 +14,10 @@ function StatCard({
   icon,
   tone,
 }: {
-  label: string;
-  value: string | number;
-  icon: string;
-  tone: string;
+  readonly label: string;
+  readonly value: string | number;
+  readonly icon: string;
+  readonly tone: string;
 }) {
   return (
     <div className="card stat">
@@ -106,37 +107,36 @@ export function DashboardPage() {
 
       <div className="card card-pad" style={{ marginTop: 24 }}>
         <h3 style={{ marginBottom: 12 }}>Ocupación por espacio</h3>
-        {espacios.loading ? (
-          <p className="muted">Cargando…</p>
-        ) : espaciosList.length === 0 ? (
-          <p className="muted">No hay espacios registrados.</p>
-        ) : (
+        <AsyncView
+          loading={espacios.loading}
+          isEmpty={espaciosList.length === 0}
+          loadingNode={<p className="muted">Cargando…</p>}
+          emptyNode={<p className="muted">No hay espacios registrados.</p>}
+        >
           <div className="row-wrap" style={{ gap: 8 }}>
-            {espaciosList.slice(0, 60).map((e) => (
+            {espaciosList.slice(0, 60).map((e) => {
+              let bg = 'var(--warning-soft)';
+              if (e.estado === 'DISPONIBLE') bg = 'var(--success-soft)';
+              else if (e.estado === 'OCUPADO') bg = 'var(--danger-soft)';
+              let fg = 'var(--warning)';
+              if (e.estado === 'DISPONIBLE') fg = 'var(--success)';
+              else if (e.estado === 'OCUPADO') fg = 'var(--danger)';
+              return (
               <span
                 key={e.id}
                 className="badge"
                 title={`${e.codigo} · ${e.estado}`}
                 style={{
-                  background:
-                    e.estado === 'DISPONIBLE'
-                      ? 'var(--success-soft)'
-                      : e.estado === 'OCUPADO'
-                        ? 'var(--danger-soft)'
-                        : 'var(--warning-soft)',
-                  color:
-                    e.estado === 'DISPONIBLE'
-                      ? 'var(--success)'
-                      : e.estado === 'OCUPADO'
-                        ? 'var(--danger)'
-                        : 'var(--warning)',
+                  background: bg,
+                  color: fg,
                 }}
               >
                 {e.codigo}
               </span>
-            ))}
+              );
+            })}
           </div>
-        )}
+        </AsyncView>
       </div>
     </>
   );

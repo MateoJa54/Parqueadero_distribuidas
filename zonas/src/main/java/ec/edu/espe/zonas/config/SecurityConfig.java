@@ -2,6 +2,7 @@ package ec.edu.espe.zonas.config;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -76,7 +77,7 @@ public class SecurityConfig {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
         var body = new java.util.LinkedHashMap<String, Object>();
-        body.put("timestamp", OffsetDateTime.now().toString());
+        body.put("timestamp", OffsetDateTime.now(ZoneId.systemDefault()).toString());
         body.put("status", status.value());
         body.put("error", status.getReasonPhrase());
         body.put("mensaje", mensaje);

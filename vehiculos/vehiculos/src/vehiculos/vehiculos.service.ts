@@ -27,7 +27,7 @@ export class VehiculosService {
   constructor(
     @InjectRepository(Vehiculo)
     private readonly repositoryVehiculo: Repository<Vehiculo>,
-    private eventPublisher: EventPublisher,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
   // Método auxiliar para publicar eventos

@@ -22,7 +22,7 @@ export function RequireAuth() {
 }
 
 /** Protege una rama por permiso concreto. Sin permiso → 403 (no filtra la existencia). */
-export function RequirePermiso({ permiso }: { permiso: Permiso }) {
+export function RequirePermiso({ permiso }: { readonly permiso: Permiso }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
   if (!puede(user.roles, permiso)) {

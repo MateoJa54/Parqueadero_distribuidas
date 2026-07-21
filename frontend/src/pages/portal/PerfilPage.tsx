@@ -7,7 +7,7 @@ import { ApiError } from '@/api/client';
 import { PageHead } from '@/ui/PageHead';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
-import { ErrorState, Loading } from '@/ui/States';
+import { AsyncView, Loading } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 import { rgx } from '@/lib/format';
 
@@ -69,11 +69,11 @@ export function PerfilPage() {
     <>
       <PageHead title="Mi perfil" subtitle="Tus datos personales y credenciales de acceso." />
 
-      {loading ? (
-        <Loading label="Cargando tu perfil…" />
-      ) : error ? (
-        <ErrorState message={error} />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={error}
+        loadingNode={<Loading label="Cargando tu perfil…" />}
+      >
         <div className="grid grid-2">
           <div className="card card-pad">
             <h3 style={{ marginTop: 0 }}>Datos personales</h3>
@@ -120,7 +120,7 @@ export function PerfilPage() {
             </div>
           </div>
         </div>
-      )}
+      </AsyncView>
     </>
   );
 }

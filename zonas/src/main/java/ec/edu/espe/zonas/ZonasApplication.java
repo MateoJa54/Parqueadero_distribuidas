@@ -10,4 +10,6 @@ public class ZonasApplication {
 		SpringApplication.run(ZonasApplication.class, args);
 	}
 
+	// Trigger SonarCloud analysis
+
 }

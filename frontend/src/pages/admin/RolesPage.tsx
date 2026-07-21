@@ -8,7 +8,7 @@ import { Button } from '@/ui/Button';
 import { Input, Textarea } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { ActivoBadge } from '@/ui/Badge';
-import { EmptyState, ErrorState, TableSkeleton } from '@/ui/States';
+import { EmptyState, AsyncView, TableSkeleton } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 
 export function RolesPage() {
@@ -78,15 +78,18 @@ export function RolesPage() {
         }
       />
 
-      {loading ? (
-        <div className="card card-pad">
-          <TableSkeleton cols={3} />
-        </div>
-      ) : error ? (
-        <ErrorState message={error} onRetry={reload} />
-      ) : (data ?? []).length === 0 ? (
-        <EmptyState title="Sin roles" message="Crea el primer rol." />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={error}
+        isEmpty={(data ?? []).length === 0}
+        onRetry={reload}
+        loadingNode={
+          <div className="card card-pad">
+            <TableSkeleton cols={3} />
+          </div>
+        }
+        emptyNode={<EmptyState title="Sin roles" message="Crea el primer rol." />}
+      >
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -126,7 +129,7 @@ export function RolesPage() {
             </tbody>
           </table>
         </div>
-      )}
+      </AsyncView>
 
       <Modal
         open={modal.open}

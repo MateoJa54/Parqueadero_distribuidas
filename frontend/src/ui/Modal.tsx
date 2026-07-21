@@ -3,12 +3,12 @@ import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 
 interface ModalProps {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-  footer?: ReactNode;
-  size?: 'md' | 'lg';
+  readonly open: boolean;
+  readonly title: string;
+  readonly onClose: () => void;
+  readonly children: ReactNode;
+  readonly footer?: ReactNode;
+  readonly size?: 'md' | 'lg';
 }
 
 /** Modal accesible: cierra con Esc, click fuera, y atrapa el foco dentro. */
@@ -59,23 +59,22 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
   if (!open) return null;
 
   return createPortal(
-    <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
+    <div className="overlay" aria-hidden="false" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <dialog
         ref={ref}
         className={`modal ${size === 'lg' ? 'modal-lg' : ''}`}
-        role="dialog"
-        aria-modal="true"
+        open
         aria-label={title}
       >
         <div className="modal-header">
           <h3>{title}</h3>
-          <button className="icon-btn" onClick={onClose} aria-label="Cerrar">
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Cerrar">
             ✕
           </button>
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-footer">{footer}</div>}
-      </div>
+      </dialog>
     </div>,
     document.body,
   );

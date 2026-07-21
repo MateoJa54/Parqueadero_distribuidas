@@ -8,7 +8,7 @@ interface ThemeCtx {
 const Ctx = createContext<ThemeCtx | null>(null);
 const KEY = 'pq_theme';
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+export function ThemeProvider({ children }: { readonly children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem(KEY) as Theme | null;
     if (saved) return saved;
@@ -18,7 +18,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.dataset['theme'] = theme;
     localStorage.setItem(KEY, theme);
   }, [theme]);
 

@@ -1,6 +1,7 @@
 package ec.edu.espe.zonas.entidades;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -67,13 +68,13 @@ public class Zona {
 
     @PrePersist
     protected void alCrear() {
-        this.fechaCreacion = LocalDateTime.now();
+        this.fechaCreacion = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
         this.fechaActualizacion = this.fechaCreacion;
     }
 
     @PreUpdate
     protected void alActualizar() {
-        this.fechaActualizacion = LocalDateTime.now();
+        this.fechaActualizacion = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
     }
 
 }

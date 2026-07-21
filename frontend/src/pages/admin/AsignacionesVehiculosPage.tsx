@@ -10,7 +10,7 @@ import { Button } from '@/ui/Button';
 import { Input, Select, Combobox } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { ActivoBadge, Badge, EstadoAsignacionBadge } from '@/ui/Badge';
-import { EmptyState, ErrorState, Loading } from '@/ui/States';
+import { EmptyState, AsyncView, Loading } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 
 const TIPOS: AssignmentType[] = ['PROPIETARIO', 'AUTORIZADO', 'TEMPORAL'];
@@ -160,19 +160,24 @@ export function AsignacionesVehiculosPage() {
         </div>
       </div>
 
-      {asignaciones.loading ? (
-        <Loading label="Cargando asignaciones…" />
-      ) : asignaciones.error ? (
-        <ErrorState message={asignaciones.error} onRetry={() => asignaciones.reload()} />
-      ) : (asignaciones.data ?? []).length === 0 ? (
-        <EmptyState
-          title="Sin asignaciones"
-          message="Todavía no hay asignaciones de vehículos."
-          action={<Button onClick={abrirModal}>Nueva asignación</Button>}
-        />
-      ) : filtradas.length === 0 ? (
-        <EmptyState title="Sin resultados" message="Ninguna asignación coincide con el filtro." />
-      ) : (
+      <AsyncView
+        loading={asignaciones.loading}
+        error={asignaciones.error}
+        isEmpty={filtradas.length === 0}
+        onRetry={() => asignaciones.reload()}
+        loadingNode={<Loading label="Cargando asignaciones…" />}
+        emptyNode={
+          (asignaciones.data ?? []).length === 0 ? (
+            <EmptyState
+              title="Sin asignaciones"
+              message="Todavía no hay asignaciones de vehículos."
+              action={<Button onClick={abrirModal}>Nueva asignación</Button>}
+            />
+          ) : (
+            <EmptyState title="Sin resultados" message="Ninguna asignación coincide con el filtro." />
+          )
+        }
+      >
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -217,7 +222,7 @@ export function AsignacionesVehiculosPage() {
             </tbody>
           </table>
         </div>
-      )}
+      </AsyncView>
 
       <Modal
         open={modal}

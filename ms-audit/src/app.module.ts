@@ -18,7 +18,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         host: config.get<string>('DB_HOST') ?? 'localhost',
-        port: parseInt(config.get<string>('DB_PORT') ?? '5433', 10),
+        port: Number.parseInt(config.get<string>('DB_PORT') ?? '5433', 10),
         username: config.get<string>('DB_USER') ?? 'audit_user',
         password: config.get<string>('DB_PASSWORD') ?? 'audit_pass',
         database: config.get<string>('DB_NAME') ?? 'audit_db',

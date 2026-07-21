@@ -188,7 +188,7 @@ reg["request"]["description"] = (
 set_body(reg, {
     "idPersona": "{{idPersonaRegistro}}",
     "username": "cliente_espe",
-    "password": "Espe2025",
+    "password": os.environ.get("USER_PASSWORD", "Espe2025"),
 })
 set_test(reg, [
     "var json = {};",
@@ -211,7 +211,7 @@ logc["request"]["auth"] = {"type": "noauth"}
 logc["request"]["description"] = (
     "Inicia sesion con el cliente registrado (cliente_espe). Guarda {{tokenCliente}} "
     "para probar restricciones por rol, sin tocar el token de admin.")
-set_body(logc, {"username": "cliente_espe", "password": "Espe2025"})
+set_body(logc, {"username": "cliente_espe", "password": os.environ.get("USER_PASSWORD", "Espe2025")})
 set_test(logc, [
     "var json = {};",
     "try { json = pm.response.json(); } catch (e) {}",

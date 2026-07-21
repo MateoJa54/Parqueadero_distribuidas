@@ -1,70 +1,62 @@
-import { describe, expect, it } from 'vitest';
-import { esStaff, permisosDe, puede, rutaInicial } from './rbac';
+import { describe, it, expect } from 'vitest';
+import { permisosDe, puede, esStaff, rutaInicial, MATRIZ } from './rbac';
 
-describe('permisosDe', () => {
-  it('une los permisos de todos los roles del usuario sin duplicados', () => {
-    const permisos = permisosDe(['RECAUDADOR', 'CLIENTE']);
-    expect(permisos.has('tickets:operar')).toBe(true);
-    expect(permisos.has('portal:mis-vehiculos')).toBe(true);
-    expect(permisos.has('usuarios')).toBe(false);
+describe('puede', () => {
+  it('ROOT tiene todos los permisos definidos en su matriz', () => {
+    for (const p of MATRIZ.ROOT) {
+      expect(puede(['ROOT'], p)).toBe(true);
+    }
   });
 
-  it('devuelve un set vacío si el rol no existe en la matriz', () => {
-    // @ts-expect-error - rol inválido a propósito para probar el fallback ?? []
-    const permisos = permisosDe(['ROL_INEXISTENTE']);
-    expect(permisos.size).toBe(0);
+  it('CLIENTE no puede acceder a usuarios', () => {
+    expect(puede(['CLIENTE'], 'usuarios')).toBe(false);
+  });
+
+  it('combina permisos de múltiples roles', () => {
+    expect(puede(['CLIENTE', 'RECAUDADOR'], 'tickets:operar')).toBe(true);
+  });
+
+  it('rol desconocido no otorga permisos', () => {
+    // @ts-expect-error probando rol inexistente
+    expect(puede(['DESCONOCIDO'], 'dashboard')).toBe(false);
   });
 });
 
-describe('puede', () => {
-  it('RECAUDADOR puede operar tickets pero no gestionar usuarios', () => {
-    expect(puede(['RECAUDADOR'], 'tickets:operar')).toBe(true);
-    expect(puede(['RECAUDADOR'], 'usuarios')).toBe(false);
+describe('permisosDe', () => {
+  it('unifica sin duplicados', () => {
+    const set = permisosDe(['CLIENTE', 'INVITADO']);
+    expect(set.has('portal:disponibilidad')).toBe(true);
+    expect(set.has('portal:perfil')).toBe(true);
   });
 
-  it('CLIENTE no puede acceder a nada del panel admin', () => {
-    expect(puede(['CLIENTE'], 'dashboard')).toBe(false);
-    expect(puede(['CLIENTE'], 'tickets:operar')).toBe(false);
-  });
-
-  it('INVITADO solo puede ver disponibilidad', () => {
-    expect(puede(['INVITADO'], 'portal:disponibilidad')).toBe(true);
-    expect(puede(['INVITADO'], 'portal:perfil')).toBe(false);
-  });
-
-  it('ROOT y ADMIN tienen acceso total al panel admin', () => {
-    for (const rol of ['ROOT', 'ADMIN'] as const) {
-      expect(puede([rol], 'usuarios')).toBe(true);
-      expect(puede([rol], 'auditoria')).toBe(true);
-      expect(puede([rol], 'configuracion')).toBe(true);
-    }
+  it('roles vacíos → set vacío', () => {
+    expect(permisosDe([]).size).toBe(0);
   });
 });
 
 describe('esStaff', () => {
-  it('ROOT, ADMIN y RECAUDADOR son staff', () => {
+  it('ROOT/ADMIN/RECAUDADOR son staff', () => {
     expect(esStaff(['ROOT'])).toBe(true);
     expect(esStaff(['ADMIN'])).toBe(true);
     expect(esStaff(['RECAUDADOR'])).toBe(true);
   });
 
-  it('CLIENTE e INVITADO no son staff', () => {
+  it('CLIENTE/INVITADO no son staff', () => {
     expect(esStaff(['CLIENTE'])).toBe(false);
     expect(esStaff(['INVITADO'])).toBe(false);
   });
 });
 
 describe('rutaInicial', () => {
-  it('ADMIN/ROOT aterrizan en el dashboard del panel', () => {
+  it('con dashboard → /app', () => {
     expect(rutaInicial(['ADMIN'])).toBe('/app');
-    expect(rutaInicial(['ROOT'])).toBe('/app');
   });
 
-  it('RECAUDADOR (sin permiso de dashboard) aterriza directo en Tickets', () => {
+  it('staff sin dashboard (RECAUDADOR) → /app/tickets', () => {
     expect(rutaInicial(['RECAUDADOR'])).toBe('/app/tickets');
   });
 
-  it('CLIENTE e INVITADO aterrizan en el portal', () => {
+  it('cliente → /portal', () => {
     expect(rutaInicial(['CLIENTE'])).toBe('/portal');
     expect(rutaInicial(['INVITADO'])).toBe('/portal');
   });

@@ -2,7 +2,6 @@ package ec.edu.espe.usuarios.services.Impl;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 public class PersonaServicioImpl implements PersonaServicio {
 
     private static final String ENTIDAD = "PERSONA";
+    private static final String PERSONA_NOT_FOUND = "Persona no encontrada con ID: ";
+    private static final String AUDIT_UPDATE = "UPDATE";
 
     private final PersonaRepositorio personaRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
@@ -37,14 +38,14 @@ public class PersonaServicioImpl implements PersonaServicio {
     public List<PersonaResponseDto> listarPersonas() {
         return personaRepositorio.findAll().stream()
                 .map(mapper::toPersonaResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public PersonaResponseDto obtenerPersona(UUID idPersona) {
         Persona persona = personaRepositorio.findById(idPersona)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Persona no encontrada con ID: " + idPersona));
+                .orElseThrow(() -> new RecursoNoEncontradoException(PERSONA_NOT_FOUND + idPersona));
         return mapper.toPersonaResponse(persona);
     }
 
@@ -87,7 +88,7 @@ public class PersonaServicioImpl implements PersonaServicio {
     @Transactional
     public PersonaResponseDto actualizarPersona(UUID idPersona, PersonaRequestDto request) {
         Persona persona = personaRepositorio.findById(idPersona)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Persona no encontrada con ID: " + idPersona));
+                .orElseThrow(() -> new RecursoNoEncontradoException(PERSONA_NOT_FOUND + idPersona));
 
         String dni = request.getDni().trim();
         String email = request.getEmail().trim().toLowerCase();
@@ -113,7 +114,7 @@ public class PersonaServicioImpl implements PersonaServicio {
         persona.setNationality(request.getNationality());
 
         Persona personaActualizada = personaRepositorio.save(persona);
-        auditPublisher.publicar("UPDATE", ENTIDAD, personaActualizada);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, personaActualizada);
         return mapper.toPersonaResponse(personaActualizada);
     }
 
@@ -121,13 +122,13 @@ public class PersonaServicioImpl implements PersonaServicio {
     @Transactional
     public PersonaResponseDto activarPersona(UUID idPersona) {
         Persona persona = personaRepositorio.findById(idPersona)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Persona no encontrada con ID: " + idPersona));
+                .orElseThrow(() -> new RecursoNoEncontradoException(PERSONA_NOT_FOUND + idPersona));
 
         persona.setActive(true);
         // No se reactiva el usuario en cascada: reactivar la identidad no implica
         // devolver el acceso. El usuario se reactiva de forma explicita (minimo privilegio).
         Persona personaActivada = personaRepositorio.save(persona);
-        auditPublisher.publicar("UPDATE", ENTIDAD, personaActivada);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, personaActivada);
         return mapper.toPersonaResponse(personaActivada);
     }
 
@@ -135,7 +136,7 @@ public class PersonaServicioImpl implements PersonaServicio {
     @Transactional
     public PersonaResponseDto desactivarPersona(UUID idPersona) {
         Persona persona = personaRepositorio.findById(idPersona)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Persona no encontrada con ID: " + idPersona));
+                .orElseThrow(() -> new RecursoNoEncontradoException(PERSONA_NOT_FOUND + idPersona));
 
         // Cascada logica: revocar la identidad (persona) revoca el acceso del usuario,
         // y este, a su vez, retira sus roles. Se reutiliza la logica de UsuarioServicio
@@ -146,7 +147,7 @@ public class PersonaServicioImpl implements PersonaServicio {
 
         persona.setActive(false);
         Persona personaDesactivada = personaRepositorio.save(persona);
-        auditPublisher.publicar("UPDATE", ENTIDAD, personaDesactivada);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, personaDesactivada);
         return mapper.toPersonaResponse(personaDesactivada);
     }
 
@@ -178,6 +179,6 @@ public class PersonaServicioImpl implements PersonaServicio {
 
         return resultado.stream()
                 .map(mapper::toPersonaResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

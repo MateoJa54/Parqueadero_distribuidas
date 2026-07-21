@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,7 +71,7 @@ class JwtServiceTest {
 
         assertEquals(id.toString(), claims.getSubject());
         assertEquals(JwtService.TYPE_REFRESH, claims.get(JwtService.CLAIM_TYPE, String.class));
-        assertTrue(claims.get("roles") == null);
+        assertNull(claims.get("roles"));
     }
 
     @Test

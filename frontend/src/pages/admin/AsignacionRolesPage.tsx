@@ -8,7 +8,7 @@ import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { ActivoBadge } from '@/ui/Badge';
-import { EmptyState, ErrorState, TableSkeleton } from '@/ui/States';
+import { EmptyState, AsyncView, TableSkeleton } from '@/ui/States';
 import { useToast } from '@/ui/ToastProvider';
 
 export function AsignacionRolesPage() {
@@ -72,15 +72,18 @@ export function AsignacionRolesPage() {
         }
       />
 
-      {loading ? (
-        <div className="card card-pad">
-          <TableSkeleton cols={3} />
-        </div>
-      ) : asignaciones.error ? (
-        <ErrorState message={asignaciones.error} onRetry={asignaciones.reload} />
-      ) : (asignaciones.data ?? []).length === 0 ? (
-        <EmptyState title="Sin asignaciones" message="Asigna el primer rol a un usuario." />
-      ) : (
+      <AsyncView
+        loading={loading}
+        error={asignaciones.error}
+        isEmpty={(asignaciones.data ?? []).length === 0}
+        onRetry={asignaciones.reload}
+        loadingNode={
+          <div className="card card-pad">
+            <TableSkeleton cols={3} />
+          </div>
+        }
+        emptyNode={<EmptyState title="Sin asignaciones" message="Asigna el primer rol a un usuario." />}
+      >
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -117,7 +120,7 @@ export function AsignacionRolesPage() {
             </tbody>
           </table>
         </div>
-      )}
+      </AsyncView>
 
       <Modal
         open={modal}
