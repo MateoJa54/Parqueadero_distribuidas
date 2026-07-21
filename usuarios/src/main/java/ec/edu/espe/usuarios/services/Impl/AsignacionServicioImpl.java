@@ -27,6 +27,9 @@ import lombok.RequiredArgsConstructor;
 public class AsignacionServicioImpl implements AsignacionServicio {
 
     private static final String ENTIDAD = "ASIGNACION-ROL";
+    private static final String USUARIO_NOT_FOUND = "Usuario no encontrado con ID: ";
+    private static final String ROL_NOT_FOUND = "Rol no encontrado con ID: ";
+    private static final String AUDIT_UPDATE = "UPDATE";
 
     private final UsuarioRolRepositorio usuarioRolRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
@@ -40,11 +43,11 @@ public class AsignacionServicioImpl implements AsignacionServicio {
 
         Usuario usuario = usuarioRepositorio.findById(request.getIdUser())
                 .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario no encontrado con ID: " + request.getIdUser()));
+                        USUARIO_NOT_FOUND + request.getIdUser()));
 
         Rol rol = rolRepositorio.findById(request.getIdRole())
                 .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Rol no encontrado con ID: " + request.getIdRole()));
+                        ROL_NOT_FOUND + request.getIdRole()));
 
         if (!rol.isActive()) {
             throw new ReglaNegocioException("No se puede asignar un rol inactivo: " + rol.getName());
@@ -81,7 +84,7 @@ public class AsignacionServicioImpl implements AsignacionServicio {
     @Transactional(readOnly = true)
     public List<AsignacionResponseDto> listarRolesDeUsuario(UUID idUsuario) {
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
+                .orElseThrow(() -> new RecursoNoEncontradoException(USUARIO_NOT_FOUND + idUsuario));
         return usuarioRolRepositorio.findByUsuario(usuario).stream()
                 .map(mapper::toAsignacionResponse)
                 .toList();
@@ -96,7 +99,7 @@ public class AsignacionServicioImpl implements AsignacionServicio {
 
         asignacion.setActive(false);
         UsuarioRol asignacionDesactivada = usuarioRolRepositorio.save(asignacion);
-        auditPublisher.publicar("UPDATE", ENTIDAD, asignacionDesactivada);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, asignacionDesactivada);
         return mapper.toAsignacionResponse(asignacionDesactivada);
     }
 
@@ -117,7 +120,7 @@ public class AsignacionServicioImpl implements AsignacionServicio {
 
         asignacion.setActive(true);
         UsuarioRol asignacionActivada = usuarioRolRepositorio.save(asignacion);
-        auditPublisher.publicar("UPDATE", ENTIDAD, asignacionActivada);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, asignacionActivada);
         return mapper.toAsignacionResponse(asignacionActivada);
     }
 }

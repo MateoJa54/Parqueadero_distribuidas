@@ -5,6 +5,8 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +64,10 @@ public class AuthServicioImpl implements AuthServicio {
     private final AsignacionServicio asignacionServicio;
     private final JwtService jwtService;
     private final AuditPublisher auditPublisher;
+
+    @Lazy
+    @Autowired
+    private AuthServicioImpl self;
 
     @Override
     @Transactional
@@ -144,7 +150,7 @@ public class AuthServicioImpl implements AuthServicio {
         interno.setIdPersona(persona.getId());
         interno.setUsername(request.getUsername());
         interno.setPassword(request.getPassword());
-        return register(interno);
+        return self.register(interno);
     }
 
     @Override
@@ -169,7 +175,7 @@ public class AuthServicioImpl implements AuthServicio {
         interno.setIdPersona(persona.getId());
         interno.setUsername(request.getUsername());
         interno.setPassword(request.getPassword());
-        return register(interno);
+        return self.register(interno);
     }
 
     @Override

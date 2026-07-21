@@ -29,6 +29,9 @@ import lombok.RequiredArgsConstructor;
 public class EspacioServicioImpl implements EspacioServicio {
 
     private static final String ENTIDAD = "ESPACIO";
+    private static final String ESPACIO_NOT_FOUND = ESPACIO_NOT_FOUND;
+    private static final String ZONA_NOT_FOUND = ZONA_NOT_FOUND;
+    private static final String AUDIT_UPDATE = AUDIT_UPDATE;
 
     // Nombres de los eventos que consume el dashboard de monitoreo (SSE).
     private static final String EVENTO_CREADO = "espacio-creado";
@@ -52,7 +55,7 @@ public class EspacioServicioImpl implements EspacioServicio {
     @Transactional(readOnly = true)
     public EspacioRespondeDto obtenerEspacioPorId(UUID idEspacio) {
         Espacio espacio = espacioRepositorio.findById(idEspacio)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con ID: " + idEspacio));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NOT_FOUND + idEspacio));
         return maper.toResponseDto(espacio);
     }
 
@@ -61,7 +64,7 @@ public class EspacioServicioImpl implements EspacioServicio {
     public EspacioRespondeDto crearEspacio(EspacioRequestDto dto) {
 
         Zona objZona = zonaRepositorio.findById(dto.getIdZona())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Zona no encontrada con ID: " + dto.getIdZona()));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ZONA_NOT_FOUND + dto.getIdZona()));
 
         if (!objZona.isActivo()) {
             throw new ReglaNegocioException("No se puede crear un espacio en una zona inactiva");
@@ -94,7 +97,7 @@ public class EspacioServicioImpl implements EspacioServicio {
     @Transactional
     public EspacioRespondeDto actualizarEspacio(UUID idEspacio, EspacioRequestDto dto) {
         Espacio espacio = espacioRepositorio.findById(idEspacio)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con ID: " + idEspacio));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NOT_FOUND + idEspacio));
 
         // Solo se actualizan atributos descriptivos. El codigo es inmutable,
         // la zona no se reasigna (rompería la capacidad), y el estado/activo
@@ -103,7 +106,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setTipoEspacio(dto.getTipo());
 
         Espacio espacioActualizado = espacioRepositorio.save(espacio);
-        auditPublisher.publicar("UPDATE", ENTIDAD, espacioActualizado);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, espacioActualizado);
 
         EspacioRespondeDto respuesta = maper.toResponseDto(espacioActualizado);
         sseService.emitir(EVENTO_ACTUALIZADO, respuesta);
@@ -122,7 +125,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         }
 
         Espacio espacio = espacioRepositorio.findById(idEspacio)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con ID: " + idEspacio));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NOT_FOUND + idEspacio));
 
         if (!espacio.isActivo()) {
             throw new ReglaNegocioException("No se puede cambiar el estado de un espacio inactivo");
@@ -134,7 +137,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setEstado(estado);
 
         Espacio espacioActualizado = espacioRepositorio.save(espacio);
-        auditPublisher.publicar("UPDATE", ENTIDAD, espacioActualizado);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, espacioActualizado);
 
         // Este es el punto por el que pasa el ticket: al emitir/pagar/anular, el
         // microservicio de tickets llama al PATCH de estado y aqui se difunde.
@@ -161,7 +164,7 @@ public class EspacioServicioImpl implements EspacioServicio {
             throw new IllegalArgumentException("El estado es obligatorio");
         }
         Zona objZona = zonaRepositorio.findById(idZona)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Zona no encontrada con ID: " + idZona));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ZONA_NOT_FOUND + idZona));
 
         return espacioRepositorio.findByZonaAndEstado(objZona, estado).stream()
                 .findFirst()
@@ -178,7 +181,7 @@ public class EspacioServicioImpl implements EspacioServicio {
 
         if (idZona != null) {
             Zona objZona = zonaRepositorio.findById(idZona)
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Zona no encontrada con ID: " + idZona));
+                    .orElseThrow(() -> new RecursoNoEncontradoException(ZONA_NOT_FOUND + idZona));
             espacios = (tipo != null)
                     ? espacioRepositorio.findByZonaAndTipoEspacioAndEstado(objZona, tipo, EstadoEspacio.DISPONIBLE)
                     : espacioRepositorio.findByZonaAndEstado(objZona, EstadoEspacio.DISPONIBLE);
@@ -199,7 +202,7 @@ public class EspacioServicioImpl implements EspacioServicio {
     @Transactional(readOnly = true)
     public DisponibilidadResponseDto verificarDisponibilidad(UUID idEspacio) {
         Espacio espacio = espacioRepositorio.findById(idEspacio)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con ID: " + idEspacio));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NOT_FOUND + idEspacio));
 
         boolean disponible = espacio.isActivo() && espacio.getEstado() == EstadoEspacio.DISPONIBLE;
 
@@ -216,7 +219,7 @@ public class EspacioServicioImpl implements EspacioServicio {
     @Transactional
     public void activarEspacio(UUID idEspacio) {
         Espacio espacio = espacioRepositorio.findById(idEspacio)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con ID: " + idEspacio));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NOT_FOUND + idEspacio));
         if (espacio.isActivo()) {
             throw new ReglaNegocioException("El espacio ya está activo");
         }
@@ -227,7 +230,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setActivo(true);
         espacio.setEstado(EstadoEspacio.DISPONIBLE);
         espacioRepositorio.save(espacio);
-        auditPublisher.publicar("UPDATE", ENTIDAD, espacio);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, espacio);
         sseService.emitir(EVENTO_ACTUALIZADO, maper.toResponseDto(espacio));
     }
 
@@ -235,7 +238,7 @@ public class EspacioServicioImpl implements EspacioServicio {
     @Transactional
     public void desactivarEspacio(UUID idEspacio) {
         Espacio espacio = espacioRepositorio.findById(idEspacio)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con ID: " + idEspacio));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NOT_FOUND + idEspacio));
         if (!espacio.isActivo()) {
             throw new ReglaNegocioException("El espacio ya está inactivo");
         }
@@ -245,7 +248,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setActivo(false);
         espacio.setEstado(EstadoEspacio.MANTENIMIENTO);
         espacioRepositorio.save(espacio);
-        auditPublisher.publicar("UPDATE", ENTIDAD, espacio);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, espacio);
         sseService.emitir(EVENTO_ACTUALIZADO, maper.toResponseDto(espacio));
     }
 
