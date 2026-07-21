@@ -112,4 +112,99 @@ describe('VehiculosService', () => {
     await expect(service.findByPlaca(' abc-9999 ')).rejects.toBeInstanceOf(NotFoundException);
     expect(repository.findOne).toHaveBeenCalledWith({ where: { placa: 'ABC-9999' } });
   });
+
+  it('findByPlaca rechaza placa vacia', async () => {
+    await expect(service.findByPlaca('   ')).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.findOne).not.toHaveBeenCalled();
+  });
+
+  it('findOne devuelve el vehiculo o falla si no existe', async () => {
+    const auto = Object.assign(new Auto(), { id: 'v1' });
+    repository.findOne.mockResolvedValueOnce(auto);
+    await expect(service.findOne('v1')).resolves.toBe(auto);
+
+    repository.findOne.mockResolvedValueOnce(null);
+    await expect(service.findOne('nope')).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('update normaliza placa, valida duplicados y persiste', async () => {
+    const existente = Object.assign(new Auto(), { id: 'v1', activo: true });
+    repository.findOne.mockResolvedValueOnce(existente); // busca por id
+    repository.findOne.mockResolvedValueOnce(null); // no hay duplicado
+    repository.merge.mockImplementation((target, patch) => Object.assign(target, patch));
+    repository.save.mockImplementation(async (v) => v);
+
+    const result = await service.update(
+      'v1',
+      { datos: { placa: ' xyz-1111 ', activo: false } } as never,
+      auditContext,
+    );
+
+    expect(result.placa).toBe('XYZ-1111');
+    expect(eventPublisher.publish).toHaveBeenCalledWith(
+      expect.objectContaining({ accion: 'UPDATE' }),
+    );
+  });
+
+  it('update rechaza cuando el id no existe', async () => {
+    repository.findOne.mockResolvedValueOnce(null);
+    await expect(
+      service.update('nope', { datos: {} } as never, auditContext),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('update rechaza placa vacia', async () => {
+    repository.findOne.mockResolvedValueOnce(Object.assign(new Auto(), { id: 'v1' }));
+    await expect(
+      service.update('v1', { datos: { placa: '   ' } } as never, auditContext),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('update rechaza placa duplicada en otro vehiculo', async () => {
+    repository.findOne.mockResolvedValueOnce(Object.assign(new Auto(), { id: 'v1' }));
+    repository.findOne.mockResolvedValueOnce(Object.assign(new Auto(), { id: 'v2' }));
+    await expect(
+      service.update('v1', { datos: { placa: 'DUP-0000' } } as never, auditContext),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('desactivar cambia activo a false y audita', async () => {
+    const auto = Object.assign(new Auto(), { id: 'v1', activo: true });
+    repository.findOne.mockResolvedValueOnce(auto);
+    repository.save.mockImplementation(async (v) => v);
+
+    const result = await service.desactivar('v1', auditContext);
+    expect(result.activo).toBe(false);
+    expect(eventPublisher.publish).toHaveBeenCalledWith(
+      expect.objectContaining({ datos: expect.objectContaining({ accionDetalle: 'DESACTIVAR' }) }),
+    );
+  });
+
+  it('desactivar rechaza si ya esta inactivo o no existe', async () => {
+    repository.findOne.mockResolvedValueOnce(Object.assign(new Auto(), { activo: false }));
+    await expect(service.desactivar('v1', auditContext)).rejects.toBeInstanceOf(ConflictException);
+
+    repository.findOne.mockResolvedValueOnce(null);
+    await expect(service.desactivar('nope', auditContext)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('activar cambia activo a true y audita', async () => {
+    const auto = Object.assign(new Auto(), { id: 'v1', activo: false });
+    repository.findOne.mockResolvedValueOnce(auto);
+    repository.save.mockImplementation(async (v) => v);
+
+    const result = await service.activar('v1', auditContext);
+    expect(result.activo).toBe(true);
+    expect(eventPublisher.publish).toHaveBeenCalledWith(
+      expect.objectContaining({ datos: expect.objectContaining({ accionDetalle: 'ACTIVAR' }) }),
+    );
+  });
+
+  it('activar rechaza si ya esta activo o no existe', async () => {
+    repository.findOne.mockResolvedValueOnce(Object.assign(new Auto(), { activo: true }));
+    await expect(service.activar('v1', auditContext)).rejects.toBeInstanceOf(ConflictException);
+
+    repository.findOne.mockResolvedValueOnce(null);
+    await expect(service.activar('nope', auditContext)).rejects.toBeInstanceOf(NotFoundException);
+  });
 });
