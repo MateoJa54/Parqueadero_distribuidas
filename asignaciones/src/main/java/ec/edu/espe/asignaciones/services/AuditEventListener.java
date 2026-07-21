@@ -1,6 +1,7 @@
 package ec.edu.espe.asignaciones.services;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -27,7 +28,7 @@ public class AuditEventListener {
                 .userId(event.assignmentId().getUserId())
                 .vehicleId(event.assignmentId().getVehicleId())
                 .action(event.action())
-                .timestamp(OffsetDateTime.now())
+                .timestamp(OffsetDateTime.now(ZoneId.of("America/Guayaquil")))
                 .oldPayload(event.oldPayload())
                 .newPayload(event.newPayload())
                 .build());

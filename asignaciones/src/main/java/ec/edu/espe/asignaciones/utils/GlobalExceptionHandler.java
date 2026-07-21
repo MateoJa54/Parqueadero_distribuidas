@@ -1,6 +1,7 @@
 package ec.edu.espe.asignaciones.utils;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,7 +72,7 @@ public class GlobalExceptionHandler {
 
     private Map<String, Object> baseBody(HttpStatus status, String mensaje) {
         Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", OffsetDateTime.now());
+        body.put("timestamp", OffsetDateTime.now(ZoneId.of("America/Guayaquil")));
         body.put("status", status.value());
         body.put("error", status.getReasonPhrase());
         body.put("mensaje", mensaje);

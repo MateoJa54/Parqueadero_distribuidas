@@ -1,6 +1,7 @@
 package ec.edu.espe.usuarios.services.Impl;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,7 +77,7 @@ public class AuthServicioImpl implements AuthServicio {
             throw new CredencialesInvalidasException("Usuario o contrasena incorrectos");
         }
 
-        usuario.setLastLogin(LocalDateTime.now());
+        usuario.setLastLogin(LocalDateTime.now(ZoneId.of("America/Guayaquil")));
         Usuario usuarioActualizado = usuarioRepositorio.save(usuario);
 
         // En este punto todavia no existe una sesion autenticada (el login ES

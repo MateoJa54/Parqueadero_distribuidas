@@ -1,6 +1,7 @@
 package ec.edu.espe.zonas.entidades;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -62,13 +63,13 @@ public class Espacio {
 
     @PrePersist
     protected void alCrear() {
-        this.fechaCreacion = LocalDateTime.now();
+        this.fechaCreacion = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
         this.fechaModificacion = this.fechaCreacion;
     }
 
     @PreUpdate
     protected void alActualizar() {
-        this.fechaModificacion = LocalDateTime.now();
+        this.fechaModificacion = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
     }
 
 }

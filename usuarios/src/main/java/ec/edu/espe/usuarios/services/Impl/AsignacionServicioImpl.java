@@ -2,7 +2,6 @@ package ec.edu.espe.usuarios.services.Impl;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,7 +74,7 @@ public class AsignacionServicioImpl implements AsignacionServicio {
     public List<AsignacionResponseDto> listarAsignaciones() {
         return usuarioRolRepositorio.findAll().stream()
                 .map(mapper::toAsignacionResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -85,7 +84,7 @@ public class AsignacionServicioImpl implements AsignacionServicio {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
         return usuarioRolRepositorio.findByUsuario(usuario).stream()
                 .map(mapper::toAsignacionResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

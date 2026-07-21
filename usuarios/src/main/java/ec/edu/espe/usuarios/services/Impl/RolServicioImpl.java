@@ -2,7 +2,6 @@ package ec.edu.espe.usuarios.services.Impl;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 public class RolServicioImpl implements RolServicio {
 
     private static final String ENTIDAD = "ROL";
+    private static final String ROL_NOT_FOUND = "Rol no encontrado con ID: ";
+    private static final String AUDIT_UPDATE = "UPDATE";
 
     private final RolRepositorio rolRepositorio;
     private final UsuarioRolRepositorio usuarioRolRepositorio;
@@ -44,14 +45,14 @@ public class RolServicioImpl implements RolServicio {
     public List<RolResponseDto> listarRoles() {
         return rolRepositorio.findAll().stream()
                 .map(mapper::toRolResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public RolResponseDto obtenerRol(UUID idRol) {
         Rol rol = rolRepositorio.findById(idRol)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Rol no encontrado con ID: " + idRol));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ROL_NOT_FOUND + idRol));
         return mapper.toRolResponse(rol);
     }
 
@@ -80,7 +81,7 @@ public class RolServicioImpl implements RolServicio {
     @Transactional
     public RolResponseDto actualizarRol(UUID idRol, RolRequestDto request) {
         Rol rol = rolRepositorio.findById(idRol)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Rol no encontrado con ID: " + idRol));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ROL_NOT_FOUND + idRol));
 
         String nombre = normalizarNombre(request.getName());
 
@@ -92,7 +93,7 @@ public class RolServicioImpl implements RolServicio {
         rol.setDescription(request.getDescription());
 
         Rol rolActualizado = rolRepositorio.save(rol);
-        auditPublisher.publicar("UPDATE", ENTIDAD, rolActualizado);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, rolActualizado);
         return mapper.toRolResponse(rolActualizado);
     }
 
@@ -100,11 +101,11 @@ public class RolServicioImpl implements RolServicio {
     @Transactional
     public RolResponseDto activarRol(UUID idRol) {
         Rol rol = rolRepositorio.findById(idRol)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Rol no encontrado con ID: " + idRol));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ROL_NOT_FOUND + idRol));
 
         rol.setActive(true);
         Rol rolActivado = rolRepositorio.save(rol);
-        auditPublisher.publicar("UPDATE", ENTIDAD, rolActivado);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, rolActivado);
         return mapper.toRolResponse(rolActivado);
     }
 
@@ -112,7 +113,7 @@ public class RolServicioImpl implements RolServicio {
     @Transactional
     public RolResponseDto desactivarRol(UUID idRol) {
         Rol rol = rolRepositorio.findById(idRol)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Rol no encontrado con ID: " + idRol));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ROL_NOT_FOUND + idRol));
 
         // Guarda de negocio: no se puede desactivar un rol que tiene usuarios
         // activos asignados (mismo criterio que zonas con espacios OCUPADOS).
@@ -126,7 +127,7 @@ public class RolServicioImpl implements RolServicio {
 
         rol.setActive(false);
         Rol rolDesactivado = rolRepositorio.save(rol);
-        auditPublisher.publicar("UPDATE", ENTIDAD, rolDesactivado);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, rolDesactivado);
         return mapper.toRolResponse(rolDesactivado);
     }
 }

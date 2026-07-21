@@ -2,6 +2,7 @@ package ec.edu.espe.tickets.services.impl;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -93,7 +94,7 @@ public class TicketServiceImpl implements TicketService {
                 .placa(placa)
                 .tipoVehiculo(vehiculo.getTipo())
                 .categoriaTarifa(categoria)
-                .fechaHoraIngreso(OffsetDateTime.now())
+                .fechaHoraIngreso(OffsetDateTime.now(ZoneId.of("America/Guayaquil")))
                 .estadoTicket(EstadoTicket.ACTIVO)
                 .idEmpleado(idEmpleado)
                 .valorRecaudado(BigDecimal.ZERO)
@@ -131,7 +132,7 @@ public class TicketServiceImpl implements TicketService {
                             + ticket.getEstadoTicket() + ")");
         }
 
-        OffsetDateTime salida = OffsetDateTime.now();
+        OffsetDateTime salida = OffsetDateTime.now(ZoneId.of("America/Guayaquil"));
         BigDecimal valor = calculadoraTarifa.calcular(
                 ticket.getTipoVehiculo(), ticket.getTipoEspacio(),
                 ticket.getCategoriaTarifa(),
@@ -161,7 +162,7 @@ public class TicketServiceImpl implements TicketService {
 
         ticket.setEstadoTicket(EstadoTicket.ANULADO);
         ticket.setValorRecaudado(BigDecimal.ZERO);
-        ticket.setFechaHoraSalida(OffsetDateTime.now());
+        ticket.setFechaHoraSalida(OffsetDateTime.now(ZoneId.of("America/Guayaquil")));
         ticket.setMotivoAnulacion(request.getMotivo().trim());
         ticket.setIdEmpleado(idEmpleado);
         Ticket guardado = ticketRepository.save(ticket);
@@ -230,7 +231,7 @@ public class TicketServiceImpl implements TicketService {
             throw new ReglaNegocioException(
                     "El vehiculo con placa " + placa + " no tiene autorizacion de ingreso");
         }
-        OffsetDateTime ahora = OffsetDateTime.now();
+        OffsetDateTime ahora = OffsetDateTime.now(ZoneId.of("America/Guayaquil"));
         if (asignacion.getValidFrom() != null && ahora.isBefore(asignacion.getValidFrom())) {
             throw new ReglaNegocioException(
                     "La asignacion aun no es vigente (valida desde " + asignacion.getValidFrom() + ")");

@@ -18,7 +18,7 @@ class PasswordUtilTest {
         
         assertNotNull(hash);
         assertFalse(hash.isEmpty());
-        assertTrue(hash.length() > 0 && hash.length() <= 100);
+        assertTrue(!hash.isEmpty() && hash.length() <= 100);
     }
 
     @Test

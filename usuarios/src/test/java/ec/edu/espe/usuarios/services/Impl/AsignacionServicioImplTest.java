@@ -1,8 +1,10 @@
 package ec.edu.espe.usuarios.services.Impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -205,7 +207,7 @@ class AsignacionServicioImplTest {
 
         AsignacionResponseDto respuesta = servicio.desactivarAsignacion(idUsuario, idRol);
 
-        assertEquals(false, respuesta.isActive());
+        assertFalse(respuesta.isActive());
         verify(auditPublisher).publicar(eq("UPDATE"), eq("ASIGNACION-ROL"), any(UsuarioRol.class));
     }
 
@@ -228,7 +230,7 @@ class AsignacionServicioImplTest {
 
         AsignacionResponseDto respuesta = servicio.activarAsignacion(idUsuario, idRol);
 
-        assertEquals(true, respuesta.isActive());
+        assertTrue(respuesta.isActive());
         verify(auditPublisher).publicar(eq("UPDATE"), eq("ASIGNACION-ROL"), any(UsuarioRol.class));
     }
 

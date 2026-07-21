@@ -1,6 +1,7 @@
 package ec.edu.espe.asignaciones.entities;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -70,7 +71,7 @@ public class VehicleAssignment {
 
     @PrePersist
     protected void onCreate() {
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now(ZoneId.of("America/Guayaquil"));
         this.assignedAt = now;
         this.updatedAt = now;
         if (this.validFrom == null) {
@@ -87,6 +88,6 @@ public class VehicleAssignment {
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now(ZoneId.of("America/Guayaquil"));
     }
 }

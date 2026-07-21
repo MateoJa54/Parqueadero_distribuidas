@@ -2,7 +2,6 @@ package ec.edu.espe.zonas.services.Impl;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +45,7 @@ public class EspacioServicioImpl implements EspacioServicio {
     public List<EspacioRespondeDto> obtenerEspacio() {
         return espacioRepositorio.findAll().stream()
                 .map(maper::toResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -152,7 +151,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         }
         return espacioRepositorio.findByEstado(estado).stream()
                 .map(maper::toResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -193,7 +192,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         return espacios.stream()
                 .filter(Espacio::isActivo)
                 .map(maper::toResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

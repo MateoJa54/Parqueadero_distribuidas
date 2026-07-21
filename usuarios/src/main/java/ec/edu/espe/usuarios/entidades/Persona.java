@@ -1,6 +1,7 @@
 package ec.edu.espe.usuarios.entidades;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -63,12 +64,12 @@ public class Persona {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
+        this.updatedAt = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneId.of("America/Guayaquil"));
     }
 }
