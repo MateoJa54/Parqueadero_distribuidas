@@ -1,10 +1,5 @@
 name: SonarCloud - Frontend
 
-# Analiza el frontend (React 18 + Vite + TS). Sin cobertura por ahora: el
-# proyecto no tiene tests todavia (hallazgo del sdd-init). Cuando se agreguen
-# tests (Vitest/Jest), sumar aqui "npm run test:cov" + sonar.javascript.lcov.reportPaths
-# igual que en sonarcloud-nestjs.yml.
-
 on:
   push:
     branches: [proyecto_aseguramiento]
@@ -39,6 +34,10 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Run tests with coverage
+        working-directory: frontend
+        run: npm run test:cov
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v4
         env:
@@ -52,5 +51,6 @@ jobs:
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.sources=src
             -Dsonar.exclusions=**/node_modules/**,**/dist/**
-
-            
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.tests=src
+            -Dsonar.test.inclusions=**/*.test.ts,**/*.test.tsx
