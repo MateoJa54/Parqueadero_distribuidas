@@ -75,15 +75,26 @@ jobs:
           key: ${{ runner.os }}-sonar-${{ matrix.module }}
           restore-keys: ${{ runner.os }}-sonar-${{ matrix.module }}
 
-      - name: Build, test and analyze (with coverage)
+      - name: Build and test (with coverage)
+        working-directory: ${{ matrix.module }}
+        run: |
+          ./mvnw -B clean verify \
+            -Dmaven.compiler.release=21
+
+      - name: Analyze with SonarCloud (with retry)
         working-directory: ${{ matrix.module }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          ./mvnw -B clean verify sonar:sonar \
-            -Dmaven.compiler.release=21 \
-            -Dsonar.projectKey=${{ matrix.project_key }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          for attempt in 1 2 3; do
+            echo "Sonar attempt $attempt/3"
+            ./mvnw -B sonar:sonar \
+              -Dmaven.compiler.release=21 \
+              -Dsonar.projectKey=${{ matrix.project_key }} \
+              -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+              && break \
+              || { echo "Attempt $attempt failed, waiting 30s..."; sleep 30; }
+          done
