@@ -59,12 +59,11 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
   if (!open) return null;
 
   return createPortal(
-    <div className="overlay" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
+    <div className="overlay" aria-hidden="false" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <dialog
         ref={ref}
         className={`modal ${size === 'lg' ? 'modal-lg' : ''}`}
-        role="dialog"
-        aria-modal="true"
+        open
         aria-label={title}
       >
         <div className="modal-header">
@@ -75,7 +74,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-footer">{footer}</div>}
-      </div>
+      </dialog>
     </div>,
     document.body,
   );

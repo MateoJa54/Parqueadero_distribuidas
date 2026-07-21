@@ -21,7 +21,7 @@ export function Button({
   className = '',
   type = 'button',
   ...rest
-}: ButtonProps) {
+}: Readonly<ButtonProps>) {
   const cls = [
     'btn',
     `btn-${variant}`,

@@ -267,15 +267,20 @@ export function VehiculosPage() {
             />
           )}
           <div className="grid grid-2">
+            {(() => {
+              const placaHint = tipo === 'Motocicleta' ? 'AB-123C' : 'ABC-1234';
+              return (
             <Input
               label="Placa"
               value={String(datos.placa ?? '')}
               onChange={(e) => set('placa', e.target.value.toUpperCase())}
               error={errs.placa}
               disabled={!!modal.edit}
-              hint={!modal.edit ? (tipo === 'Motocicleta' ? 'AB-123C' : 'ABC-1234') : undefined}
+              hint={!modal.edit ? placaHint : undefined}
               required
             />
+              );
+            })()}
             <Input
               label="Color"
               value={String(datos.color ?? '')}

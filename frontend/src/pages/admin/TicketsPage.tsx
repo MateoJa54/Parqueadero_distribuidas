@@ -77,13 +77,14 @@ function IngresoTab({ toast, onDone }: { readonly toast: ReturnType<typeof useTo
   return (
     <div className="card card-pad" style={{ maxWidth: 560 }}>
       {creado && (
-        <div className="alert alert-success" role="status" style={{ marginBottom: 16 }}>
+        <output className="alert alert-success" style={{ marginBottom: 16, display: 'block' }}>
           <span aria-hidden>✓</span>
+          {' '}
           Ticket <strong>{creado.codigo}</strong> creado para {creado.placa}.
           <Button size="sm" variant="ghost" onClick={onDone} style={{ marginLeft: 'auto' }}>
             Ver listado
           </Button>
-        </div>
+        </output>
       )}
       <div className="stack">
         <Input

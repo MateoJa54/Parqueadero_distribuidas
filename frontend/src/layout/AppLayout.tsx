@@ -121,7 +121,7 @@ export function AppLayout() {
             <span className="nav-ico" aria-hidden>
               🏠
             </span>
-            Portal cliente
+            {' '}Portal cliente
           </NavLink>
         </div>
       </aside>

@@ -70,8 +70,7 @@ export function UsuariosPage() {
     if (modal.edit) {
       if (password && (password.length < 6 || !rgx.password.test(password)))
         e.password = '6–30 con mayúscula, minúscula y número (o vacío para conservar).';
-    } else {
-      if (password.length < 6 || !rgx.password.test(password))
+    } else if (password.length < 6 || !rgx.password.test(password)) {
         e.password = '6–30 con mayúscula, minúscula y número.';
     }
     setErrs(e);
@@ -220,7 +219,7 @@ export function UsuariosPage() {
             if (personasDisponibles.length === 0) return (
               <div className="alert alert-warning">
                 <span aria-hidden>⚠</span>
-                No hay personas activas sin usuario. Crea una persona primero.
+                {' '}No hay personas activas sin usuario. Crea una persona primero.
               </div>
             );
             return (

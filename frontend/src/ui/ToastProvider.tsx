@@ -51,9 +51,9 @@ export function ToastProvider({ children }: { readonly children: React.ReactNode
   return (
     <Ctx.Provider value={value}>
       {children}
-      <div className="toast-region" role="region" aria-live="polite" aria-label="Notificaciones">
+      <section className="toast-region" aria-live="polite" aria-label="Notificaciones">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.type}`} role="status">
+          <output key={t.id} className={`toast toast-${t.type}`} htmlFor="">
             <span aria-hidden>{ICON[t.type]}</span>
             <div className="grow">
               <div className="toast-title">{t.title}</div>
@@ -67,9 +67,9 @@ export function ToastProvider({ children }: { readonly children: React.ReactNode
             >
               ✕
             </button>
-          </div>
+          </output>
         ))}
-      </div>
+      </section>
     </Ctx.Provider>
   );
 }

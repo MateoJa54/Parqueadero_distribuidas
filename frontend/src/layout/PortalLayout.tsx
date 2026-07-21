@@ -70,7 +70,7 @@ export function PortalLayout() {
               <span className="nav-ico" aria-hidden>
                 ⚙
               </span>
-              Panel de gestión
+              {' '}Panel de gestión
             </NavLink>
           </div>
         )}

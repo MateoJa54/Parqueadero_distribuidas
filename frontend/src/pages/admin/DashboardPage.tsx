@@ -115,8 +115,12 @@ export function DashboardPage() {
         >
           <div className="row-wrap" style={{ gap: 8 }}>
             {espaciosList.slice(0, 60).map((e) => {
-              const bg = e.estado === 'DISPONIBLE' ? 'var(--success-soft)' : e.estado === 'OCUPADO' ? 'var(--danger-soft)' : 'var(--warning-soft)';
-              const fg = e.estado === 'DISPONIBLE' ? 'var(--success)' : e.estado === 'OCUPADO' ? 'var(--danger)' : 'var(--warning)';
+              let bg = 'var(--warning-soft)';
+              if (e.estado === 'DISPONIBLE') bg = 'var(--success-soft)';
+              else if (e.estado === 'OCUPADO') bg = 'var(--danger-soft)';
+              let fg = 'var(--warning)';
+              if (e.estado === 'DISPONIBLE') fg = 'var(--success)';
+              else if (e.estado === 'OCUPADO') fg = 'var(--danger)';
               return (
               <span
                 key={e.id}

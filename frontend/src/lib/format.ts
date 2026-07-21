@@ -45,7 +45,7 @@ export function esCedulaEc(dni: string): boolean {
 export const rgx = {
   username: /^[a-zA-Z0-9._-]+$/,
   password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/,
-  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  email: /^[^\s@]+@[^\s@]{1,253}\.[^\s@]{2,}$/,
   soloLetras: /^[\p{L} ]+$/u,
   telefono: /^\d{7,10}$/,
   placaAuto: /^[A-Z]{3}-\d{4}$/,
