@@ -3,6 +3,10 @@ package ec.edu.espe.tickets.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.data.web.config.EnableSpringDataWebSupport;
+import org.springframework.data.web.config.SpringDataJacksonConfiguration;
+import org.springframework.data.web.config.SpringDataWebSettings;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import ec.edu.espe.tickets.dtos.AnularTicketRequest;
 import ec.edu.espe.tickets.dtos.RegistrarIngresoRequest;
 import ec.edu.espe.tickets.dtos.TicketResponse;
@@ -50,7 +54,11 @@ class TicketControllerTest {
 
         mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
+        mapper.registerModule(new SpringDataJacksonConfiguration.PageModule(
+                new SpringDataWebSettings(EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)));
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(mapper);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
@@ -58,6 +66,7 @@ class TicketControllerTest {
                 .setCustomArgumentResolvers(
                         new AuthenticationPrincipalArgumentResolver(),
                         new PageableHandlerMethodArgumentResolver())
+                .setMessageConverters(converter)
                 .build();
     }
 
