@@ -1,6 +1,6 @@
 # Registro de defectos — Parking System (Distributed Microservices)
 
-Formato: id, módulo, severidad, prioridad, pasos para reproducir, estado. Portable a Jira/Trello/GitHub Issues una vez el equipo confirme la herramienta (pendiente, ver Sec. 2.1 del SQAP).
+Formato: id, módulo, severidad, prioridad, pasos para reproducir, estado. Herramienta de gestión de incidencias confirmada (Sección 8 del SQAP): **GitHub Issues** del propio repositorio, enlazado 1:1 con este registro — este archivo mantiene el detalle completo (causa raíz, pasos, evidencia) y cada Issue da seguimiento visual (estado abierto/cerrado, labels de severidad/prioridad, y cierre automático al referenciar el commit que corrige el defecto). Se prefirió sobre Jira/Trello por no requerir cuenta externa ni tablero nuevo: ya viven en la misma plataforma que el código.
 
 Severidad: BLOQUEANTE / CRÍTICA / MAYOR / MENOR / COSMÉTICA
 Prioridad: ALTA / MEDIA / BAJA
@@ -33,6 +33,7 @@ Estado: ABIERTO / EN VERIFICACIÓN / CERRADO / NO ES DEFECTO
 - **Resultado obtenido:** "Usuario o **contrasena** incorrectos" (falta la ñ)
 - **Causa raíz:** `usuarios/src/main/java/ec/edu/espe/usuarios/services/Impl/AuthServicioImpl.java`, líneas 70, 73 y 76 — el mensaje está escrito sin tildes/ñ en el código fuente. El mismo patrón se repite en líneas 182, 190 y 196 de la misma clase ("invalido", "sesion", "esta inactiva"). El frontend solo reproduce el texto que recibe de la API; no es un bug del frontend.
 - **Evidencia:** [`Tests/evidence/DEF-01-login-sin-tildes.png`](evidence/DEF-01-login-sin-tildes.png) — captura real, ver también `Tests/manual/E2E-01-login.md`.
+- **Issue:** [#10](https://github.com/MateoJa54/Parqueadero_distribuidas/issues/10)
 - **Estado:** ABIERTO
 
 ### DEF-02
@@ -49,6 +50,7 @@ Estado: ABIERTO / EN VERIFICACIÓN / CERRADO / NO ES DEFECTO
 - **Causa raíz:** `LoginPage.tsx:27` — `navigate(from ?? rutaInicial(u.roles), { replace: true })` usa `from` sin verificar que el usuario recién autenticado tenga permiso sobre esa ruta.
 - **Sugerencia de corrección:** validar `puede(u.roles, permisoDeRuta(from))` antes de usar `from`; si no aplica, usar `rutaInicial(u.roles)`.
 - **Evidencia:** [`Tests/evidence/DEF-02-redirect-403-tras-login.png`](evidence/DEF-02-redirect-403-tras-login.png) — captura real mostrando la pantalla "Acceso denegado" tras el login contaminado; ver también `Tests/manual/E2E-01-login.md`.
+- **Issue:** [#11](https://github.com/MateoJa54/Parqueadero_distribuidas/issues/11)
 - **Estado:** ABIERTO
 
 ### DEF-03
@@ -67,11 +69,12 @@ Estado: ABIERTO / EN VERIFICACIÓN / CERRADO / NO ES DEFECTO
   - Se investigó una alternativa: `GET /api/v1/usuarios/{id}` (accesible al propio dueño) tampoco expone `dni`/`email`/`phone`/`nationality` — esos campos **solo existen en `PersonaController`**, restringido a `ADMIN`/`ROOT` (ver Sec. 2.2 de `docs/contrato-api-microservicios.md`). Es decir: **no existe hoy ningún endpoint que un CLIENTE pueda usar para ver su propia cédula/correo/teléfono** — es un hueco de diseño de API, no solo un bug de tipado del frontend.
 - **Sugerencia de corrección:** (a) corto plazo — usar `persona.nombreCompleto` (que sí llega) en vez de `firstName/middleName/lastName`, y ocultar Cédula/Correo/Teléfono/Nacionalidad del portal cliente ya que no hay fuente de datos; (b) correcto — exponer un endpoint tipo `GET /personas/me` o `GET /personas/{id}` accesible al propio dueño (mismo patrón ya usado en `GET /propietarios/{idUsuario}/vehiculos` para "Mis vehículos").
 - **Evidencia:** [`Tests/evidence/DEF-03-mi-perfil-vacio.png`](evidence/DEF-03-mi-perfil-vacio.png) — captura real mostrando Nombre/Cédula/Correo en blanco vs. el fallback "—" de Teléfono/Nacionalidad; respuesta cruda de `GET /api/v1/auth/me` y `GET /api/v1/usuarios/{id}` vía curl documentada en `Tests/manual/E2E-02-rbac-navegacion.md`.
+- **Issue:** [#12](https://github.com/MateoJa54/Parqueadero_distribuidas/issues/12)
 - **Estado:** ABIERTO
 
 ### DEF-04
 - **Módulo:** Frontend (CI-07) `frontend/src/ui/Modal.tsx` + `frontend/src/pages/admin/TicketsPage.tsx`
-- **Severidad:** MAYOR/CRÍTICA (bloquea funcionalmente anular un ticket con un motivo normal desde la UI)
+- **Severidad:** CRÍTICA (bloquea funcionalmente anular un ticket con un motivo normal desde la UI)
 - **Prioridad:** ALTA
 - **Detectado en:** E2E-03 (Emisión y cobro de ticket), paso 9 (anular con motivo)
 - **Pasos para reproducir:**
@@ -88,6 +91,7 @@ Estado: ABIERTO / EN VERIFICACIÓN / CERRADO / NO ES DEFECTO
   - Se verificó a nivel de API (`PATCH /api/v1/tickets/{id}/anular`, vía curl) que el backend anula correctamente (`estadoTicket: ANULADO`, `valorRecaudado: 0`) — el defecto es exclusivamente del modal del frontend.
 - **Sugerencia de corrección:** memoizar `onClose` con `useCallback` en `TicketsPage.tsx`, y/o separar en `Modal.tsx` el efecto de "foco inicial al abrir" (dependencia solo `[open]`, para que se ejecute una única vez al abrir el modal) del efecto que registra el listener de teclado para Escape/Tab.
 - **Evidencia:** [`Tests/evidence/DEF-04-modal-anular-foco-perdido.png`](evidence/DEF-04-modal-anular-foco-perdido.png) — captura real: campo "Motivo de anulación" completamente vacío tras escribir "Cliente no llego a tiempo", con el anillo de foco azul visible en el botón "✕" (confirma visualmente la causa raíz). Confirmación cruzada vía `curl` de que el backend sí anula correctamente. Ver también `Tests/manual/E2E-03-emision-ticket.md`.
+- **Issue:** [#13](https://github.com/MateoJa54/Parqueadero_distribuidas/issues/13) — bloquea el Criterio de Salida X-04 del SQAP (Sección 6.4); ver Apéndice C.7.
 - **Estado:** ABIERTO
 
 ## Nota — bug ya documentado fuera de este flujo
