@@ -99,10 +99,10 @@ wait_port 8000 kong 60
 [ -f frontend/.env ] || cp frontend/.env.example frontend/.env
 
 # --- 4) Microservicios -------------------------------------------------------
-run_bg usuarios     usuarios     ./mvnw -q -DskipTests spring-boot:run
-run_bg zonas        zonas        ./mvnw -q -DskipTests spring-boot:run
-run_bg asignaciones asignaciones ./mvnw -q -DskipTests spring-boot:run
-run_bg tickets      tickets      ./mvnw -q -DskipTests spring-boot:run
+DB_USER=usuarios     DB_NAME=usuarios     DB_PASSWORD=usuarios123     ADMIN_ROOT_PASSWORD="${ADMIN_ROOT_PASSWORD:-Root2025}" run_bg usuarios     usuarios     ./mvnw -q -DskipTests spring-boot:run
+DB_USER=zonas        DB_NAME=zonas        DB_PASSWORD=zonas123        run_bg zonas        zonas        ./mvnw -q -DskipTests spring-boot:run
+DB_USER=asignaciones DB_NAME=asignaciones DB_PASSWORD=asignaciones123 run_bg asignaciones asignaciones ./mvnw -q -DskipTests spring-boot:run
+DB_USER=tickets      DB_NAME=tickets      DB_PASSWORD=tickets123      run_bg tickets      tickets      ./mvnw -q -DskipTests spring-boot:run
 
 c_info ">> instalando dependencias Node (vehiculos, ms-audit) ..."
 ( cd vehiculos/vehiculos && npm install --silent )

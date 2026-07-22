@@ -200,6 +200,16 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<TicketResponse> listarPorUsuario(UUID idUsuario, EstadoTicket estado, Pageable pageable) {
+        Page<Ticket> tickets = (estado == null)
+                ? ticketRepository.findByIdUsuarioOrderByFechaHoraIngresoDesc(idUsuario, pageable)
+                : ticketRepository.findByIdUsuarioAndEstadoTicketOrderByFechaHoraIngresoDesc(
+                        idUsuario, estado, pageable);
+        return tickets.map(TicketMapper::aResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public TicketResponse obtenerActivoPorEspacio(UUID idEspacio) {
         Ticket ticket = ticketRepository
                 .findByIdEspacioAndEstadoTicket(idEspacio, EstadoTicket.ACTIVO)
@@ -207,6 +217,18 @@ public class TicketServiceImpl implements TicketService {
                         "El espacio no tiene un ticket activo: " + idEspacio));
         return TicketMapper.aResponse(ticket);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<VehiculoClientResponse> listarVehiculosSinTicketActivo() {
+        // Vehiculos que ya estan dentro del parqueadero (ticket ACTIVO): se excluyen.
+        java.util.Set<UUID> conTicketActivo =
+                new java.util.HashSet<>(ticketRepository.idsVehiculoPorEstado(EstadoTicket.ACTIVO));
+        return catalogo.obtenerVehiculosActivos().stream()
+                .filter(v -> v.getId() != null && !conTicketActivo.contains(v.getId()))
+                .toList();
+    }
+
 
     // ------------------------------------------------------------------
     // Validaciones privadas

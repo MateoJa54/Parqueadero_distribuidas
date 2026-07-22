@@ -23,6 +23,7 @@ import { DiagnosticoPage } from '@/pages/admin/DiagnosticoPage';
 
 import { PerfilPage } from '@/pages/portal/PerfilPage';
 import { MisVehiculosPage } from '@/pages/portal/MisVehiculosPage';
+import { MisTicketsPage } from '@/pages/portal/MisTicketsPage';
 import { DisponibilidadPage } from '@/pages/portal/DisponibilidadPage';
 
 export function App() {
@@ -89,6 +90,9 @@ export function App() {
           </Route>
           <Route element={<RequirePermiso permiso="portal:mis-vehiculos" />}>
             <Route path="vehiculos" element={<MisVehiculosPage />} />
+          </Route>
+          <Route element={<RequirePermiso permiso="portal:mis-tickets" />}>
+            <Route path="tickets" element={<MisTicketsPage />} />
           </Route>
           <Route element={<RequirePermiso permiso="portal:disponibilidad" />}>
             <Route path="disponibilidad" element={<DisponibilidadPage />} />

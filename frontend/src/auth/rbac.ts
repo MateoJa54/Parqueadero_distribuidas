@@ -22,6 +22,7 @@ export type Permiso =
   | 'diagnostico'
   | 'portal:perfil'
   | 'portal:mis-vehiculos'
+  | 'portal:mis-tickets'
   | 'portal:disponibilidad';
 
 // Etiquetas legibles para mostrar la matriz de permisos en Configuración.
@@ -42,6 +43,7 @@ export const ETIQUETA_PERMISO: Record<Permiso, string> = {
   diagnostico: 'Diagnóstico',
   'portal:perfil': 'Portal · Perfil',
   'portal:mis-vehiculos': 'Portal · Mis vehículos',
+  'portal:mis-tickets': 'Portal · Mis tickets',
   'portal:disponibilidad': 'Portal · Disponibilidad',
 };
 
@@ -63,6 +65,7 @@ export const MATRIZ: Record<Rol, Permiso[]> = {
     'diagnostico',
     'portal:perfil',
     'portal:mis-vehiculos',
+    'portal:mis-tickets',
     'portal:disponibilidad',
   ],
   ADMIN: [
@@ -82,6 +85,7 @@ export const MATRIZ: Record<Rol, Permiso[]> = {
     'diagnostico',
     'portal:perfil',
     'portal:mis-vehiculos',
+    'portal:mis-tickets',
     'portal:disponibilidad',
   ],
   RECAUDADOR: [
@@ -93,7 +97,7 @@ export const MATRIZ: Record<Rol, Permiso[]> = {
     'portal:perfil',
     'portal:disponibilidad',
   ],
-  CLIENTE: ['portal:perfil', 'portal:mis-vehiculos', 'portal:disponibilidad'],
+  CLIENTE: ['portal:perfil', 'portal:mis-vehiculos', 'portal:mis-tickets', 'portal:disponibilidad'],
   INVITADO: ['portal:disponibilidad'],
 };
 
@@ -120,4 +124,41 @@ export function rutaInicial(roles: Rol[]): string {
   if (puede(roles, 'dashboard')) return '/app';
   if (esStaff(roles)) return '/app/tickets';
   return '/portal';
+}
+
+// Mapeo ruta protegida -> permiso requerido. Refleja los guards del router (App.tsx).
+// Las entradas más específicas van primero para que gane la coincidencia correcta.
+const RUTA_PERMISO: ReadonlyArray<readonly [string, Permiso]> = [
+  ['/app/personas', 'personas'],
+  ['/app/usuarios', 'usuarios'],
+  ['/app/roles', 'roles'],
+  ['/app/asignacion-roles', 'asignacion-roles'],
+  ['/app/zonas', 'zonas'],
+  ['/app/espacios', 'espacios'],
+  ['/app/asignaciones-vehiculos', 'asignaciones-vehiculos'],
+  ['/app/vehiculos', 'vehiculos'],
+  ['/app/tickets', 'tickets:ver'],
+  ['/app/auditoria', 'auditoria'],
+  ['/app/configuracion', 'configuracion'],
+  ['/app/diagnostico', 'diagnostico'],
+  ['/portal/vehiculos', 'portal:mis-vehiculos'],
+  ['/portal/tickets', 'portal:mis-tickets'],
+  ['/portal/disponibilidad', 'portal:disponibilidad'],
+  ['/app', 'dashboard'],
+  ['/portal', 'portal:perfil'],
+];
+
+/**
+ * ¿El usuario con esos roles puede entrar a una ruta concreta?
+ * Se usa para validar el destino guardado (`from`) tras el login y no redirigir
+ * a una ruta protegida que terminaría en "Acceso denegado" (DEF-02).
+ * Las rutas públicas o desconocidas no se bloquean aquí.
+ */
+export function rutaPermitida(roles: Rol[], path: string): boolean {
+  const limpio = (path.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
+  const match = RUTA_PERMISO.find(
+    ([prefijo]) => limpio === prefijo || limpio.startsWith(`${prefijo}/`),
+  );
+  if (!match) return true;
+  return puede(roles, match[1]);
 }

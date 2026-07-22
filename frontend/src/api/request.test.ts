@@ -14,7 +14,7 @@ const validToken = () => makeJwt({ sub: 'x', exp: Math.floor(Date.now() / 1000) 
 function mockFetch(resp: { status?: number; body?: unknown; ok?: boolean }) {
   const status = resp.status ?? 200;
   const text = resp.body === undefined ? '' : typeof resp.body === 'string' ? resp.body : JSON.stringify(resp.body);
-  return vi.fn(() =>
+  return vi.fn((_url?: string, _init?: RequestInit) =>
     Promise.resolve({
       status,
       ok: resp.ok ?? (status >= 200 && status < 300),

@@ -76,6 +76,26 @@ export interface Persona {
   updatedAt?: string;
 }
 
+// ---- Perfil propio (GET /auth/me) ----
+// Incluye los datos personales del PROPIO usuario, para que un CLIENTE pueda ver
+// su Nombre/Cédula/Correo sin acceder al endpoint de personas (ADMIN/ROOT).
+export interface PerfilResponse {
+  idUsuario: string;
+  idPersona: string;
+  username: string;
+  nombreCompleto: string;
+  firstName: string;
+  middleName?: string | null;
+  lastName: string;
+  dni: string;
+  email: string;
+  phone?: string | null;
+  address?: string | null;
+  nationality: string;
+  active: boolean;
+  roles: string[];
+}
+
 export interface PersonaRequest {
   firstName: string;
   middleName?: string;

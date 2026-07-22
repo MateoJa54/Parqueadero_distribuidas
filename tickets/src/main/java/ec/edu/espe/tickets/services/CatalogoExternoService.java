@@ -2,9 +2,11 @@ package ec.edu.espe.tickets.services;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -68,6 +70,16 @@ public class CatalogoExternoService {
         } catch (HttpClientErrorException.NotFound ex) {
             throw new RecursoNoEncontradoException("No existe un vehiculo con placa: " + placa);
         }
+    }
+
+    /** Lista los vehiculos activos del catalogo (microservicio vehiculos). */
+    public List<VehiculoClientResponse> obtenerVehiculosActivos() {
+        List<VehiculoClientResponse> vehiculos = restClient.get()
+                .uri(vehiculosUrl + "/api/vehiculos?incluirInactivos=false")
+                .headers(this::reenviarAuthorization)
+                .retrieve()
+                .body(new ParameterizedTypeReference<List<VehiculoClientResponse>>() {});
+        return vehiculos == null ? List.of() : vehiculos;
     }
 
     /** Obtiene la (unica) asignacion activa del vehiculo en el microservicio asignaciones. */

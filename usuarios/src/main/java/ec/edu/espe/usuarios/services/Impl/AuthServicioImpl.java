@@ -72,13 +72,13 @@ public class AuthServicioImpl implements AuthServicio {
     public AuthResponse login(LoginRequest request) {
         // Mensaje generico para no revelar si fallo el username o la contrasena.
         Usuario usuario = usuarioRepositorio.findByUsernameIgnoreCase(request.getUsername().trim())
-                .orElseThrow(() -> new CredencialesInvalidasException("Usuario o contrasena incorrectos"));
+                .orElseThrow(() -> new CredencialesInvalidasException("Usuario o contraseña incorrectos"));
 
         if (!usuario.isActive()) {
-            throw new CredencialesInvalidasException("Usuario o contrasena incorrectos");
+            throw new CredencialesInvalidasException("Usuario o contraseña incorrectos");
         }
         if (!PasswordUtil.matches(request.getPassword(), usuario.getPasswordHash())) {
-            throw new CredencialesInvalidasException("Usuario o contrasena incorrectos");
+            throw new CredencialesInvalidasException("Usuario o contraseña incorrectos");
         }
 
         usuario.setLastLogin(LocalDateTime.now(ZoneId.of("America/Guayaquil")));
@@ -129,7 +129,7 @@ public class AuthServicioImpl implements AuthServicio {
         // email que no coincide, persona inactiva o cuenta ya creada). Asi el endpoint
         // no permite enumerar cedulas/correos ni saber si una cedula existe en el sistema.
         final String generico = "No pudimos verificar tu identidad con esos datos, "
-                + "o ya existe una cuenta asociada. Verifica tu cedula y correo, o contacta al administrador.";
+                + "o ya existe una cuenta asociada. Verifica tu cédula y correo, o contacta al administrador.";
 
         Persona persona = personaRepositorio.findByDni(request.getDni().trim())
                 .orElseThrow(() -> new ReglaNegocioException(generico));
@@ -184,7 +184,7 @@ public class AuthServicioImpl implements AuthServicio {
         try {
             claims = jwtService.validarTipo(request.getRefreshToken().trim(), JwtService.TYPE_REFRESH);
         } catch (JwtException | IllegalArgumentException ex) {
-            throw new CredencialesInvalidasException("Refresh token invalido o expirado: inicie sesion de nuevo");
+            throw new CredencialesInvalidasException("Refresh token inválido o expirado: inicie sesión de nuevo");
         }
 
         // 2. El usuario debe seguir existiendo y estar activo.
@@ -192,13 +192,13 @@ public class AuthServicioImpl implements AuthServicio {
         try {
             idUsuario = UUID.fromString(claims.getSubject());
         } catch (IllegalArgumentException ex) {
-            throw new CredencialesInvalidasException("Refresh token invalido o expirado: inicie sesion de nuevo");
+            throw new CredencialesInvalidasException("Refresh token inválido o expirado: inicie sesión de nuevo");
         }
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
                 .orElseThrow(() -> new CredencialesInvalidasException(
-                        "Refresh token invalido o expirado: inicie sesion de nuevo"));
+                        "Refresh token inválido o expirado: inicie sesión de nuevo"));
         if (!usuario.isActive()) {
-            throw new CredencialesInvalidasException("La cuenta esta inactiva");
+            throw new CredencialesInvalidasException("La cuenta está inactiva");
         }
 
         // 3. Emitir un nuevo access y ROTAR el refresh (roles frescos desde la BD).
@@ -211,10 +211,22 @@ public class AuthServicioImpl implements AuthServicio {
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
 
+        // El propio usuario SIEMPRE puede ver sus datos personales aqui, sin depender
+        // del endpoint de personas (restringido a ADMIN/ROOT).
+        Persona persona = usuario.getPersona();
         return PerfilResponse.builder()
                 .idUsuario(usuario.getId())
+                .idPersona(persona != null ? persona.getId() : null)
                 .username(usuario.getUsername())
-                .nombreCompleto(nombreCompleto(usuario.getPersona()))
+                .nombreCompleto(nombreCompleto(persona))
+                .firstName(persona != null ? persona.getFirstName() : null)
+                .middleName(persona != null ? persona.getMiddleName() : null)
+                .lastName(persona != null ? persona.getLastName() : null)
+                .dni(persona != null ? persona.getDni() : null)
+                .email(persona != null ? persona.getEmail() : null)
+                .phone(persona != null ? persona.getPhone() : null)
+                .address(persona != null ? persona.getAddress() : null)
+                .nationality(persona != null ? persona.getNationality() : null)
                 .active(usuario.isActive())
                 .roles(rolesActivos(usuario))
                 .build();

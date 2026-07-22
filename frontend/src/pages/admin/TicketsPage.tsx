@@ -6,7 +6,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { ApiError } from '@/api/client';
 import { PageHead } from '@/ui/PageHead';
 import { Button } from '@/ui/Button';
-import { Input, Select } from '@/ui/Input';
+import { Combobox, Input, Select } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { EstadoTicketBadge } from '@/ui/Badge';
 import { EmptyState, AsyncView, Loading, TableSkeleton } from '@/ui/States';
@@ -46,6 +46,7 @@ export function TicketsPage() {
 // ---- Registrar ingreso ----
 function IngresoTab({ toast, onDone }: { readonly toast: ReturnType<typeof useToast>; readonly onDone: () => void }) {
   const disponibles = useAsync(() => espaciosApi.disponibles(), []);
+  const vehiculos = useAsync(() => ticketsApi.vehiculosDisponibles(), []);
   const [placa, setPlaca] = useState('');
   const [idEspacio, setIdEspacio] = useState('');
   const [errs, setErrs] = useState<Record<string, string>>({});
@@ -67,6 +68,7 @@ function IngresoTab({ toast, onDone }: { readonly toast: ReturnType<typeof useTo
       setPlaca('');
       setIdEspacio('');
       disponibles.reload();
+      vehiculos.reload();
     } catch (err) {
       toast.error('No se pudo registrar', err instanceof ApiError ? err.message : undefined);
     } finally {
@@ -87,26 +89,37 @@ function IngresoTab({ toast, onDone }: { readonly toast: ReturnType<typeof useTo
         </output>
       )}
       <div className="stack">
-        <Input
-          label="Placa del vehículo"
-          value={placa}
-          onChange={(e) => setPlaca(e.target.value.toUpperCase())}
-          error={errs.placa}
-          hint="Auto ABC-1234 · Moto AB-123C"
-          required
-        />
+        {vehiculos.loading ? (
+          <Loading label="Cargando vehículos…" />
+        ) : (
+          <Combobox
+            label="Placa del vehículo"
+            placeholder="Busca por placa o modelo…"
+            value={placa}
+            onChange={setPlaca}
+            error={errs.placa}
+            hint="Solo vehículos que no están dentro del parqueadero"
+            emptyText="Ningún vehículo disponible coincide"
+            options={(vehiculos.data ?? []).map((v) => ({
+              value: v.placa,
+              label: `${v.placa} · ${v.marca} ${v.modelo}`,
+            }))}
+            required
+          />
+        )}
         {disponibles.loading ? (
           <Loading label="Cargando espacios…" />
         ) : (
-          <Select
+          <Combobox
             label="Espacio disponible"
-            placeholder="Selecciona…"
+            placeholder="Busca por código, tipo o zona…"
             value={idEspacio}
-            onChange={(e) => setIdEspacio(e.target.value)}
+            onChange={setIdEspacio}
             error={errs.idEspacio}
+            emptyText="Ningún espacio coincide"
             options={(disponibles.data ?? []).map((es) => ({
               value: es.id,
-            label: (() => { const zonaStr = es.nombreZona ? ` · ${es.nombreZona}` : ''; return `${es.codigo} · ${es.tipo}${zonaStr}`; })(),
+              label: (() => { const zonaStr = es.nombreZona ? ` · ${es.nombreZona}` : ''; return `${es.codigo} · ${es.tipo}${zonaStr}`; })(),
             }))}
             required
           />

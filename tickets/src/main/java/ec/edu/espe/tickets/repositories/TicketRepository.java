@@ -1,5 +1,6 @@
 package ec.edu.espe.tickets.repositories;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,4 +35,14 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
     Page<Ticket> findByEstadoTicketOrderByFechaHoraIngresoDesc(EstadoTicket estadoTicket, Pageable pageable);
 
     Page<Ticket> findAllByOrderByFechaHoraIngresoDesc(Pageable pageable);
+
+    /** Tickets de un propietario (para que el cliente vea solo los suyos). */
+    Page<Ticket> findByIdUsuarioOrderByFechaHoraIngresoDesc(UUID idUsuario, Pageable pageable);
+
+    Page<Ticket> findByIdUsuarioAndEstadoTicketOrderByFechaHoraIngresoDesc(
+            UUID idUsuario, EstadoTicket estadoTicket, Pageable pageable);
+
+    /** Ids de vehiculos que actualmente tienen un ticket en el estado dado (p.ej. ACTIVO). */
+    @Query("SELECT t.idVehiculo FROM Ticket t WHERE t.estadoTicket = :estado")
+    List<UUID> idsVehiculoPorEstado(EstadoTicket estado);
 }

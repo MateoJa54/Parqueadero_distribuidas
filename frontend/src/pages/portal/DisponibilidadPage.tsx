@@ -1,38 +1,58 @@
 import { useMemo, useState } from 'react';
 import { espaciosApi } from '@/api/zonas';
-import type { TipoEspacio } from '@/types';
+import type { EstadoEspacio, TipoEspacio } from '@/types';
 import { useAsync } from '@/hooks/useAsync';
 import { PageHead } from '@/ui/PageHead';
-import { Badge } from '@/ui/Badge';
+import { Badge, EstadoEspacioBadge } from '@/ui/Badge';
 import { Select } from '@/ui/Input';
 import { Button } from '@/ui/Button';
 import { EmptyState, AsyncView, Loading } from '@/ui/States';
 
 const TIPOS: TipoEspacio[] = ['MOTO', 'AUTO', 'BUSETA'];
+const ESTADOS: EstadoEspacio[] = ['DISPONIBLE', 'OCUPADO', 'RESERVADO', 'MANTENIMIENTO'];
+
+const BORDE_ESTADO: Record<EstadoEspacio, string> = {
+  DISPONIBLE: 'var(--success)',
+  OCUPADO: 'var(--danger)',
+  RESERVADO: 'var(--warning)',
+  MANTENIMIENTO: 'var(--border)',
+};
 
 export function DisponibilidadPage() {
-  const { data, loading, error, reload } = useAsync(() => espaciosApi.disponibles(), []);
+  const { data, loading, error, reload } = useAsync(() => espaciosApi.list(), []);
   const [tipo, setTipo] = useState<TipoEspacio | ''>('');
+  const [estado, setEstado] = useState<EstadoEspacio | ''>('');
+
+  // Solo espacios operativos (activos) para la vista del cliente.
+  const activos = useMemo(() => (data ?? []).filter((e) => e.activo), [data]);
 
   const lista = useMemo(() => {
-    let arr = data ?? [];
+    let arr = activos;
     if (tipo) arr = arr.filter((e) => e.tipo === tipo);
+    if (estado) arr = arr.filter((e) => e.estado === estado);
     return arr;
-  }, [data, tipo]);
+  }, [activos, tipo, estado]);
 
-  const porTipo = useMemo(() => {
+  const porEstado = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const e of data ?? []) m[e.tipo] = (m[e.tipo] ?? 0) + 1;
+    for (const e of activos) m[e.estado] = (m[e.estado] ?? 0) + 1;
     return m;
-  }, [data]);
+  }, [activos]);
 
   return (
     <>
       <PageHead
         title="Disponibilidad"
-        subtitle="Espacios libres en este momento."
+        subtitle="Estado de los espacios en este momento."
         actions={
           <>
+            <Select
+              value={estado}
+              onChange={(e) => setEstado(e.target.value as EstadoEspacio | '')}
+              placeholder="Todos los estados"
+              aria-label="Filtrar por estado"
+              options={ESTADOS.map((s) => ({ value: s, label: s }))}
+            />
             <Select
               value={tipo}
               onChange={(e) => setTipo(e.target.value as TipoEspacio | '')}
@@ -55,22 +75,22 @@ export function DisponibilidadPage() {
       >
         <>
           <div className="row-wrap" style={{ gap: 12, marginBottom: 20 }}>
-            <div className="card card-pad" style={{ minWidth: 140 }}>
-              <div className="stat-label">Total libres</div>
-              <div className="stat-value tnum">{(data ?? []).length}</div>
+            <div className="card card-pad" style={{ minWidth: 120 }}>
+              <div className="stat-label">Total</div>
+              <div className="stat-value tnum">{activos.length}</div>
             </div>
-            {TIPOS.map((t) => (
-              <div className="card card-pad" style={{ minWidth: 120 }} key={t}>
-                <div className="stat-label">{t}</div>
-                <div className="stat-value tnum">{porTipo[t] ?? 0}</div>
+            {ESTADOS.map((s) => (
+              <div className="card card-pad" style={{ minWidth: 120 }} key={s}>
+                <div className="stat-label">{s}</div>
+                <div className="stat-value tnum">{porEstado[s] ?? 0}</div>
               </div>
             ))}
           </div>
 
           {lista.length === 0 ? (
             <EmptyState
-              title="Sin espacios disponibles"
-              message="No hay espacios libres con ese filtro por ahora."
+              title="Sin espacios"
+              message="No hay espacios con ese filtro por ahora."
             />
           ) : (
             <div className="grid grid-4">
@@ -78,11 +98,11 @@ export function DisponibilidadPage() {
                 <div
                   className="card card-pad"
                   key={e.id}
-                  style={{ borderLeft: '3px solid var(--success)' }}
+                  style={{ borderLeft: `3px solid ${BORDE_ESTADO[e.estado]}` }}
                 >
                   <div className="row spread">
                     <strong>{e.codigo}</strong>
-                    <Badge tone="success">Libre</Badge>
+                    <EstadoEspacioBadge estado={e.estado} />
                   </div>
                   <div className="row-wrap" style={{ gap: 6, marginTop: 8 }}>
                     <Badge tone="info">{e.tipo}</Badge>

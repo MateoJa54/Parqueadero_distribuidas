@@ -22,6 +22,13 @@ export function PortalLayout() {
       end: false,
     },
     {
+      to: '/portal/tickets',
+      label: 'Mis tickets',
+      icon: '🎫',
+      permiso: 'portal:mis-tickets' as const,
+      end: false,
+    },
+    {
       to: '/portal/disponibilidad',
       label: 'Disponibilidad',
       icon: '▦',

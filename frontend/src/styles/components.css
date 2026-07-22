@@ -463,6 +463,11 @@ table.table {
   max-height: 90vh;
   overflow-y: auto;
   background: var(--surface);
+  /* El UA stylesheet del <dialog> aplica color: CanvasText; si el SO está en
+     modo oscuro y la app en tema claro, ese CanvasText es blanco y el contenido
+     (listas del combobox de usuarios/vehículos) queda invisible. Fijamos el
+     color del texto al token del tema para no depender del color-scheme del SO. */
+  color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-lg);

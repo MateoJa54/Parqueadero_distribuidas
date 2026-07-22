@@ -208,12 +208,12 @@ consumers:
         algorithm: RS256
         rsa_public_key: |
           -----BEGIN PUBLIC KEY-----
-          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA01kdUOZVT9hocsfFiHXK
-          4vVez1daEdX/kZn3ijoM5ptSkcXGr0sWOle7UCvShLCa45fMNAtOiZabK1DNEkjs
-          Yx/OVvbqlhryRIY6mAZEZ3JeC0vE8mwGIRRJ9agVppqU5qF89qWu3P53ULmEVjL9
-          rwz0KulYAttKzGzYXyD/5yBcm4MWFx9ELAmQiCOrHpRl+ftDgKVe3BMRwttZMFnC
-          ca543E0M3h/hUgLwyXZ4sNK3KArxC8k/ks2GogU33rV8e29ZykFdZdbx00i5D5fB
-          JCMVeir5Ec4ioRhN2K1oxyatM0l4OVzq9Zh425DnSv61NcBArk9wwp3H6NTXMnV9
-          MwIDAQAB
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5rURdug9VJgdOLRTC7Cv
+          p0/9v97Mf6+k2yFPsyRTyENrHSpAC1kmQNUvRLHnPPvFB1zYLCxqYrF0I/JRnHmk
+          yjxxmLE8PG1u/DJyW3MGWL7zoZwf+Qzy2qpVFG+srBuh8mUSu5UtutHncEFEvGMn
+          8CDvnC+iJ7cwKM6MYDETrdGWH30RYUZ6KSWiR9L3OHHTnrJzi2Tzo7oOn3X4vTdg
+          GLy/fySs/QLAZvApAZH+DINIw+Kr8as3Kvh5aFk8Ff5ClVa6FdhobragaftKKHA3
+          dymW14YpwPWdXux8iNFAWOL9S+Osqje754f2Kfzc1jcU7WUryKzpVbtos128v/7k
+          CwIDAQAB
           -----END PUBLIC KEY-----
 

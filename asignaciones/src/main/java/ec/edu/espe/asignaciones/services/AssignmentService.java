@@ -175,7 +175,12 @@ public class AssignmentService {
         return assignmentRepository.findByIdUserIdAndActiveTrue(userId).stream()
                 .map(assignment -> {
                     VehiculoClientResponse vehiculo = externalCatalogService
-                            .validarVehiculoActivo(assignment.getId().getVehicleId(), authorization);
+                            .obtenerVehiculo(assignment.getId().getVehicleId(), authorization);
+                    // El cliente solo debe ver vehiculos activos: los inactivos (o
+                    // inexistentes) se omiten sin romper la consulta de la flota.
+                    if (vehiculo == null || !vehiculo.isActivo()) {
+                        return null;
+                    }
                     return FleetVehicleResponse.builder()
                             .userId(userId)
                             .vehicleId(assignment.getId().getVehicleId())
@@ -186,6 +191,7 @@ public class AssignmentService {
                             .anio(vehiculo.getAnio())
                             .tipo(vehiculo.getTipo())
                             .clasificacion(vehiculo.getClasificacion())
+                            .activo(vehiculo.isActivo())
                             .status(assignment.getStatus())
                             .assignmentType(assignment.getAssignmentType())
                             .authorizationRoleName(assignment.getAuthorizationRoleName())
@@ -196,6 +202,7 @@ public class AssignmentService {
                             .assignedAt(assignment.getAssignedAt())
                             .build();
                 })
+                .filter(java.util.Objects::nonNull)
                 .toList();
     }
 

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { personasApi, usuariosApi } from '@/api/usuarios';
+import { asignacionesRolApi, personasApi, usuariosApi } from '@/api/usuarios';
 import type { Persona, Usuario } from '@/types';
 import { useAsync } from '@/hooks/useAsync';
+import { useAuth } from '@/auth/context';
 import { ApiError } from '@/api/client';
 import { PageHead } from '@/ui/PageHead';
 import { Button } from '@/ui/Button';
@@ -14,8 +15,10 @@ import { fmtFecha, rgx } from '@/lib/format';
 
 export function UsuariosPage() {
   const toast = useToast();
+  const { user, hasRole } = useAuth();
   const usuarios = useAsync(() => usuariosApi.list(), []);
   const personas = useAsync(() => personasApi.list(), []);
+  const asignaciones = useAsync(() => asignacionesRolApi.list(), []);
   const [q, setQ] = useState('');
   const [modal, setModal] = useState<{ open: boolean; edit?: Usuario }>({ open: false });
   const [idPersona, setIdPersona] = useState('');
@@ -36,8 +39,33 @@ export function UsuariosPage() {
     return (personas.data ?? []).filter((p) => p.active && !conUsuario.has(p.id));
   }, [personas.data, usuarios.data]);
 
+  // Roles activos por usuario (idUser -> conjunto de roles), para restringir la vista.
+  const rolesPorUsuario = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const a of asignaciones.data ?? []) {
+      if (!a.active) continue;
+      const set = m.get(a.idUser) ?? new Set<string>();
+      set.add(a.rol);
+      m.set(a.idUser, set);
+    }
+    return m;
+  }, [asignaciones.data]);
+
+  const esRootOAdmin = (idUsuario: string) => {
+    const set = rolesPorUsuario.get(idUsuario);
+    return !!set && (set.has('ROOT') || set.has('ADMIN'));
+  };
+
   const lista = useMemo(() => {
-    const arr = usuarios.data ?? [];
+    let arr = usuarios.data ?? [];
+    // Restricciones por rol del usuario en sesión:
+    if (hasRole('ROOT')) {
+      // El root no se ve a sí mismo (no puede autodesactivarse).
+      arr = arr.filter((u) => u.id !== user?.idUsuario);
+    } else if (hasRole('ADMIN')) {
+      // El admin no ve (ni puede tocar) usuarios ROOT ni ADMIN.
+      arr = arr.filter((u) => !esRootOAdmin(u.id));
+    }
     const term = q.trim().toLowerCase();
     if (!term) return arr;
     return arr.filter(
@@ -45,7 +73,7 @@ export function UsuariosPage() {
         u.username.toLowerCase().includes(term) ||
         u.nombreCompleto.toLowerCase().includes(term),
     );
-  }, [usuarios.data, q]);
+  }, [usuarios.data, q, hasRole, user?.idUsuario, rolesPorUsuario]);
 
   const abrirNuevo = () => {
     setIdPersona('');
@@ -112,7 +140,7 @@ export function UsuariosPage() {
     }
   };
 
-  const loading = usuarios.loading || personas.loading;
+  const loading = usuarios.loading || personas.loading || asignaciones.loading;
 
   return (
     <>

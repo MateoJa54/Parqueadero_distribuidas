@@ -83,6 +83,7 @@ class AssignmentServiceExtendedTest {
         v.setMarca("Toyota");
         v.setModelo("Corolla");
         v.setTipo("Auto");
+        v.setActivo(true);
         return v;
     }
 
@@ -213,13 +214,32 @@ class AssignmentServiceExtendedTest {
 
         when(externalCatalogService.validarUsuarioActivo(userId, null)).thenReturn(new UsuarioClientResponse());
         when(assignmentRepository.findByIdUserIdAndActiveTrue(userId)).thenReturn(List.of(a));
-        when(externalCatalogService.validarVehiculoActivo(vehicleId, null)).thenReturn(vehiculoResponse(vehicleId));
+        when(externalCatalogService.obtenerVehiculo(vehicleId, null)).thenReturn(vehiculoResponse(vehicleId));
 
         List<FleetVehicleResponse> fleet = service.consultarFlota(userId, null);
 
         assertEquals(1, fleet.size());
         assertEquals(vehicleId, fleet.get(0).getVehicleId());
         assertEquals("ABC-1234", fleet.get(0).getPlaca());
+        assertTrue(fleet.get(0).isActivo());
+    }
+
+    @Test
+    @DisplayName("consultarFlota omite vehiculos inactivos (no los muestra al cliente)")
+    void consultarFlotaOmiteInactivos() {
+        UUID userId = UUID.randomUUID();
+        UUID vehicleId = UUID.randomUUID();
+        VehicleAssignment a = assignment(userId, vehicleId, AssignmentStatus.ACTIVA, true);
+        VehiculoClientResponse inactivo = vehiculoResponse(vehicleId);
+        inactivo.setActivo(false);
+
+        when(externalCatalogService.validarUsuarioActivo(userId, null)).thenReturn(new UsuarioClientResponse());
+        when(assignmentRepository.findByIdUserIdAndActiveTrue(userId)).thenReturn(List.of(a));
+        when(externalCatalogService.obtenerVehiculo(vehicleId, null)).thenReturn(inactivo);
+
+        List<FleetVehicleResponse> fleet = service.consultarFlota(userId, null);
+
+        assertTrue(fleet.isEmpty());
     }
 
     @Test

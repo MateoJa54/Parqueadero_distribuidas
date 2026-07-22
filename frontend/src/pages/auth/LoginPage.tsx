@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/context';
-import { rutaInicial } from '@/auth/rbac';
+import { rutaInicial, rutaPermitida } from '@/auth/rbac';
 import { ApiError } from '@/api/client';
 import { Button } from '@/ui/Button';
 import { Input, PasswordInput } from '@/ui/Input';
@@ -23,8 +23,11 @@ export function LoginPage() {
     setLoading(true);
     try {
       const u = await login(username.trim(), password);
+      // Solo respetamos el destino guardado (`from`) si el usuario TIENE permiso
+      // para esa ruta; de lo contrario iría a parar a "Acceso denegado" (DEF-02).
       const from = (location.state as { from?: string })?.from;
-      navigate(from ?? rutaInicial(u.roles), { replace: true });
+      const destino = from && rutaPermitida(u.roles, from) ? from : rutaInicial(u.roles);
+      navigate(destino, { replace: true });
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : 'No se pudo iniciar sesión. Intenta de nuevo.',

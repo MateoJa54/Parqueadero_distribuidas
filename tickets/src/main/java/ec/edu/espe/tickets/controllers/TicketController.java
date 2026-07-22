@@ -83,8 +83,31 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.listar(estado, pageable));
     }
 
+    /**
+     * Tickets del usuario autenticado (propietario). El {@code CLIENTE} solo
+     * puede consultar los suyos; el id se toma del token, no de un parametro.
+     */
+    @GetMapping("/mios")
+    @PreAuthorize("hasAnyRole('CLIENTE','RECAUDADOR','ADMIN','ROOT')")
+    public ResponseEntity<Page<TicketResponse>> misTickets(
+            @AuthenticationPrincipal String idUsuario,
+            @RequestParam(required = false) EstadoTicket estado,
+            @PageableDefault(size = 20, sort = "fechaHoraIngreso", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(
+                ticketService.listarPorUsuario(UUID.fromString(idUsuario), estado, pageable));
+    }
+
     @GetMapping("/activo/espacio/{idEspacio}")
     public ResponseEntity<TicketResponse> obtenerActivoPorEspacio(@PathVariable UUID idEspacio) {
         return ResponseEntity.ok(ticketService.obtenerActivoPorEspacio(idEspacio));
+    }
+
+    /**
+     * Vehiculos que pueden ingresar: activos y sin un ticket ACTIVO (los que ya
+     * estan dentro del parqueadero no aparecen). Alimenta el selector al crear tickets.
+     */
+    @GetMapping("/vehiculos-disponibles")
+    public ResponseEntity<java.util.List<ec.edu.espe.tickets.dtos.VehiculoClientResponse>> vehiculosDisponibles() {
+        return ResponseEntity.ok(ticketService.listarVehiculosSinTicketActivo());
     }
 }

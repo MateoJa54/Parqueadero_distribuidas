@@ -20,6 +20,7 @@ export function EspaciosPage() {
   const zonas = useAsync(() => zonasApi.list(), []);
   const [filtroEstado, setFiltroEstado] = useState<EstadoEspacio | ''>('');
   const [filtroZona, setFiltroZona] = useState('');
+  const [busqueda, setBusqueda] = useState('');
   const [modal, setModal] = useState<{ open: boolean; edit?: Espacio }>({ open: false });
   const [estadoModal, setEstadoModal] = useState<{ open: boolean; esp?: Espacio; estado: EstadoEspacio }>(
     { open: false, estado: 'DISPONIBLE' },
@@ -38,8 +39,19 @@ export function EspaciosPage() {
     let arr = espacios.data ?? [];
     if (filtroEstado) arr = arr.filter((e) => e.estado === filtroEstado);
     if (filtroZona) arr = arr.filter((e) => e.idZona === filtroZona);
+    const q = busqueda.trim().toLowerCase();
+    if (q) {
+      arr = arr.filter((e) => {
+        const zona = zonasMap.get(e.idZona)?.nombre ?? e.nombreZona ?? '';
+        return (
+          e.codigo.toLowerCase().includes(q) ||
+          e.tipo.toLowerCase().includes(q) ||
+          zona.toLowerCase().includes(q)
+        );
+      });
+    }
     return arr;
-  }, [espacios.data, filtroEstado, filtroZona]);
+  }, [espacios.data, filtroEstado, filtroZona, busqueda, zonasMap]);
 
   const abrirNuevo = () => {
     setForm({ idZona: filtroZona || '', descripcion: '', tipo: 'AUTO', estado: 'DISPONIBLE' });
@@ -116,6 +128,12 @@ export function EspaciosPage() {
         subtitle="Plazas individuales de estacionamiento. El código se genera automáticamente."
         actions={
           <>
+            <Input
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar código, tipo o zona…"
+              aria-label="Buscar espacios"
+            />
             <Select
               value={filtroZona}
               onChange={(e) => setFiltroZona(e.target.value)}

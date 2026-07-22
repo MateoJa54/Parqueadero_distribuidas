@@ -29,6 +29,16 @@ export const asignVehiculoApi = {
 
 // Flota del propietario (/api/v1/propietarios/{userId}/vehiculos)
 export const propietariosApi = {
-  vehiculos: (userId: string) =>
-    http.get<Vehiculo[]>(`${A}/propietarios/${userId}/vehiculos`),
+  vehiculos: async (userId: string): Promise<Vehiculo[]> => {
+    const flota = await http.get<Array<Record<string, unknown>>>(
+      `${A}/propietarios/${userId}/vehiculos`,
+    );
+    // El backend devuelve FleetVehicleResponse (usa vehicleId, no id). Solo llegan
+    // vehiculos activos: el servicio ya filtra los inactivos.
+    return flota.map((v) => ({
+      ...v,
+      id: (v.vehicleId ?? v.id) as string,
+      activo: v.activo !== false,
+    })) as Vehiculo[];
+  },
 };

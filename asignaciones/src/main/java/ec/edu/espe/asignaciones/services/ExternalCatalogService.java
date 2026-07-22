@@ -80,6 +80,24 @@ public class ExternalCatalogService {
         return vehiculo;
     }
 
+    /**
+     * Obtiene un vehiculo sin exigir que este activo. Devuelve {@code null} si no
+     * existe. Se usa al consultar la flota del propietario: los vehiculos
+     * inactivos no deben mostrarse al cliente, pero tampoco deben romper toda la
+     * consulta (a diferencia de {@link #validarVehiculoActivo} que lanza excepcion).
+     */
+    public VehiculoClientResponse obtenerVehiculo(UUID vehicleId, String authorization) {
+        try {
+            return restClient.get()
+                    .uri(vehiculosUrl + "/api/vehiculos/{id}", vehicleId)
+                    .headers(headers -> agregarAuthorization(headers, authorization))
+                    .retrieve()
+                    .body(VehiculoClientResponse.class);
+        } catch (HttpClientErrorException.NotFound ex) {
+            return null;
+        }
+    }
+
     public UserRoleAssignmentResponse validarRolAutorizadoParaAsignacion(UUID userId, String authorization) {
         UserRoleAssignmentResponse[] roles;
         try {

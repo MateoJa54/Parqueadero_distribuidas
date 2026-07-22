@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { rolesApi } from '@/api/usuarios';
 import type { RolEntity, RolRequest } from '@/types';
 import { useAsync } from '@/hooks/useAsync';
+import { useAuth } from '@/auth/context';
 import { ApiError } from '@/api/client';
 import { PageHead } from '@/ui/PageHead';
 import { Button } from '@/ui/Button';
@@ -13,11 +14,22 @@ import { useToast } from '@/ui/ToastProvider';
 
 export function RolesPage() {
   const toast = useToast();
+  const { hasRole } = useAuth();
   const { data, loading, error, reload } = useAsync(() => rolesApi.list(), []);
   const [modal, setModal] = useState<{ open: boolean; edit?: RolEntity }>({ open: false });
   const [form, setForm] = useState<RolRequest>({ name: '', description: '' });
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  // Roles reservados que no debe ver/desactivar cada quien:
+  // - ROOT en sesión: se oculta el propio rol ROOT.
+  // - ADMIN en sesión: se ocultan ROOT y ADMIN.
+  const lista = (data ?? []).filter((r) => {
+    const nombre = r.name.toUpperCase();
+    if (hasRole('ROOT')) return nombre !== 'ROOT';
+    if (hasRole('ADMIN')) return nombre !== 'ROOT' && nombre !== 'ADMIN';
+    return true;
+  });
 
   const abrirNuevo = () => {
     setForm({ name: '', description: '' });
@@ -81,7 +93,7 @@ export function RolesPage() {
       <AsyncView
         loading={loading}
         error={error}
-        isEmpty={(data ?? []).length === 0}
+        isEmpty={lista.length === 0}
         onRetry={reload}
         loadingNode={
           <div className="card card-pad">
@@ -101,7 +113,7 @@ export function RolesPage() {
               </tr>
             </thead>
             <tbody>
-              {(data ?? []).map((r) => (
+              {lista.map((r) => (
                 <tr key={r.id}>
                   <td>
                     <span className="chip">{r.name}</span>

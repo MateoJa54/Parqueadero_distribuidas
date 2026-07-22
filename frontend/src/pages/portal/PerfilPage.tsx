@@ -28,7 +28,19 @@ export function PerfilPage() {
     (async () => {
       try {
         const p = await authApi.me();
-        if (alive) setPersona(p);
+        if (alive)
+          setPersona({
+            id: p.idPersona,
+            firstName: p.firstName,
+            middleName: p.middleName,
+            lastName: p.lastName,
+            dni: p.dni,
+            email: p.email,
+            phone: p.phone,
+            address: p.address,
+            nationality: p.nationality,
+            active: p.active,
+          });
       } catch (err) {
         if (alive) setError(err instanceof ApiError ? err.message : 'Error al cargar tu perfil.');
       } finally {

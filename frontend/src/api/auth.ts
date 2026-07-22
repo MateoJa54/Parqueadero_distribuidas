@@ -2,7 +2,7 @@ import { API, http, tokenStore } from './client';
 import type {
   AuthResponse,
   LoginRequest,
-  Persona,
+  PerfilResponse,
   RegistroClienteRequest,
   RegistroCompletoRequest,
 } from '@/types';
@@ -24,7 +24,7 @@ export const authApi = {
   refresh: (refreshToken: string) =>
     http.post<AuthResponse>(`${API.usuarios}/auth/refresh`, { refreshToken }, { auth: false }),
 
-  me: () => http.get<Persona>(`${API.usuarios}/auth/me`),
+  me: () => http.get<PerfilResponse>(`${API.usuarios}/auth/me`),
 
   logout: () => tokenStore.clear(),
 };

@@ -13,7 +13,13 @@ interface ModalProps {
 
 /** Modal accesible: cierra con Esc, click fuera, y atrapa el foco dentro. */
 export function Modal({ open, title, onClose, children, footer, size = 'md' }: ModalProps) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDialogElement>(null);
+  // Guardamos onClose en una ref para que el efecto de foco NO dependa de su
+  // identidad. Si dependiera, cada render del padre (p. ej. al teclear en un
+  // input del modal) re-ejecutaría el efecto, robaría el foco al primer control
+  // y una tecla como Espacio/Enter "activaría" el botón de cerrar. (DEF-04)
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -32,7 +38,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
       } else if (e.key === 'Tab') {
         const list = focusables();
         if (list.length === 0) return;
@@ -54,7 +60,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
       document.body.style.overflow = '';
       prev?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
