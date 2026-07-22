@@ -10,4 +10,6 @@ public class UsuariosApplication {
 		SpringApplication.run(UsuariosApplication.class, args);
 	}
 
+	// Trigger SonarCloud analysis
+
 }

@@ -10,6 +10,7 @@ Pasa TODO por Kong (localhost:8000) respetando las reglas de negocio:
 No borra nada; solo agrega. Idempotencia parcial: si algo ya existe (409), continua.
 """
 import json
+import os
 import urllib.request
 import urllib.error
 
@@ -88,7 +89,7 @@ def placa_moto(i):
 def login_root():
     global TOKEN
     st, body = post(f"{USUARIOS}/api/v1/auth/login",
-                    {"username": "root", "password": "Root2025"}, auth=False)
+                    {"username": "root", "password": os.environ.get("ROOT_PASSWORD", "Root2025")}, auth=False)
     if st == 200:
         TOKEN = body.get("token") or body.get("accessToken")
         print(f"[OK] Login root -> token obtenido")
@@ -133,7 +134,7 @@ def crear_persona_usuario(i, role_id):
     pid = p.get("id")
     username = f"{nom[0].lower()}{ape.lower()}{i}"[:15]
     st, u = post(f"{USUARIOS}/api/v1/usuarios",
-                 {"idPersona": pid, "username": username, "password": "Espe2025"})
+                 {"idPersona": pid, "username": username, "password": os.environ.get("USER_PASSWORD", "Espe2025")})
     if st not in (200, 201):
         print(f"  [skip usuario {username}] {st}: {u}")
         return None
@@ -169,18 +170,27 @@ def crear_espacio(id_zona, desc, tipo):
 
 
 def crear_vehiculo(i, tipo):
+    color = COLORES[i % len(COLORES)]
+    anio = 2019 + (i % 7)
     if tipo == "Auto":
-        datos = {"placa": placa_auto(i), "marca": "Toyota", "modelo": "Corolla",
-                 "color": "Rojo", "anio": 2020 + (i % 5), "clasificacion": "Gasolina",
-                 "numeroPuertas": 4, "capacidadMaletero": 470}
+        marca, modelo = MARCAS_AUTO[i % len(MARCAS_AUTO)]
+        clas = ["Gasolina", "Híbrido", "Eléctrico"][i % 3]
+        datos = {"placa": placa_auto(i), "marca": marca, "modelo": modelo,
+                 "color": color, "anio": anio, "clasificacion": clas,
+                 "numeroPuertas": 2 + (i % 4), "capacidadMaletero": 300 + (i % 6) * 100}
     elif tipo == "Motocicleta":
-        datos = {"placa": placa_moto(i), "marca": "Yamaha", "modelo": "FZ",
-                 "color": "Negro", "anio": 2020 + (i % 5), "clasificacion": "Gasolina",
-                 "cilindraje": 150, "tipoMoto": "Deportiva"}
+        marca, modelo = MARCAS_MOTO[i % len(MARCAS_MOTO)]
+        clas = ["Gasolina", "Eléctrico"][i % 2]
+        datos = {"placa": placa_moto(i), "marca": marca, "modelo": modelo,
+                 "color": color, "anio": anio, "clasificacion": clas,
+                 "cilindraje": [125, 150, 200, 250][i % 4],
+                 "tipoMoto": ["Deportiva", "Scooter", "Motocross"][i % 3]}
     else:  # Camioneta
-        datos = {"placa": placa_auto(i), "marca": "Chevrolet", "modelo": "Dmax",
-                 "color": "Blanco", "anio": 2020 + (i % 5), "clasificacion": "Diésel",
-                 "cabina": 4, "capacidadCarga": "3.5t"}
+        marca, modelo = MARCAS_CAM[i % len(MARCAS_CAM)]
+        clas = ["Diésel", "Gasolina"][i % 2]
+        datos = {"placa": placa_auto(i), "marca": marca, "modelo": modelo,
+                 "color": color, "anio": anio, "clasificacion": clas,
+                 "cabina": 2 if i % 2 else 4, "capacidadCarga": f"{2 + i % 4}.5t"}
     st, v = post(f"{VEHICULOS}/vehiculos", {"tipo": tipo, "datos": datos})
     if st in (200, 201):
         return {"id": v.get("id"), "placa": datos["placa"], "tipo": tipo}
@@ -197,6 +207,16 @@ def asignar(uid, vid, role_id, alias):
 
 
 TIPO_ESPACIO = {"Auto": "AUTO", "Motocicleta": "MOTO", "Camioneta": "BUSETA"}
+
+# Variedad para que el catalogo de vehiculos no sea monotono en el frontend.
+MARCAS_AUTO = [("Toyota", "Corolla"), ("Kia", "Rio"), ("Hyundai", "Accent"),
+               ("Chevrolet", "Aveo"), ("Nissan", "Sentra"), ("Mazda", "3"),
+               ("Volkswagen", "Gol")]
+MARCAS_MOTO = [("Yamaha", "FZ"), ("Suzuki", "GN125"), ("Honda", "CB190"),
+               ("Bajaj", "Pulsar"), ("KTM", "Duke")]
+MARCAS_CAM = [("Chevrolet", "Dmax"), ("Toyota", "Hilux"), ("Ford", "Ranger"),
+              ("Mazda", "BT-50"), ("Nissan", "Frontier")]
+COLORES = ["Rojo", "Negro", "Blanco", "Gris", "Azul", "Plata", "Verde"]
 
 
 def main():
@@ -216,7 +236,7 @@ def main():
         zid = crear_zona(zn, zd, zt, zc)
         if not zid:
             continue
-        plan = [("AUTO", 5), ("MOTO", 3), ("BUSETA", 2)]
+        plan = [("AUTO", 8), ("MOTO", 5), ("BUSETA", 3)]
         for tipo, cant in plan:
             for k in range(1, cant + 1):
                 e = crear_espacio(zid, f"{zn} {tipo}-{k:02d}", tipo)
@@ -227,7 +247,7 @@ def main():
 
     print("\n=== PERSONAS / USUARIOS ===")
     usuarios = []
-    for i in range(40, 52):
+    for i in range(200, 240):
         u = crear_persona_usuario(i, role_id)
         if u:
             usuarios.append(u)
@@ -236,8 +256,8 @@ def main():
     print("\n=== VEHICULOS ===")
     tipos_ciclo = ["Auto", "Motocicleta", "Camioneta"]
     vehiculos = []
-    for i in range(12):
-        v = crear_vehiculo(420 + i, tipos_ciclo[i % 3])
+    for i in range(30):
+        v = crear_vehiculo(700 + i, tipos_ciclo[i % 3])
         if v:
             vehiculos.append(v)
     print(f"  Total vehiculos creados: {len(vehiculos)}")

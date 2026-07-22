@@ -1,0 +1,32 @@
+# Ingress: unico punto de entrada externo (host parqueadero.local).
+#   /api  -> Kong (gateway)  -> microservicios
+#   /     -> frontend (Nginx)
+# El prefijo /api se envia tal cual a Kong (que enruta por /api/v1/... y
+# /api/vehiculos), por eso NO se reescribe la ruta.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: parqueadero-ingress
+  namespace: parqueadero-iza-garcia-criollo
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: parqueadero.iza.garcia.criollo
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: kong
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

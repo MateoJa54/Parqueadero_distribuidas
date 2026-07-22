@@ -18,7 +18,7 @@ class PasswordUtilTest {
         
         assertNotNull(hash);
         assertFalse(hash.isEmpty());
-        assertTrue(hash.length() > 0 && hash.length() <= 100);
+        assertTrue(hash.length() <= 100);
     }
 
     @Test
@@ -52,6 +52,13 @@ class PasswordUtilTest {
         
         assertNotNull(hash);
         assertFalse(hash.isEmpty());
+    }
+
+    @Test
+    @DisplayName("matches con contrasena incorrecta retorna false")
+    void matches_wrongPassword_returnsFalse() {
+        String hash = PasswordUtil.hash("correctPassword");
+        assertFalse(PasswordUtil.matches("wrongpass", hash));
     }
 
     @Test

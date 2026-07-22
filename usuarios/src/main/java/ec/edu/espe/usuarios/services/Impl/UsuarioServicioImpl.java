@@ -2,7 +2,6 @@ package ec.edu.espe.usuarios.services.Impl;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +27,8 @@ import lombok.RequiredArgsConstructor;
 public class UsuarioServicioImpl implements UsuarioServicio {
 
     private static final String ENTIDAD = "USUARIO";
+    private static final String USUARIO_NOT_FOUND = "Usuario no encontrado con ID: ";
+    private static final String AUDIT_UPDATE = "UPDATE";
 
     private final UsuarioRepositorio usuarioRepositorio;
     private final PersonaRepositorio personaRepositorio;
@@ -40,14 +41,14 @@ public class UsuarioServicioImpl implements UsuarioServicio {
     public List<UsuarioResponseDto> listarUsuarios() {
         return usuarioRepositorio.findAll().stream()
                 .map(mapper::toUsuarioResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public UsuarioResponseDto obtenerUsuario(UUID idUsuario) {
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
+                .orElseThrow(() -> new RecursoNoEncontradoException(USUARIO_NOT_FOUND + idUsuario));
         return mapper.toUsuarioResponse(usuario);
     }
 
@@ -92,7 +93,7 @@ public class UsuarioServicioImpl implements UsuarioServicio {
     @Transactional
     public UsuarioResponseDto actualizarUsuario(UUID idUsuario, UsuarioUpdateDto request) {
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
+                .orElseThrow(() -> new RecursoNoEncontradoException(USUARIO_NOT_FOUND + idUsuario));
 
         if (!usuario.getPersona().getId().equals(request.getIdPersona())) {
             throw new IllegalArgumentException("No se permite cambiar la persona asociada al usuario");
@@ -112,7 +113,7 @@ public class UsuarioServicioImpl implements UsuarioServicio {
         }
 
         Usuario usuarioActualizado = usuarioRepositorio.save(usuario);
-        auditPublisher.publicar("UPDATE", ENTIDAD, usuarioActualizado);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, usuarioActualizado);
         return mapper.toUsuarioResponse(usuarioActualizado);
     }
 
@@ -120,7 +121,7 @@ public class UsuarioServicioImpl implements UsuarioServicio {
     @Transactional
     public UsuarioResponseDto activarUsuario(UUID idUsuario) {
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
+                .orElseThrow(() -> new RecursoNoEncontradoException(USUARIO_NOT_FOUND + idUsuario));
 
         // No se puede dar acceso a un usuario cuya persona (identidad) esta inactiva.
         if (usuario.getPersona() != null && !usuario.getPersona().isActive()) {
@@ -129,7 +130,7 @@ public class UsuarioServicioImpl implements UsuarioServicio {
 
         usuario.setActive(true);
         Usuario usuarioActivado = usuarioRepositorio.save(usuario);
-        auditPublisher.publicar("UPDATE", ENTIDAD, usuarioActivado);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, usuarioActivado);
         return mapper.toUsuarioResponse(usuarioActivado);
     }
 
@@ -137,7 +138,7 @@ public class UsuarioServicioImpl implements UsuarioServicio {
     @Transactional
     public UsuarioResponseDto desactivarUsuario(UUID idUsuario) {
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
+                .orElseThrow(() -> new RecursoNoEncontradoException(USUARIO_NOT_FOUND + idUsuario));
 
         // Cascada logica: revocar el acceso del usuario tambien retira sus roles activos.
         // (Composicion: el usuario "posee" sus asignaciones de rol.)
@@ -150,7 +151,7 @@ public class UsuarioServicioImpl implements UsuarioServicio {
 
         usuario.setActive(false);
         Usuario usuarioDesactivado = usuarioRepositorio.save(usuario);
-        auditPublisher.publicar("UPDATE", ENTIDAD, usuarioDesactivado);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, usuarioDesactivado);
         return mapper.toUsuarioResponse(usuarioDesactivado);
     }
 
@@ -163,6 +164,6 @@ public class UsuarioServicioImpl implements UsuarioServicio {
         }
         return usuarioRepositorio.findByUsernameContainingIgnoreCase(filtro).stream()
                 .map(mapper::toUsuarioResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

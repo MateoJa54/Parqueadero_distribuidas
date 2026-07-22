@@ -1,0 +1,153 @@
+/* ============================================================================
+   Soft UI Evolved — Design tokens
+   Un solo color de acento por vista. Estados nunca por color solo.
+   ========================================================================== */
+:root {
+  /* Tipografía */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Radios */
+  --r-input: 12px;
+  --r-card: 16px;
+  --r-chip: 24px;
+  --r-pill: 999px;
+
+  /* Espaciado base 8px */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* Acento primario */
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-active: #1d4ed8;
+  --primary-soft: rgba(59, 130, 246, 0.12);
+  --primary-contrast: #ffffff;
+
+  /* Semánticos */
+  --success: #16a34a;
+  --success-soft: rgba(22, 163, 74, 0.12);
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.12);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.12);
+  --info: #0891b2;
+  --info-soft: rgba(8, 145, 178, 0.12);
+
+  /* Transiciones */
+  --t-fast: 120ms ease;
+  --t-base: 200ms ease;
+
+  /* z-index */
+  --z-toast: 1000;
+  --z-modal: 900;
+  --z-overlay: 890;
+  --z-sticky: 100;
+}
+
+/* ---- Tema claro (por defecto) ---- */
+:root,
+[data-theme='light'] {
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-sunken: #eef1f7;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #94a3b8;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06),
+    0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08),
+    0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12),
+    0 4px 8px rgba(15, 23, 42, 0.06);
+  --ring: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+/* ---- Tema oscuro ---- */
+[data-theme='dark'] {
+  --bg: #0b1120;
+  --surface: #151c2c;
+  --surface-2: #1b2436;
+  --surface-sunken: #0f1626;
+  --border: #273349;
+  --border-strong: #37455f;
+
+  --text: #f1f5f9;
+  --text-muted: #a3b0c2;
+  --text-subtle: #64748b;
+
+  --primary-soft: rgba(59, 130, 246, 0.2);
+  --success-soft: rgba(22, 163, 74, 0.2);
+  --warning-soft: rgba(217, 119, 6, 0.22);
+  --danger-soft: rgba(220, 38, 38, 0.22);
+  --info-soft: rgba(8, 145, 178, 0.22);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.55);
+  --ring: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+/* ============================================================================
+   Reset ligero
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background var(--t-base), color var(--t-base);
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--r-input);
+}
+
+/* Números tabulares para tablas/cifras */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,7 @@
+# Namespace que aisla todos los recursos del sistema de parqueadero.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: parqueadero-iza-garcia-criollo
+  labels:
+    app.kubernetes.io/part-of: parqueadero

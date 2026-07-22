@@ -1,0 +1,193 @@
+# Configuracion declarativa de Kong (modo DB-less) adaptada a Kubernetes.
+# Diferencias respecto a gateway/kong.yml:
+#   - Las URLs upstream usan los nombres DNS de los Services de k8s
+#     (http://usuarios:8081, etc.) en lugar de host.docker.internal.
+#   - CORS incluye http://parqueadero.local (host del Ingress).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-config
+  namespace: parqueadero-iza-garcia-criollo
+data:
+  kong.yml: |
+    _format_version: "3.0"
+    _transform: true
+
+    services:
+      # ---------------- USUARIOS ----------------
+      - name: usuarios
+        url: http://usuarios:8081
+        routes:
+          - name: usuarios-auth-routes
+            strip_path: false
+            paths:
+              - /api/v1/auth
+          - name: usuarios-protected-routes
+            strip_path: false
+            paths:
+              - /api/v1/personas
+              - /api/v1/usuarios
+              - /api/v1/roles
+              - /api/v1/asignaciones
+            plugins:
+              - name: jwt
+                config:
+                  claims_to_verify:
+                    - exp
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+
+      # ---------------- ZONAS -------------------
+      - name: zonas
+        url: http://zonas:8080
+        routes:
+          - name: zonas-routes
+            strip_path: false
+            paths:
+              - /api/v1/zonas
+              - /api/v1/espacios
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+
+      # ---------------- VEHICULOS ---------------
+      - name: vehiculos
+        url: http://vehiculos:3000
+        routes:
+          - name: vehiculos-routes
+            strip_path: false
+            paths:
+              - /api/vehiculos
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+
+      # ---------------- ASIGNACIONES ------------
+      - name: asignaciones
+        url: http://asignaciones:8082
+        routes:
+          - name: asignaciones-routes
+            strip_path: false
+            paths:
+              - /api/v1/asignaciones-vehiculos
+              - /api/v1/propietarios
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+
+      # ---------------- TICKETS -----------------
+      - name: tickets
+        url: http://tickets:8083
+        routes:
+          - name: tickets-routes
+            strip_path: false
+            paths:
+              - /api/v1/tickets
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+
+      # ---------------- MS-AUDIT ----------------
+      - name: ms-audit
+        url: http://ms-audit:3002
+        routes:
+          - name: ms-audit-routes
+            strip_path: false
+            paths:
+              - /api/v1/audit
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 100
+              policy: local
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - http://parqueadero.local
+            - http://localhost:5173
+            - http://127.0.0.1:5173
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - Accept
+            - Content-Type
+            - Authorization
+            - X-Device-Mac
+          credentials: false
+          max_age: 3600
+
+      - name: response-transformer
+        config:
+          add:
+            headers:
+              - "X-Content-Type-Options:nosniff"
+              - "X-Frame-Options:DENY"
+              - "Referrer-Policy:strict-origin-when-cross-origin"
+              - "Strict-Transport-Security:max-age=31536000; includeSubDomains"
+          remove:
+            headers:
+              - "Server"
+
+      - name: request-size-limiting
+        config:
+          allowed_payload_size: 8
+
+      - name: correlation-id
+        config:
+          header_name: X-Correlation-ID
+          generator: uuid
+          echo_downstream: true
+
+    consumers:
+      - username: parqueadero-app
+        jwt_secrets:
+          - key: parqueadero
+            algorithm: RS256
+            rsa_public_key: |
+              -----BEGIN PUBLIC KEY-----
+              MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5rURdug9VJgdOLRTC7Cv
+              p0/9v97Mf6+k2yFPsyRTyENrHSpAC1kmQNUvRLHnPPvFB1zYLCxqYrF0I/JRnHmk
+              yjxxmLE8PG1u/DJyW3MGWL7zoZwf+Qzy2qpVFG+srBuh8mUSu5UtutHncEFEvGMn
+              8CDvnC+iJ7cwKM6MYDETrdGWH30RYUZ6KSWiR9L3OHHTnrJzi2Tzo7oOn3X4vTdg
+              GLy/fySs/QLAZvApAZH+DINIw+Kr8as3Kvh5aFk8Ff5ClVa6FdhobragaftKKHA3
+              dymW14YpwPWdXux8iNFAWOL9S+Osqje754f2Kfzc1jcU7WUryKzpVbtos128v/7k
+              CwIDAQAB
+              -----END PUBLIC KEY-----

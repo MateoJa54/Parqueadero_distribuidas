@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ec.edu.espe.asignaciones.dtos.AssignmentResponse;
@@ -30,6 +31,13 @@ import lombok.RequiredArgsConstructor;
 public class AssignmentController {
 
     private final AssignmentService assignmentService;
+
+    @GetMapping
+    @PreAuthorize(RolesAsignaciones.PUEDE_ADMINISTRAR)
+    public ResponseEntity<List<AssignmentResponse>> listarAsignaciones(
+            @RequestParam(value = "activas", required = false, defaultValue = "false") boolean activas) {
+        return ResponseEntity.ok(assignmentService.listarAsignaciones(activas));
+    }
 
     @PostMapping
     @PreAuthorize(RolesAsignaciones.PUEDE_ADMINISTRAR)

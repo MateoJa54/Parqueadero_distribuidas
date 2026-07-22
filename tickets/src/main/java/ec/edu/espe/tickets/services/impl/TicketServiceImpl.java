@@ -2,14 +2,17 @@ package ec.edu.espe.tickets.services.impl;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.List;
+import java.time.ZoneId;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ec.edu.espe.tickets.audit.AuditPublisher;
+import ec.edu.espe.tickets.audit.AuditRequest;
 import ec.edu.espe.tickets.dtos.AnularTicketRequest;
 import ec.edu.espe.tickets.dtos.AsignacionActivaResponse;
 import ec.edu.espe.tickets.dtos.EspacioClientResponse;
@@ -37,12 +40,13 @@ public class TicketServiceImpl implements TicketService {
     private static final String ESTADO_ESPACIO_DISPONIBLE = "DISPONIBLE";
     private static final String ESTADO_ESPACIO_OCUPADO = "OCUPADO";
     private static final String ENTIDAD = "TICKET";
+    private static final String ZONA_HORARIA = "America/Guayaquil";
 
     private final TicketRepository ticketRepository;
     private final CatalogoExternoService catalogo;
     private final CalculadoraTarifa calculadoraTarifa;
     private final GeneradorCodigoTicket generadorCodigo;
-    private final AuditPublisher auditPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -91,7 +95,7 @@ public class TicketServiceImpl implements TicketService {
                 .placa(placa)
                 .tipoVehiculo(vehiculo.getTipo())
                 .categoriaTarifa(categoria)
-                .fechaHoraIngreso(OffsetDateTime.now())
+                .fechaHoraIngreso(OffsetDateTime.now(ZoneId.of(ZONA_HORARIA)))
                 .estadoTicket(EstadoTicket.ACTIVO)
                 .idEmpleado(idEmpleado)
                 .valorRecaudado(BigDecimal.ZERO)
@@ -113,7 +117,9 @@ public class TicketServiceImpl implements TicketService {
         // propaga y @Transactional revierte la insercion del ticket.
         catalogo.cambiarEstadoEspacio(espacio.getId(), ESTADO_ESPACIO_OCUPADO);
 
-        auditPublisher.publicar("CREATE", ENTIDAD, guardado);
+        // El envio real a RabbitMQ ocurre AFTER_COMMIT (AuditEventListener): si
+        // la transaccion revierte, no se emite un evento de auditoria fantasma.
+        eventPublisher.publishEvent(new AuditRequest("CREATE", ENTIDAD, guardado));
         return TicketMapper.aResponse(guardado);
     }
 
@@ -127,7 +133,7 @@ public class TicketServiceImpl implements TicketService {
                             + ticket.getEstadoTicket() + ")");
         }
 
-        OffsetDateTime salida = OffsetDateTime.now();
+        OffsetDateTime salida = OffsetDateTime.now(ZoneId.of(ZONA_HORARIA));
         BigDecimal valor = calculadoraTarifa.calcular(
                 ticket.getTipoVehiculo(), ticket.getTipoEspacio(),
                 ticket.getCategoriaTarifa(),
@@ -141,7 +147,7 @@ public class TicketServiceImpl implements TicketService {
 
         catalogo.cambiarEstadoEspacio(ticket.getIdEspacio(), ESTADO_ESPACIO_DISPONIBLE);
 
-        auditPublisher.publicar("UPDATE", ENTIDAD, guardado);
+        eventPublisher.publishEvent(new AuditRequest("UPDATE", ENTIDAD, guardado));
         return TicketMapper.aResponse(guardado);
     }
 
@@ -157,14 +163,14 @@ public class TicketServiceImpl implements TicketService {
 
         ticket.setEstadoTicket(EstadoTicket.ANULADO);
         ticket.setValorRecaudado(BigDecimal.ZERO);
-        ticket.setFechaHoraSalida(OffsetDateTime.now());
+        ticket.setFechaHoraSalida(OffsetDateTime.now(ZoneId.of(ZONA_HORARIA)));
         ticket.setMotivoAnulacion(request.getMotivo().trim());
         ticket.setIdEmpleado(idEmpleado);
         Ticket guardado = ticketRepository.save(ticket);
 
         catalogo.cambiarEstadoEspacio(ticket.getIdEspacio(), ESTADO_ESPACIO_DISPONIBLE);
 
-        auditPublisher.publicar("UPDATE", ENTIDAD, guardado);
+        eventPublisher.publishEvent(new AuditRequest("UPDATE", ENTIDAD, guardado));
         return TicketMapper.aResponse(guardado);
     }
 
@@ -185,11 +191,21 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TicketResponse> listar(EstadoTicket estado) {
-        List<Ticket> tickets = (estado == null)
-                ? ticketRepository.findAllByOrderByFechaHoraIngresoDesc()
-                : ticketRepository.findByEstadoTicketOrderByFechaHoraIngresoDesc(estado);
-        return tickets.stream().map(TicketMapper::aResponse).toList();
+    public Page<TicketResponse> listar(EstadoTicket estado, Pageable pageable) {
+        Page<Ticket> tickets = (estado == null)
+                ? ticketRepository.findAllByOrderByFechaHoraIngresoDesc(pageable)
+                : ticketRepository.findByEstadoTicketOrderByFechaHoraIngresoDesc(estado, pageable);
+        return tickets.map(TicketMapper::aResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TicketResponse> listarPorUsuario(UUID idUsuario, EstadoTicket estado, Pageable pageable) {
+        Page<Ticket> tickets = (estado == null)
+                ? ticketRepository.findByIdUsuarioOrderByFechaHoraIngresoDesc(idUsuario, pageable)
+                : ticketRepository.findByIdUsuarioAndEstadoTicketOrderByFechaHoraIngresoDesc(
+                        idUsuario, estado, pageable);
+        return tickets.map(TicketMapper::aResponse);
     }
 
     @Override
@@ -201,6 +217,18 @@ public class TicketServiceImpl implements TicketService {
                         "El espacio no tiene un ticket activo: " + idEspacio));
         return TicketMapper.aResponse(ticket);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<VehiculoClientResponse> listarVehiculosSinTicketActivo() {
+        // Vehiculos que ya estan dentro del parqueadero (ticket ACTIVO): se excluyen.
+        java.util.Set<UUID> conTicketActivo =
+                new java.util.HashSet<>(ticketRepository.idsVehiculoPorEstado(EstadoTicket.ACTIVO));
+        return catalogo.obtenerVehiculosActivos().stream()
+                .filter(v -> v.getId() != null && !conTicketActivo.contains(v.getId()))
+                .toList();
+    }
+
 
     // ------------------------------------------------------------------
     // Validaciones privadas
@@ -226,7 +254,7 @@ public class TicketServiceImpl implements TicketService {
             throw new ReglaNegocioException(
                     "El vehiculo con placa " + placa + " no tiene autorizacion de ingreso");
         }
-        OffsetDateTime ahora = OffsetDateTime.now();
+        OffsetDateTime ahora = OffsetDateTime.now(ZoneId.of(ZONA_HORARIA));
         if (asignacion.getValidFrom() != null && ahora.isBefore(asignacion.getValidFrom())) {
             throw new ReglaNegocioException(
                     "La asignacion aun no es vigente (valida desde " + asignacion.getValidFrom() + ")");

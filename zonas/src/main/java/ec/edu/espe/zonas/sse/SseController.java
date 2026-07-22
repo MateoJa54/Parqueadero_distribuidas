@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
  */
 @RestController
 @RequestMapping("/api/v1/sse")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${cors.allowed-origins}")
 @RequiredArgsConstructor
 public class SseController {
 

@@ -27,6 +27,8 @@ import lombok.RequiredArgsConstructor;
 public class ZonaServicioImpl implements ZonaServicio {
 
     private static final String ENTIDAD = "ZONA";
+    private static final String ZONA_NOT_FOUND = "Zona no encontrada con ID: ";
+    private static final String AUDIT_UPDATE = "UPDATE";
 
     private final ZonaRepositorio repositorioZona;
     private final EspacioRepositorio repositorioEspacio;
@@ -44,7 +46,7 @@ public class ZonaServicioImpl implements ZonaServicio {
     @Transactional(readOnly = true)
     public ZonaRespondeDto obtenerZona(UUID id) {
         Zona zona = repositorioZona.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Zona no encontrada con ID: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ZONA_NOT_FOUND + id));
         return mapToDto(zona);
     }
 
@@ -77,7 +79,7 @@ public class ZonaServicioImpl implements ZonaServicio {
     @Transactional
     public ZonaRespondeDto actualizarZona(UUID idZona, ZonaRequestDto request) {
         Zona zona = repositorioZona.findById(idZona)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Zona no encontrada con ID: " + idZona));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ZONA_NOT_FOUND + idZona));
 
         String nombre = request.getNombre().trim();
 
@@ -98,7 +100,7 @@ public class ZonaServicioImpl implements ZonaServicio {
         zona.setCapacidad(request.getCapacidad());
 
         repositorioZona.save(zona);
-        auditPublisher.publicar("UPDATE", ENTIDAD, zona);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, zona);
         return mapToDto(zona);
     }
 
@@ -106,7 +108,7 @@ public class ZonaServicioImpl implements ZonaServicio {
     @Transactional
     public void activarZona(UUID idZona) {
         Zona zona = repositorioZona.findById(idZona)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Zona no encontrada con ID: " + idZona));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ZONA_NOT_FOUND + idZona));
 
         List<Espacio> espacios = repositorioEspacio.findByZona(zona);
         for (Espacio espacio : espacios) {
@@ -117,14 +119,14 @@ public class ZonaServicioImpl implements ZonaServicio {
 
         zona.setActivo(true);
         repositorioZona.save(zona);
-        auditPublisher.publicar("UPDATE", ENTIDAD, zona);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, zona);
     }
 
     @Override
     @Transactional
     public void desactivarZona(UUID idZona) {
         Zona zona = repositorioZona.findById(idZona)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Zona no encontrada con ID: " + idZona));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ZONA_NOT_FOUND + idZona));
 
         List<Espacio> espacios = repositorioEspacio.findByZona(zona);
 
@@ -143,7 +145,7 @@ public class ZonaServicioImpl implements ZonaServicio {
 
         zona.setActivo(false);
         repositorioZona.save(zona);
-        auditPublisher.publicar("UPDATE", ENTIDAD, zona);
+        auditPublisher.publicar(AUDIT_UPDATE, ENTIDAD, zona);
     }
 
 

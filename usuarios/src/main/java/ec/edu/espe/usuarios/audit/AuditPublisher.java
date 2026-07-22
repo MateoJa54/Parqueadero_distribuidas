@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -62,8 +64,9 @@ public class AuditPublisher {
      * prioridad sobre lo inferido del JWT/SecurityContext.
      */
     public void publicar(String accion, String entidad, Object datos, String usuarioExplicito, String rolExplicito) {
+        final AuditEvent evento;
         try {
-            AuditEvent evento = AuditEvent.builder()
+            evento = AuditEvent.builder()
                     .servicio(SERVICIO)
                     .accion(accion)
                     .entidad(entidad)
@@ -73,10 +76,31 @@ public class AuditPublisher {
                     .ip(ipActual())
                     .mac(macActual())
                     .build();
-
-            rabbitTemplate.convertAndSend(exchange, routingKey, evento);
         } catch (Exception ex) {
-            log.warn("No se pudo publicar el evento de auditoria [{} {}]: {}", accion, entidad, ex.getMessage());
+            log.warn("No se pudo construir el evento de auditoria [{} {}]: {}", accion, entidad, ex.getMessage());
+            return;
+        }
+
+        Runnable envio = () -> {
+            try {
+                rabbitTemplate.convertAndSend(exchange, routingKey, evento);
+            } catch (Exception ex) {
+                log.warn("No se pudo publicar el evento de auditoria [{} {}]: {}", accion, entidad, ex.getMessage());
+            }
+        };
+
+        // Diferir el envio a RabbitMQ hasta DESPUES del commit de la transaccion
+        // de negocio: si la transaccion revierte, no se emite un evento fantasma
+        // (elimina el dual-write). Sin transaccion activa (p.ej. LOGIN) se envia ya.
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    envio.run();
+                }
+            });
+        } else {
+            envio.run();
         }
     }
 

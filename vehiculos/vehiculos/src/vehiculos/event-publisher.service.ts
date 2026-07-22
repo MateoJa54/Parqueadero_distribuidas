@@ -24,8 +24,8 @@ export class EventPublisher implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(EventPublisher.name);
   private connection: any = null; // any para evitar conflictos de tipos
   private channel: any = null;
-  private exchange: string;
-  private routingKey: string;
+  private readonly exchange: string;
+  private readonly routingKey: string;
   private isConnected = false;
   private connectionPromise: Promise<void> | null = null;
   private reconnectTimeout: NodeJS.Timeout | null = null;
@@ -142,7 +142,7 @@ export class EventPublisher implements OnModuleInit, OnModuleDestroy {
     try {
       if (this.channel) await this.channel.close();
       if (this.connection) await this.connection.close();
-    } catch (error) {
+    } catch {
       // Ignoramos errores al cerrar
     }
     this.logger.log('Conexión a RabbitMQ cerrada');

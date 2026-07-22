@@ -106,7 +106,7 @@ export class CamionetaDto extends BaseVehiculoDto {
 
   @IsString()
   @IsNotEmpty({ message: 'La capacidad de carga no puede estar vacía' })
-  @Matches(/^[0-9]+(\.[0-9]+)?\s?(kg|KG|t|T)$/,
+  @Matches(/^\d+(\.\d+)?\s?(kg|KG|t|T)$/,
     {
       message: 'La capacidad de carga debe tener formato como 750kg o 3.5t',
     })

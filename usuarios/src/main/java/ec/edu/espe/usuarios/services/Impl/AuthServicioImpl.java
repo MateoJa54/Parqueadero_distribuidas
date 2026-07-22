@@ -1,14 +1,18 @@
 package ec.edu.espe.usuarios.services.Impl;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ec.edu.espe.usuarios.audit.AuditPublisher;
 import ec.edu.espe.usuarios.dtos.AsignarRolRequestDto;
+import ec.edu.espe.usuarios.dtos.PersonaRequestDto;
+import ec.edu.espe.usuarios.dtos.PersonaResponseDto;
 import ec.edu.espe.usuarios.dtos.UsuarioRequestDto;
 import ec.edu.espe.usuarios.dtos.UsuarioResponseDto;
 import ec.edu.espe.usuarios.dtos.auth.AuthResponse;
@@ -16,6 +20,8 @@ import ec.edu.espe.usuarios.dtos.auth.LoginRequest;
 import ec.edu.espe.usuarios.dtos.auth.PerfilResponse;
 import ec.edu.espe.usuarios.dtos.auth.RefreshRequest;
 import ec.edu.espe.usuarios.dtos.auth.RegisterRequest;
+import ec.edu.espe.usuarios.dtos.auth.RegistroClienteRequest;
+import ec.edu.espe.usuarios.dtos.auth.RegistroCompletoRequest;
 import ec.edu.espe.usuarios.entidades.Persona;
 import ec.edu.espe.usuarios.entidades.Rol;
 import ec.edu.espe.usuarios.entidades.Usuario;
@@ -51,26 +57,31 @@ public class AuthServicioImpl implements AuthServicio {
     private final UsuarioRepositorio usuarioRepositorio;
     private final UsuarioRolRepositorio usuarioRolRepositorio;
     private final RolRepositorio rolRepositorio;
+    private final ec.edu.espe.usuarios.repositorios.PersonaRepositorio personaRepositorio;
     private final UsuarioServicio usuarioServicio;
+    private final ec.edu.espe.usuarios.services.PersonaServicio personaServicio;
     private final AsignacionServicio asignacionServicio;
     private final JwtService jwtService;
     private final AuditPublisher auditPublisher;
+
+    @Lazy
+    private final AuthServicioImpl self;
 
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request) {
         // Mensaje generico para no revelar si fallo el username o la contrasena.
         Usuario usuario = usuarioRepositorio.findByUsernameIgnoreCase(request.getUsername().trim())
-                .orElseThrow(() -> new CredencialesInvalidasException("Usuario o contrasena incorrectos"));
+                .orElseThrow(() -> new CredencialesInvalidasException("Usuario o contraseña incorrectos"));
 
         if (!usuario.isActive()) {
-            throw new CredencialesInvalidasException("Usuario o contrasena incorrectos");
+            throw new CredencialesInvalidasException("Usuario o contraseña incorrectos");
         }
         if (!PasswordUtil.matches(request.getPassword(), usuario.getPasswordHash())) {
-            throw new CredencialesInvalidasException("Usuario o contrasena incorrectos");
+            throw new CredencialesInvalidasException("Usuario o contraseña incorrectos");
         }
 
-        usuario.setLastLogin(LocalDateTime.now());
+        usuario.setLastLogin(LocalDateTime.now(ZoneId.of("America/Guayaquil")));
         Usuario usuarioActualizado = usuarioRepositorio.save(usuario);
 
         // En este punto todavia no existe una sesion autenticada (el login ES
@@ -113,13 +124,67 @@ public class AuthServicioImpl implements AuthServicio {
 
     @Override
     @Transactional
+    public AuthResponse registrarCliente(RegistroClienteRequest request) {
+        // Mensaje UNICO y generico para TODOS los casos de fallo (persona inexistente,
+        // email que no coincide, persona inactiva o cuenta ya creada). Asi el endpoint
+        // no permite enumerar cedulas/correos ni saber si una cedula existe en el sistema.
+        final String generico = "No pudimos verificar tu identidad con esos datos, "
+                + "o ya existe una cuenta asociada. Verifica tu cédula y correo, o contacta al administrador.";
+
+        Persona persona = personaRepositorio.findByDni(request.getDni().trim())
+                .orElseThrow(() -> new ReglaNegocioException(generico));
+
+        // Segundo factor de identidad: el correo debe coincidir exactamente (sin distinguir mayusculas).
+        if (persona.getEmail() == null || !persona.getEmail().equalsIgnoreCase(request.getEmail().trim())) {
+            throw new ReglaNegocioException(generico);
+        }
+        // La persona debe estar activa y no tener aun un usuario (PK compartida persona<->usuario).
+        if (!persona.isActive() || usuarioRepositorio.existsById(persona.getId())) {
+            throw new ReglaNegocioException(generico);
+        }
+
+        // Identidad verificada: reutiliza el alta de usuario + rol CLIENTE con el idPersona resuelto.
+        RegisterRequest interno = new RegisterRequest();
+        interno.setIdPersona(persona.getId());
+        interno.setUsername(request.getUsername());
+        interno.setPassword(request.getPassword());
+        return self.register(interno);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse registrarCompleto(RegistroCompletoRequest request) {
+        // 1) Crea la persona (identidad) reutilizando PersonaServicio, que valida
+        //    cedula ecuatoriana + unicidad de dni/email/telefono y la deja activa.
+        PersonaResponseDto persona = personaServicio.crearPersona(PersonaRequestDto.builder()
+                .firstName(request.getFirstName())
+                .middleName(request.getMiddleName())
+                .lastName(request.getLastName())
+                .dni(request.getDni())
+                .email(request.getEmail())
+                .phone(request.getPhone())
+                .address(request.getAddress())
+                .nationality(request.getNationality())
+                .build());
+
+        // 2) Crea el usuario (acceso) sobre esa persona + rol CLIENTE. Al compartir la
+        //    transaccion, si falla el alta del usuario tambien se revierte la persona.
+        RegisterRequest interno = new RegisterRequest();
+        interno.setIdPersona(persona.getId());
+        interno.setUsername(request.getUsername());
+        interno.setPassword(request.getPassword());
+        return self.register(interno);
+    }
+
+    @Override
+    @Transactional
     public AuthResponse refrescar(RefreshRequest request) {
         // 1. Validar firma, expiracion y que el token sea realmente de tipo refresh.
         Claims claims;
         try {
             claims = jwtService.validarTipo(request.getRefreshToken().trim(), JwtService.TYPE_REFRESH);
         } catch (JwtException | IllegalArgumentException ex) {
-            throw new CredencialesInvalidasException("Refresh token invalido o expirado: inicie sesion de nuevo");
+            throw new CredencialesInvalidasException("Refresh token inválido o expirado: inicie sesión de nuevo");
         }
 
         // 2. El usuario debe seguir existiendo y estar activo.
@@ -127,13 +192,13 @@ public class AuthServicioImpl implements AuthServicio {
         try {
             idUsuario = UUID.fromString(claims.getSubject());
         } catch (IllegalArgumentException ex) {
-            throw new CredencialesInvalidasException("Refresh token invalido o expirado: inicie sesion de nuevo");
+            throw new CredencialesInvalidasException("Refresh token inválido o expirado: inicie sesión de nuevo");
         }
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
                 .orElseThrow(() -> new CredencialesInvalidasException(
-                        "Refresh token invalido o expirado: inicie sesion de nuevo"));
+                        "Refresh token inválido o expirado: inicie sesión de nuevo"));
         if (!usuario.isActive()) {
-            throw new CredencialesInvalidasException("La cuenta esta inactiva");
+            throw new CredencialesInvalidasException("La cuenta está inactiva");
         }
 
         // 3. Emitir un nuevo access y ROTAR el refresh (roles frescos desde la BD).
@@ -146,10 +211,22 @@ public class AuthServicioImpl implements AuthServicio {
         Usuario usuario = usuarioRepositorio.findById(idUsuario)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con ID: " + idUsuario));
 
+        // El propio usuario SIEMPRE puede ver sus datos personales aqui, sin depender
+        // del endpoint de personas (restringido a ADMIN/ROOT).
+        Persona persona = usuario.getPersona();
         return PerfilResponse.builder()
                 .idUsuario(usuario.getId())
+                .idPersona(persona != null ? persona.getId() : null)
                 .username(usuario.getUsername())
-                .nombreCompleto(nombreCompleto(usuario.getPersona()))
+                .nombreCompleto(nombreCompleto(persona))
+                .firstName(persona != null ? persona.getFirstName() : null)
+                .middleName(persona != null ? persona.getMiddleName() : null)
+                .lastName(persona != null ? persona.getLastName() : null)
+                .dni(persona != null ? persona.getDni() : null)
+                .email(persona != null ? persona.getEmail() : null)
+                .phone(persona != null ? persona.getPhone() : null)
+                .address(persona != null ? persona.getAddress() : null)
+                .nationality(persona != null ? persona.getNationality() : null)
                 .active(usuario.isActive())
                 .roles(rolesActivos(usuario))
                 .build();

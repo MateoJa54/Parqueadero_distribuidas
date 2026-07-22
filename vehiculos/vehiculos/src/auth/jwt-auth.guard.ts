@@ -29,7 +29,7 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const header = request.headers['authorization'];
 
-    if (!header || !header.startsWith('Bearer ')) {
+    if (!header?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Token ausente o invalido: inicie sesion');
     }
 

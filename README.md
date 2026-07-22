@@ -1,10 +1,11 @@
 # 🅿️ Sistema de Parqueadero — Microservicios Distribuidos
 
-Proyecto de **Sistemas Distribuidos** (Parcial 2 · backend). El sistema está compuesto por
-**4 microservicios independientes**, una **base de datos PostgreSQL unificada** y un
-**API Gateway Kong** que expone todo desde un único punto de entrada.
+Proyecto de **Sistemas Distribuidos** (Parcial 2). El sistema está compuesto por
+**6 microservicios independientes**, una **base de datos PostgreSQL unificada**, un
+**bus de eventos RabbitMQ**, un **API Gateway Kong** que expone todo desde un único punto de
+entrada, y un **frontend React** para usarlo desde el navegador.
 
-| Microservicio | Tecnología | Puerto | Base de datos |
+| Componente | Tecnología | Puerto | Base de datos |
 |---|---|---|---|
 | **usuarios** | Spring Boot 3.5 (Java 25) | `8081` | `usuarios` |
 | **zonas** | Spring Boot 3.5 (Java 25) | `8080` | `zonas` |
@@ -12,16 +13,52 @@ Proyecto de **Sistemas Distribuidos** (Parcial 2 · backend). El sistema está c
 | **asignaciones** | Spring Boot 3.5 (Java 25) | `8082` | `asignaciones` |
 | **tickets** | Spring Boot 3.5 (Java 25) | `8083` | `tickets` |
 | **ms-audit** | NestJS 11 + TypeORM | `3002` (prefijo `/api/v1`) | `audit_db` |
+| **frontend** | React 18 + Vite + TS | `5173` | — |
 | **PostgreSQL** | Docker (postgres:16) | `5433` | todas las anteriores |
 | **RabbitMQ** | Docker (rabbitmq:3-management) | `5672` AMQP / `15672` panel | — |
 | **Kong Gateway** | Docker (kong:3.7, DB-less) | `8000` proxy / `8001` admin | — |
 
 ```
-Cliente ──► Kong (:8000) ──► usuarios (:8081)
-                          ├─► zonas    (:8080)
-                          ├─► vehiculos(:3000)
-                          └─► asignaciones(:8082)
+Frontend (:5173) ──► Kong (:8000) ──► usuarios (:8081)
+                                   ├─► zonas       (:8080)
+                                   ├─► vehiculos    (:3000)
+                                   ├─► asignaciones (:8082)
+                                   ├─► tickets      (:8083)
+                                   └─► ms-audit     (:3002)
 ```
+
+---
+
+## ⚡ Arranque rápido (para el equipo)
+
+**¿Solo quieres compilar y probar todo con datos?** Usa el script automático: genera las
+claves JWT, levanta Docker + Kong, **compila y arranca los 6 microservicios + el frontend**, y
+**carga los datos de prueba** — todo en un comando.
+
+**Linux / macOS**
+```bash
+export JAVA_HOME=/usr/lib/jvm/java-25-openjdk   # tu ruta al JDK 25
+chmod +x iniciar.sh detener.sh
+./iniciar.sh
+```
+
+**Windows (PowerShell, en la raíz del repo — antes define `JAVA_HOME` al JDK 25)**
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\iniciar.ps1
+```
+
+Al terminar tendrás:
+- **Frontend:** http://localhost:5173  ·  **Gateway:** http://localhost:8000
+- **Cuentas de prueba:** `qa.admin / QaAdmin2025` (ADMIN), `qa.recauda / QaRecauda2025`
+  (RECAUDADOR), `qa.cliente / QaCliente2025` (CLIENTE), `qa.invitado / QaInvitado2025`
+  (INVITADO) y `root / Root2025` (súper admin).
+
+Detener todo: `./detener.sh` (Linux/macOS) o `.\detener.ps1` (Windows). Opciones: `--no-seed`
+/ `-NoSeed` (sin datos), `--no-front` / `-NoFront` (sin frontend), `--wipe` / `-Wipe` (borra la BD).
+
+> 📘 **Guía completa (auto + manual, Windows y Linux, cuentas y pruebas):** [`GUIA-EQUIPO.md`](GUIA-EQUIPO.md).
+> Si prefieres arrancar servicio por servicio a mano, sigue la sección **Puesta en marcha** de abajo.
 
 ---
 
@@ -31,10 +68,11 @@ Instala esto en tu equipo (sirve igual para **Windows**, Linux y macOS):
 
 | Herramienta | Versión | Para qué |
 |---|---|---|
-| **JDK 25** | 25 | compilar/ejecutar usuarios, zonas y asignaciones |
-| **Node.js** | 20 o superior | ejecutar vehiculos |
-| **Docker Desktop** | reciente | PostgreSQL y Kong |
-| **Git** | reciente | clonar el repositorio |
+| **JDK 25** | 25 | compilar/ejecutar usuarios, zonas, asignaciones y tickets |
+| **Node.js** | 20 o superior | ejecutar vehiculos, ms-audit y el frontend |
+| **Docker Desktop** | reciente | PostgreSQL, RabbitMQ y Kong |
+| **Python** | 3.8+ | scripts de carga de datos de prueba |
+| **Git** | reciente | clonar el repositorio (en Windows aporta `bash`/`openssl`) |
 | **Postman** | reciente | probar las APIs |
 
 > No necesitas instalar Maven: cada servicio Spring trae su **Maven Wrapper** (`mvnw` / `mvnw.cmd`).
@@ -51,13 +89,28 @@ java -version      # debe decir 25
 
 ## 🚀 Puesta en marcha (paso a paso)
 
+> Esta es la vía **manual** (servicio por servicio). Si prefieres un solo comando, usa el
+> **Arranque rápido** de arriba (`iniciar.sh` / `iniciar.ps1`).
+
 ### 1) Clonar el repositorio
 ```bash
 git clone https://github.com/MateoJa54/Parqueadero_distribuidas.git
 cd Parqueadero_distribuidas
 ```
 
-### 2) Levantar la base de datos y RabbitMQ (Docker)
+### 2) Generar las claves JWT (RS256) — obligatorio la primera vez
+`usuarios` **firma** los tokens con la clave privada; los demás servicios y Kong solo los
+**verifican** con la pública. Las claves **no están en Git** (son secretos), así que hay que
+generarlas al clonar:
+```bash
+# Linux/macOS y Windows con Git Bash:
+bash scripts/setup_jwt_keys.sh
+```
+Esto crea `keys/jwt_private.pem`, `keys/jwt_public.pem` y escribe el `.env` de `ms-audit` y
+`vehiculos` con la clave pública. Sin este paso los servicios fallan al arrancar con
+*"No se pudo cargar la clave privada RSA"*.
+
+### 3) Levantar la base de datos y RabbitMQ (Docker)
 Una sola instancia de PostgreSQL crea **automáticamente** todas las bases (incluida
 `audit_db`) la primera vez (gracias a `init-db/01-init.sql`), y RabbitMQ es el bus de
 eventos que usa el sistema de auditoría:
@@ -75,7 +128,7 @@ Panel de RabbitMQ: http://localhost:15672 (usuario/clave `guest`/`guest`).
 > init no se re-ejecuta solo; crea la base manualmente una vez:
 > `docker exec parqueadero-postgres psql -U postgres -c "CREATE USER audit_user WITH PASSWORD 'audit_pass';" -c "CREATE DATABASE audit_db OWNER audit_user;"`
 
-### 3) Levantar el microservicio **usuarios** (puerto 8081)
+### 4) Levantar el microservicio **usuarios** (puerto 8081)
 
 **Windows (PowerShell o CMD):**
 ```powershell
@@ -90,7 +143,7 @@ export JAVA_HOME=/ruta/al/jdk-25      # ej: /usr/lib/jvm/java-25-openjdk
 ./mvnw spring-boot:run
 ```
 
-### 4) Levantar el microservicio **zonas** (puerto 8080)
+### 5) Levantar el microservicio **zonas** (puerto 8080)
 En **otra terminal**:
 
 **Windows:**
@@ -106,7 +159,7 @@ export JAVA_HOME=/ruta/al/jdk-25
 ./mvnw spring-boot:run
 ```
 
-### 5) Levantar el microservicio **vehiculos** (puerto 3000)
+### 6) Levantar el microservicio **vehiculos** (puerto 3000)
 En **otra terminal**:
 ```bash
 cd vehiculos/vehiculos
@@ -117,7 +170,7 @@ npm run start:dev
 En este punto las APIs core corren en el host y la base en Docker. Ya puedes probar directo
 (`http://localhost:8081`, `:8080`, `:3000/api`, `:8082`) o levantar el gateway (siguiente sección).
 
-### 6) Levantar el microservicio **asignaciones** (puerto 8082)
+### 7) Levantar el microservicio **asignaciones** (puerto 8082)
 En **otra terminal**:
 
 **Windows:**
@@ -133,7 +186,23 @@ export JAVA_HOME=/ruta/al/jdk-25
 ./mvnw spring-boot:run
 ```
 
-### 7) Levantar el microservicio **ms-audit** (puerto 3002)
+### 8) Levantar el microservicio **tickets** (puerto 8083)
+En **otra terminal**:
+
+**Windows:**
+```powershell
+cd tickets
+.\mvnw.cmd spring-boot:run
+```
+
+**Linux / macOS:**
+```bash
+cd tickets
+export JAVA_HOME=/ruta/al/jdk-25
+./mvnw spring-boot:run
+```
+
+### 9) Levantar el microservicio **ms-audit** (puerto 3002)
 En **otra terminal**. Consume desde RabbitMQ (exchange `audit_exchange`) los eventos que
 publican los demás microservicios y los persiste en `audit_db`:
 ```bash
@@ -142,6 +211,46 @@ npm install
 npm run start:dev
 ```
 Consultar los eventos guardados: `GET http://localhost:3002/api/v1/audit`.
+
+### 10) Levantar el **gateway Kong** (puerto 8000)
+En **otra terminal**. A partir de aquí **todas** las peticiones entran por el puerto `8000`
+(ver la sección *API Gateway con Kong* más abajo):
+```bash
+cd gateway
+docker compose up -d
+```
+
+### 11) Cargar datos de prueba (usuarios QA + catálogo)
+Con `usuarios`, `zonas`, `vehiculos`, `asignaciones` y **Kong** arriba, en **otra terminal**
+desde la raíz del repo:
+```bash
+python3 scripts/seed_usuarios_roles.py   # cuentas QA (admin, recaudador, cliente, invitado)
+python3 scripts/seed_datos.py            # catálogo: personas, zonas, espacios, vehículos, asignaciones
+```
+> En **Windows** usa `python` en lugar de `python3`. Los scripts pasan por Kong y usan la
+> cuenta `root / Root2025` (que el servicio `usuarios` crea solo al arrancar).
+
+**Cuentas de prueba que quedan disponibles:**
+
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| `root` | `Root2025` | ROOT (súper admin) |
+| `qa.admin` | `QaAdmin2025` | ADMIN |
+| `qa.recauda` | `QaRecauda2025` | RECAUDADOR |
+| `qa.cliente` | `QaCliente2025` | CLIENTE |
+| `qa.invitado` | `QaInvitado2025` | INVITADO |
+
+(Los usuarios del catálogo de `seed_datos.py` usan la contraseña `Espe2025`.)
+
+### 12) Levantar el **frontend** (puerto 5173)
+En **otra terminal**:
+```bash
+cd frontend
+cp .env.example .env       # Windows: copy .env.example .env
+npm install
+npm run dev                # abre http://localhost:5173
+```
+Inicia sesión con cualquiera de las cuentas de prueba de arriba.
 
 ---
 
@@ -272,10 +381,16 @@ GET /api/v1/espacios/{id}/disponibilidad             # ¿este espacio está libr
 ## 🗂️ Estructura del repositorio
 ```
 .
+├── iniciar.sh / iniciar.ps1  # arranque COMPLETO en 1 comando (Linux / Windows)
+├── detener.sh / detener.ps1  # detener todo
+├── GUIA-EQUIPO.md            # guía de arranque y pruebas para el equipo
 ├── docker-compose.yml        # PostgreSQL unificado + RabbitMQ (host 5433 / 5672)
 ├── init-db/                  # script que crea las bases la 1ª vez
+├── scripts/                  # claves JWT (setup_jwt_keys.sh) + carga de datos (seed_*.py)
+├── keys/                     # claves JWT RS256 (se generan; NO se versionan)
 ├── gateway/                  # Kong (kong.yml + docker-compose.yml)
 ├── postman/                  # environment compartido
+├── frontend/                 # frontend React + Vite (5173)
 ├── usuarios/                 # microservicio Spring Boot (8081)
 ├── zonas/                    # microservicio Spring Boot (8080)
 ├── vehiculos/vehiculos/      # microservicio NestJS (3000)
@@ -291,8 +406,12 @@ GET /api/v1/espacios/{id}/disponibilidad             # ¿este espacio está libr
 | Problema | Causa / Solución |
 |---|---|
 | `JAVA_HOME` no encontrado / compila con otra versión | Define `JAVA_HOME` apuntando al **JDK 25**. Windows: variable de entorno; Linux/mac: `export JAVA_HOME=...`. |
-| Puerto en uso (8080/8081/8082/8083/3000/3002/5433/5672/8000) | Cierra el proceso que lo ocupa o cambia el puerto del servicio. El repo usa `5433` para no chocar con PostgreSQL local en `5432`. |
-| Las bases no se crearon (falta `audit_db`, etc.) | Se crean solo con el **volumen vacío**. Resetea: `docker compose down -v && docker compose up -d`. Si no quieres perder datos existentes, crea `audit_db` a mano (ver paso 2). |
+| `No se pudo cargar la clave privada RSA` al arrancar un servicio | Faltan las claves JWT. Genéralas desde la raíz: `bash scripts/setup_jwt_keys.sh`. |
+| El **frontend** no carga datos / errores de red | Falta `frontend/.env` (cópialo de `frontend/.env.example`) o Kong no está arriba. |
+| Login falla / no existen las cuentas `qa.*` | Faltó correr `python3 scripts/seed_usuarios_roles.py` (con `usuarios` + Kong arriba). |
+| Puerto en uso (8080/8081/8082/8083/3000/3002/5433/5672/8000/5173) | Cierra el proceso que lo ocupa o usa `detener.sh` / `detener.ps1`. El repo usa `5433` para no chocar con PostgreSQL local en `5432`. |
+| Las bases no se crearon (falta `audit_db`, etc.) | Se crean solo con el **volumen vacío**. Resetea: `docker compose down -v && docker compose up -d`. Si no quieres perder datos existentes, crea `audit_db` a mano (ver paso 3). |
+| Windows: no se ejecuta `iniciar.ps1` | Corre antes `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`. |
 | Kong responde `502 Bad Gateway` | Las APIs deben estar **levantadas en el host** antes de probar por Kong. |
 | `host.docker.internal` no resuelve (Linux) | Ya está resuelto con `extra_hosts: host-gateway` en `gateway/docker-compose.yml`. |
 | `npm install` falla | Usa Node 20+. Borra `node_modules` y reintenta. |

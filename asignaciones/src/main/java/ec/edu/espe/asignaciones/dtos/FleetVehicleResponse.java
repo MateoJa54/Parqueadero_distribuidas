@@ -21,6 +21,7 @@ public class FleetVehicleResponse {
     private Integer anio;
     private String tipo;
     private String clasificacion;
+    private boolean activo;
     private AssignmentStatus status;
     private AssignmentType assignmentType;
     private String authorizationRoleName;

@@ -2,6 +2,7 @@ package ec.edu.espe.usuarios.config;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,8 +29,8 @@ import lombok.extern.slf4j.Slf4j;
  * registro publico solo crea CLIENTE. Este seeder rompe ese circulo creando una
  * credencial administrativa conocida la primera vez que arranca el servicio.
  *
- * Credenciales por defecto:  usuario = root   /   contrasena = Root2025
- * IMPORTANTE: cambiar la contrasena en un entorno real.
+ * Credenciales por defecto:  usuario = root   /   contrasena via ADMIN_ROOT_PASSWORD
+ * IMPORTANTE: definir ADMIN_ROOT_PASSWORD en un entorno real.
  */
 @Component
 @Order(2)
@@ -37,11 +38,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class BootstrapAdminSeeder implements ApplicationRunner {
 
-    private static final String ROOT_USERNAME = "root";
-    private static final String ROOT_PASSWORD = "Root2025";
     private static final String ROOT_DNI = "0000000000";
     private static final String ROOT_EMAIL = "root@parqueadero.local";
     private static final String ROOT_PHONE = "0000000000";
+
+    @Value("${admin.root.username:root}")
+    private String rootUsername;
+
+    @Value("${admin.root.password:}")
+    private String rootPassword;
 
     private final PersonaRepositorio personaRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
@@ -51,7 +56,12 @@ public class BootstrapAdminSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (usuarioRepositorio.existsByUsernameIgnoreCase(ROOT_USERNAME)) {
+        if (usuarioRepositorio.existsByUsernameIgnoreCase(rootUsername)) {
+            return;
+        }
+
+        if (rootPassword == null || rootPassword.isBlank()) {
+            log.warn("No se creo el usuario ROOT: defina ADMIN_ROOT_PASSWORD para sembrar la credencial inicial.");
             return;
         }
 
@@ -73,8 +83,8 @@ public class BootstrapAdminSeeder implements ApplicationRunner {
 
         Usuario usuario = usuarioRepositorio.save(Usuario.builder()
                 .persona(persona)
-                .username(ROOT_USERNAME)
-                .passwordHash(PasswordUtil.hash(ROOT_PASSWORD))
+                .username(rootUsername)
+                .passwordHash(PasswordUtil.hash(rootPassword))
                 .active(true)
                 .build());
 
@@ -89,7 +99,7 @@ public class BootstrapAdminSeeder implements ApplicationRunner {
                 .active(true)
                 .build());
 
-        log.warn("Usuario ROOT inicial creado -> usuario: '{}', contrasena: '{}'. CAMBIELA en produccion.",
-                ROOT_USERNAME, ROOT_PASSWORD);
+        log.warn("Usuario ROOT inicial creado -> usuario: '{}'. Cambie la contrasena en produccion.",
+                rootUsername);
     }
 }

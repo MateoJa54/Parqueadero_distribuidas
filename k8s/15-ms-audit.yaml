@@ -1,0 +1,78 @@
+# Microservicio ms-audit (NestJS): consume eventos de RabbitMQ y los persiste
+# en audit_db. Solo ADMIN/ROOT pueden leer via HTTP (guard de roles).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-audit
+  namespace: parqueadero-iza-garcia-criollo
+  labels:
+    app: ms-audit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-audit
+  template:
+    metadata:
+      labels:
+        app: ms-audit
+    spec:
+      containers:
+        - name: ms-audit
+          image: parqueadero/ms-audit:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3002
+          env:
+            - name: PORT
+              value: "3002"
+            - name: DB_HOST
+              value: "postgres"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              value: "audit_user"
+            - name: DB_PASSWORD
+              value: "audit_pass"
+            - name: DB_NAME
+              value: "audit_db"
+            - name: RABBITMQ_HOST
+              value: "rabbitmq"
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: "guest"
+            - name: RABBITMQ_PASSWORD
+              value: "guest"
+            - name: RABBITMQ_QUEUE
+              value: "audit_queue"
+            - name: RABBITMQ_EXCHANGE
+              value: "audit_exchange"
+            - name: RABBITMQ_ROUTING_KEY
+              value: "audit.#"
+            - name: JWT_ISSUER
+              value: "parqueadero"
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-keys
+                  key: jwt_public.pem
+          readinessProbe:
+            tcpSocket:
+              port: 3002
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-audit
+  namespace: parqueadero-iza-garcia-criollo
+spec:
+  selector:
+    app: ms-audit
+  ports:
+    - port: 3002
+      targetPort: 3002
+  type: ClusterIP

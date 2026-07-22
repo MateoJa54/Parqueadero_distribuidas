@@ -8,7 +8,7 @@ import { EventoAuditoria } from './entities/evento-auditoria.entity';
 export class AuditService {
   constructor(
     @InjectRepository(EventoAuditoria)
-    private auditRepo: Repository<EventoAuditoria>,
+    private readonly auditRepo: Repository<EventoAuditoria>,
   ) {}
 
   async create(dto: CreateAuditEventDto): Promise<EventoAuditoria> {

@@ -21,7 +21,7 @@ import { RolesGuard } from './auth/roles.guard';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get<string>('DB_HOST') ?? 'localhost',
-        port: parseInt(configService.get<string>('DB_PORT') ?? '5433', 10),
+        port: Number.parseInt(configService.get<string>('DB_PORT') ?? '5433', 10),
         username: configService.get<string>('DB_USUARIO') ?? 'postgres',
         password: configService.get<string>('DB_CONTRASENA') ?? 'postgres',
         database: configService.get<string>('DB_NOMBRE') ?? 'vehiculos_db',

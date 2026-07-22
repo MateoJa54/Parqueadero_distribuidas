@@ -1,6 +1,7 @@
 package ec.edu.espe.usuarios.entidades;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -23,6 +24,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class Persona {
+
+    private static final String ZONA_HORARIA = "America/Guayaquil";
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -63,12 +66,12 @@ public class Persona {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
+        this.updatedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneId.of(ZONA_HORARIA));
     }
 }

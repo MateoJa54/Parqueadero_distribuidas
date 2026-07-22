@@ -93,23 +93,7 @@ public class AssignmentService {
         String oldPayload = toJson(assignment);
 
         if (request.getStatus() != null) {
-            AssignmentStatus previousStatus = assignment.getStatus();
-            if (request.getStatus() == AssignmentStatus.ACTIVA && previousStatus != AssignmentStatus.ACTIVA) {
-                externalCatalogService.validarUsuarioActivo(userId, authorization);
-                UserRoleAssignmentResponse authorizationRole = externalCatalogService
-                        .validarRolAutorizadoParaAsignacion(userId, authorization);
-                assignment.setAuthorizationRoleId(authorizationRole.getIdRole());
-                assignment.setAuthorizationRoleName(authorizationRole.getRol());
-            }
-            assignment.setStatus(request.getStatus());
-            if (request.getStatus() == AssignmentStatus.FINALIZADA) {
-                assignment.setActive(false);
-            }
-            if (request.getStatus() != AssignmentStatus.ACTIVA) {
-                assignment.setEntryAuthorized(false);
-            } else if (request.getEntryAuthorized() == null) {
-                assignment.setEntryAuthorized(true);
-            }
+            aplicarCambioEstado(assignment, request, userId, authorization);
         }
         if (request.getAssignmentType() != null) {
             assignment.setAssignmentType(request.getAssignmentType());
@@ -191,7 +175,12 @@ public class AssignmentService {
         return assignmentRepository.findByIdUserIdAndActiveTrue(userId).stream()
                 .map(assignment -> {
                     VehiculoClientResponse vehiculo = externalCatalogService
-                            .validarVehiculoActivo(assignment.getId().getVehicleId(), authorization);
+                            .obtenerVehiculo(assignment.getId().getVehicleId(), authorization);
+                    // El cliente solo debe ver vehiculos activos: los inactivos (o
+                    // inexistentes) se omiten sin romper la consulta de la flota.
+                    if (vehiculo == null || !vehiculo.isActivo()) {
+                        return null;
+                    }
                     return FleetVehicleResponse.builder()
                             .userId(userId)
                             .vehicleId(assignment.getId().getVehicleId())
@@ -202,6 +191,7 @@ public class AssignmentService {
                             .anio(vehiculo.getAnio())
                             .tipo(vehiculo.getTipo())
                             .clasificacion(vehiculo.getClasificacion())
+                            .activo(vehiculo.isActivo())
                             .status(assignment.getStatus())
                             .assignmentType(assignment.getAssignmentType())
                             .authorizationRoleName(assignment.getAuthorizationRoleName())
@@ -212,6 +202,7 @@ public class AssignmentService {
                             .assignedAt(assignment.getAssignedAt())
                             .build();
                 })
+                .filter(java.util.Objects::nonNull)
                 .toList();
     }
 
@@ -221,6 +212,22 @@ public class AssignmentService {
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No existe una asignacion activa para el vehiculo: " + vehicleId));
         return toResponse(assignment);
+    }
+
+    /**
+     * Lista TODAS las asignaciones (para el panel de administracion). Si
+     * {@code soloActivas} es {@code true} filtra por asignaciones activas.
+     * Ordenadas por fecha de asignacion descendente (mas recientes primero).
+     */
+    @Transactional(readOnly = true)
+    public List<AssignmentResponse> listarAsignaciones(boolean soloActivas) {
+        return assignmentRepository.findAll().stream()
+                .filter(a -> !soloActivas || a.isActive())
+                .sorted(java.util.Comparator.comparing(
+                        VehicleAssignment::getAssignedAt,
+                        java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -236,6 +243,27 @@ public class AssignmentService {
                         .newPayload(event.getNewPayload())
                         .build())
                 .toList();
+    }
+
+    private void aplicarCambioEstado(VehicleAssignment assignment, UpdateAssignmentRequest request,
+            UUID userId, String authorization) {
+        AssignmentStatus previousStatus = assignment.getStatus();
+        if (request.getStatus() == AssignmentStatus.ACTIVA && previousStatus != AssignmentStatus.ACTIVA) {
+            externalCatalogService.validarUsuarioActivo(userId, authorization);
+            UserRoleAssignmentResponse authorizationRole = externalCatalogService
+                    .validarRolAutorizadoParaAsignacion(userId, authorization);
+            assignment.setAuthorizationRoleId(authorizationRole.getIdRole());
+            assignment.setAuthorizationRoleName(authorizationRole.getRol());
+        }
+        assignment.setStatus(request.getStatus());
+        if (request.getStatus() == AssignmentStatus.FINALIZADA) {
+            assignment.setActive(false);
+        }
+        if (request.getStatus() != AssignmentStatus.ACTIVA) {
+            assignment.setEntryAuthorized(false);
+        } else if (request.getEntryAuthorized() == null) {
+            assignment.setEntryAuthorized(true);
+        }
     }
 
     private VehicleAssignment obtenerAsignacionActiva(AssignmentId id) {

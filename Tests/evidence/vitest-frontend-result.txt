@@ -1,0 +1,15 @@
+> parqueadero-frontend@1.0.0 test
+> vitest run
+
+[2m12:31:29 p. m.[22m [33m[1m[vite][22m[39m [33mwarning: `esbuild` option was specified by "vite:react-babel" plugin. This option is deprecated, please use `oxc` instead.[39m
+[2m12:31:29 p. m.[22m [33m[1m[vite][22m[39m [33mwarning: `optimizeDeps.esbuildOptions` option was specified by "vite:react-babel" plugin. This option is deprecated, please use `optimizeDeps.rolldownOptions` instead.[39m
+[33mBoth esbuild and oxc options were set. oxc options will be used and esbuild options will be ignored.[39m The following esbuild options were set: `{ jsx: 'automatic', jsxImportSource: undefined }`
+
+ RUN  v4.1.10 C:/Users/MSI/Desktop/Parqueadero_distribuidas/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  36 passed (36)
+   Start at  12:31:29
+   Duration  4.76s (transform 366ms, setup 1.20s, import 621ms, tests 189ms, environment 10.36s)
+

@@ -1,0 +1,83 @@
+# Microservicio tickets: nucleo de ingreso/salida/cobro. Orquesta usuarios,
+# vehiculos, zonas y asignaciones por HTTP interno del cluster.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tickets
+  namespace: parqueadero-iza-garcia-criollo
+  labels:
+    app: tickets
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tickets
+  template:
+    metadata:
+      labels:
+        app: tickets
+    spec:
+      containers:
+        - name: tickets
+          image: parqueadero/tickets:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+          env:
+            - name: DB_HOST
+              value: "postgres"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "tickets"
+            - name: DB_USER
+              value: "tickets"
+            - name: DB_PASSWORD
+              value: "tickets123"
+            - name: RABBITMQ_HOST
+              value: "rabbitmq"
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: "guest"
+            - name: RABBITMQ_PASSWORD
+              value: "guest"
+            - name: JWT_ISSUER
+              value: "parqueadero"
+            - name: JWT_PUBLIC_KEY
+              value: "/keys/jwt_public.pem"
+            - name: USUARIOS_URL
+              value: "http://usuarios:8081"
+            - name: VEHICULOS_URL
+              value: "http://vehiculos:3000"
+            - name: ZONAS_URL
+              value: "http://zonas:8080"
+            - name: ASIGNACIONES_URL
+              value: "http://asignaciones:8082"
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /keys
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 8083
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 30
+      volumes:
+        - name: jwt-keys
+          secret:
+            secretName: jwt-keys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tickets
+  namespace: parqueadero-iza-garcia-criollo
+spec:
+  selector:
+    app: tickets
+  ports:
+    - port: 8083
+      targetPort: 8083
+  type: ClusterIP
