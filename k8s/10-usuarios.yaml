@@ -1,0 +1,79 @@
+# Microservicio usuarios: emisor/validador de JWT y autoridad de permisos.
+# Firma tokens con la clave PRIVADA (montada desde el Secret jwt-keys).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: usuarios
+  namespace: parqueadero-iza-garcia-criollo
+  labels:
+    app: usuarios
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: usuarios
+  template:
+    metadata:
+      labels:
+        app: usuarios
+    spec:
+      containers:
+        - name: usuarios
+          image: parqueadero/usuarios:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: DB_HOST
+              value: "postgres"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "usuarios"
+            - name: DB_USER
+              value: "usuarios"
+            - name: DB_PASSWORD
+              value: "usuarios123"
+            - name: RABBITMQ_HOST
+              value: "rabbitmq"
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: "guest"
+            - name: RABBITMQ_PASSWORD
+              value: "guest"
+            - name: JWT_ISSUER
+              value: "parqueadero"
+            - name: JWT_PRIVATE_KEY
+              value: "/keys/jwt_private.pem"
+            - name: JWT_PUBLIC_KEY
+              value: "/keys/jwt_public.pem"
+            - name: ADMIN_ROOT_PASSWORD
+              value: "Root2025"
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /keys
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 30
+      volumes:
+        - name: jwt-keys
+          secret:
+            secretName: jwt-keys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: usuarios
+  namespace: parqueadero-iza-garcia-criollo
+spec:
+  selector:
+    app: usuarios
+  ports:
+    - port: 8081
+      targetPort: 8081
+  type: ClusterIP

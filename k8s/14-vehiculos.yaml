@@ -1,0 +1,79 @@
+# Microservicio vehiculos (NestJS): catalogo de vehiculos.
+# Publica eventos de auditoria a RabbitMQ. JWT_PUBLIC_KEY recibe el PEM
+# como contenido (el guard NestJS no lee rutas de archivo).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vehiculos
+  namespace: parqueadero-iza-garcia-criollo
+  labels:
+    app: vehiculos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vehiculos
+  template:
+    metadata:
+      labels:
+        app: vehiculos
+    spec:
+      containers:
+        - name: vehiculos
+          image: parqueadero/vehiculos:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: DB_HOST
+              value: "postgres"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USUARIO
+              value: "postgres"
+            - name: DB_CONTRASENA
+              value: "postgres"
+            - name: DB_NOMBRE
+              value: "vehiculos_db"
+            - name: RABBITMQ_HOST
+              value: "rabbitmq"
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: "guest"
+            - name: RABBITMQ_PASSWORD
+              value: "guest"
+            - name: RABBITMQ_EXCHANGE
+              value: "audit_exchange"
+            - name: RABBITMQ_ROUTING_KEY
+              value: "audit.event"
+            - name: JWT_ISSUER
+              value: "parqueadero"
+            - name: CORS_ORIGINS
+              value: "http://parqueadero.local,http://localhost:5173"
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-keys
+                  key: jwt_public.pem
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vehiculos
+  namespace: parqueadero-iza-garcia-criollo
+spec:
+  selector:
+    app: vehiculos
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: ClusterIP

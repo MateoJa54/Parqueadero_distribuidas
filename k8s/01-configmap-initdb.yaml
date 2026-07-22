@@ -1,0 +1,33 @@
+# Script de inicializacion de PostgreSQL. Se monta en
+# /docker-entrypoint-initdb.d y se ejecuta SOLO la primera vez que el
+# contenedor crea el volumen (PVC vacio). Crea las bases y usuarios de
+# cada microservicio.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-initdb
+  namespace: parqueadero-iza-garcia-criollo
+data:
+  01-init.sql: |
+    -- ---------- API zonas (Spring Boot) ----------
+    CREATE USER zonas WITH PASSWORD 'zonas123';
+    CREATE DATABASE zonas OWNER zonas;
+
+    -- ---------- API usuarios (Spring Boot) ----------
+    CREATE USER usuarios WITH PASSWORD 'usuarios123';
+    CREATE DATABASE usuarios OWNER usuarios;
+
+    -- ---------- API asignaciones (Spring Boot) ----------
+    CREATE USER asignaciones WITH PASSWORD 'asignaciones123';
+    CREATE DATABASE asignaciones OWNER asignaciones;
+
+    -- ---------- API tickets (Spring Boot) ----------
+    CREATE USER tickets WITH PASSWORD 'tickets123';
+    CREATE DATABASE tickets OWNER tickets;
+
+    -- ---------- API vehiculos (NestJS / TypeORM) ----------
+    CREATE DATABASE vehiculos_db OWNER postgres;
+
+    -- ---------- API ms-audit (NestJS / TypeORM) ----------
+    CREATE USER audit_user WITH PASSWORD 'audit_pass';
+    CREATE DATABASE audit_db OWNER audit_user;

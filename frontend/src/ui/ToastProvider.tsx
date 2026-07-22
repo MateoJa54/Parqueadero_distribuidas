@@ -15,6 +15,17 @@ interface ToastCtx {
 }
 const Ctx = createContext<ToastCtx | null>(null);
 
+/** Id único con fallback: crypto.randomUUID solo existe en contextos seguros (HTTPS/localhost). */
+function uid(): string {
+  const c = globalThis.crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  if (c?.getRandomValues) {
+    const b = c.getRandomValues(new Uint8Array(16));
+    return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  }
+  return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
+}
+
 const ICON: Record<ToastType, string> = {
   success: '✓',
   danger: '✕',
@@ -31,7 +42,7 @@ export function ToastProvider({ children }: { readonly children: React.ReactNode
 
   const push = useCallback(
     (t: Omit<Toast, 'id'>) => {
-      const id = crypto.randomUUID();
+      const id = uid();
       setToasts((ts) => [...ts, { ...t, id }]);
       window.setTimeout(() => remove(id), 4200);
     },
